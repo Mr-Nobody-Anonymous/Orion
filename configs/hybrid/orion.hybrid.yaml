@@ -1,0 +1,44 @@
+# ORION hybrid configuration profile.
+#
+# Hybrid mode keeps local memory and evaluation but allows an
+# explicitly-configured cloud provider for specialist inference. The
+# cloud provider is OPT-IN: it never activates without credentials
+# and a per-provider evaluation budget.
+
+mode: HYBRID
+execution_mode: simulation
+autonomy_level: 1
+live_trading_enabled: false
+cloud_inference_enabled: false  # set to true only after cloud provider is configured
+
+risk:
+  max_order_notional: "50000"
+  max_position_fraction: 0.15
+  max_portfolio_exposure: 1.0
+  max_correlation: 0.75
+  min_model_confidence: 0.30
+  emergency_stop: false
+
+providers:
+  filings:
+    sec: live
+    news: live
+    earnings: live
+  market_data:
+    crypto: live
+    alpaca: paper
+
+cloud:
+  provider: null             # set to "openai" | "anthropic" | "azure" only after evaluation
+  budget_usd_per_day: 0.0
+
+agents:
+  controller: hierarchy
+
+distributed:
+  pool_concurrency: 2
+  default_max_attempts: 3
+
+governance:
+  dashboard_on_promotion: true
+  require_approval_level: 3

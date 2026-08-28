@@ -1,0 +1,52 @@
+# ORION local configuration profile.
+#
+# This file documents the canonical local configuration. ORION does
+# not yet auto-load YAML; the values here mirror the programmatic
+# defaults in :class:`orion.infrastructure.configuration.OrionConfig`
+# so the operator has a single source of truth.
+#
+# To switch to a different profile, set the environment variable
+# ``ORION_CONFIG_PROFILE`` to the profile name and the matching file
+# under ``configs/{profile}/orion.{profile}.yaml`` will be used.
+
+mode: LOCAL                  # LOCAL | HYBRID | CLOUD
+execution_mode: simulation   # simulation | live (live requires explicit enable)
+autonomy_level: 0            # 0=research only, 1=recommend, 2=paper, 3=limited, 4=auto
+live_trading_enabled: false
+cloud_inference_enabled: false
+
+risk:
+  max_order_notional: "10000"
+  max_position_fraction: 0.10
+  max_portfolio_exposure: 1.0
+  max_correlation: 0.7
+  min_model_confidence: 0.30
+  emergency_stop: false
+
+providers:
+  filings:
+    sec: reference            # reference | live
+    news: reference           # reference | live
+    earnings: reference       # reference | live
+  market_data:
+    crypto: live              # ccxt
+    alpaca: paper             # paper | live (live requires explicit enable)
+
+agents:
+  controller: hierarchy       # hierarchy | custom
+  decisions:                  # which agent classes to load
+    - compliance
+    - risk
+    - decision
+    - researcher
+    - quant
+    - news
+    - strategy
+
+distributed:
+  pool_concurrency: 1
+  default_max_attempts: 3
+
+governance:
+  dashboard_on_promotion: true
+  require_approval_level: 3

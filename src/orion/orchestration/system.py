@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime
 from decimal import Decimal
 from typing import Sequence
 
@@ -15,6 +16,7 @@ from ..infrastructure.event_bus import EventBus
 from ..infrastructure.governance import PromotionGate
 from ..infrastructure.provenance import ProvenanceStore
 from ..intelligence.financial_reasoning import FinancialReasoner
+from ..intelligence.sentiment import SentimentAnalyzer
 from ..prediction.machine_learning import MLRidgeForecaster
 from ..intelligence.llm.providers import create_local_llm_provider
 from ..learning.self_improvement import SelfImprovementEngine
@@ -28,6 +30,25 @@ from ..world_model import FinancialWorldModel
 from ..evolution import EvolutionEngine, Fitness, StrategyCandidate
 from ..research import ResearchDiscovery, build_research_report
 from ..simulation import bootstrap_market_paths
+from ..agents import (
+    AgentController,
+    ComplianceAgent,
+    DecisionAgent,
+    NewsAgent,
+    QuantAgent,
+    ResearcherAgent,
+    RiskAgent,
+    StrategyAgent,
+)
+from ..compliance import AuditLog, RoleBasedAccess, RestrictedList
+from ..data.providers.filings import FilingsManager
+from ..distributed import OrionController as DistributedController
+from ..portfolio.factors import (
+    FACTOR_NAMES,
+    factor_alpha_decomposition,
+    compute_factor_signal,
+)
+from ..portfolio.optimizer import mean_variance, mvp_weights, risk_parity
 
 
 class OrionSystem:
@@ -50,6 +71,40 @@ class OrionSystem:
         self.council = build_default_council()
         self.ml_forecaster = MLRidgeForecaster()
         self.reasoner = FinancialReasoner()
+        # P1-5: filings manager wired with the deterministic reference
+        # providers. The CLI / operator can swap in live providers
+        # without touching the system.
+        from ..data.providers.filings.reference import (
+            ReferenceEarningsProvider,
+            ReferenceNewsProvider,
+            ReferenceSecEdgarProvider,
+        )
+        self.filings = FilingsManager(
+            sec=ReferenceSecEdgarProvider(),
+            news=ReferenceNewsProvider(),
+            earnings=ReferenceEarningsProvider(),
+        )
+        # P2-2: agent controller with the full default hierarchy.
+        self.agents = AgentController(
+            agents=[
+                ComplianceAgent(restricted=RestrictedList()),
+                RiskAgent(),
+                DecisionAgent(reasoner=self.reasoner),
+                ResearcherAgent(),
+                QuantAgent(),
+                NewsAgent(analyzer=SentimentAnalyzer()),
+                StrategyAgent(),
+            ]
+        )
+        # P2-3: compliance scaffolding.
+        self.audit_log = AuditLog()
+        self.rbac = RoleBasedAccess()
+        self.restricted_list = RestrictedList()
+        # P2-4: distributed job control.
+        self.distributed = DistributedController()
+        # P1-6: factor cache is recomputed on demand; the registry is
+        # always available.
+        self.factor_names: tuple[str, ...] = FACTOR_NAMES
 
     def status(self) -> dict[str, object]:
         _, router, hardware = create_local_llm_provider()
@@ -183,6 +238,74 @@ class OrionSystem:
         }))
         return evaluated
 
+    def run_evaluation(
+        self,
+        symbol: str,
+        prices: Sequence[float],
+        *,
+        ablations: Sequence = (),
+        config: object | None = None,
+    ) -> dict[str, object]:
+        """Run the P0-3 evaluation lab against a price series.
+
+        Wires the system to :class:`orion.evaluation.EvaluationLab`,
+        executes a contamination-safe walk-forward ablation, and
+        persists a reproducible artifact tree.
+
+        Parameters
+        ----------
+        symbol:
+            The asset symbol the prices correspond to.
+        prices:
+            Bar series in chronological order.
+        ablations:
+            Optional iterable of
+            :class:`orion.evaluation.AblationVariant` for "Orion - X"
+            experiments.
+        config:
+            Optional :class:`orion.evaluation.LabConfig`.
+
+        Returns
+        -------
+        dict with ``run_id``, ``artifact_dir``, ``report`` (a
+        serialised :class:`EvaluationReport`), and ``ablations``
+        (the list of ablation results).
+        """
+        from ..data.contracts import Asset, AssetClass
+        from ..evaluation import (
+            AblationVariant as _AblationVariant,
+            EvaluationLab,
+            LabConfig,
+            make_orion_predictor,
+        )
+
+        asset = Asset(symbol, AssetClass.EQUITY)
+        predictor = make_orion_predictor(self, asset)
+        lab_config = config if isinstance(config, LabConfig) else LabConfig()
+        ablations_tuple = tuple(ablations)
+        for a in ablations_tuple:
+            if not isinstance(a, _AblationVariant):
+                raise TypeError(
+                    "ablations must be a sequence of orion.evaluation.AblationVariant; "
+                    f"got {type(a).__name__}"
+                )
+
+        lab = EvaluationLab(
+            predictor,
+            prices,
+            ablations=ablations_tuple,
+            config=lab_config,
+        )
+        artifact, report = lab.run()
+        return {
+            "run_id": artifact.run_id,
+            "artifact_dir": str(artifact.artifact_dir),
+            "report": report.as_dict(),
+            "ablations": [
+                {"name": a.name, "description": a.description} for a in ablations_tuple
+            ],
+        }
+
     def research(self, question: str, *, limit: int = 5) -> dict[str, object]:
         self.world.research.question = self.world.set_state("research.question", question, source="user")
         try:
@@ -229,8 +352,107 @@ class OrionSystem:
             "risk_gate": "PASS" if isinstance(self.risk, RiskEngine) else "FAIL",
             "memory": "PASS" if self.layered_memory.counts() else "FAIL",
             "provenance": "PASS",
+            "filings": "PASS" if self.filings is not None else "FAIL",
+            "agents": "PASS" if self.agents is not None else "FAIL",
+            "compliance": "PASS" if self.audit_log is not None else "FAIL",
+            "distributed": "PASS" if self.distributed is not None else "FAIL",
         }
         return {"status": "HEALTHY" if all(value == "PASS" for value in checks.values()) else "ATTENTION", "checks": checks}
+
+    # ------------------- P1-5 / P1-6 / P2 public surface -------------------
+
+    def compute_factors(self, prices: Sequence[float], factors: Sequence[str] = ()) -> dict[str, object]:
+        """Return the canonical factor signals for ``prices``."""
+        names = tuple(factors) if factors else self.factor_names
+        unknown = [n for n in names if n not in self.factor_names]
+        if unknown:
+            raise KeyError(f"unknown factors: {unknown}")
+        return {
+            "status": "IMPLEMENTED",
+            "signals": [compute_factor_signal(n, list(prices)).as_dict() for n in names],
+        }
+
+    def factor_exposures(
+        self,
+        strategy_returns: Sequence[float],
+        factor_returns: dict[str, Sequence[float]],
+        factor_names: Sequence[str] = (),
+    ) -> dict[str, object]:
+        """Run the factor-alpha decomposition on a strategy return stream."""
+        names = tuple(factor_names) if factor_names else self.factor_names
+        report = factor_alpha_decomposition(
+            list(strategy_returns), factor_returns, factor_names=names
+        )
+        return {"status": "IMPLEMENTED", "report": report.as_dict()}
+
+    def fetch_filings(
+        self,
+        asset: "Asset",
+        *,
+        as_of: "datetime | None" = None,
+        news_query: str | None = None,
+    ) -> dict[str, object]:
+        """P1-5 filings fetch via the wired-in providers."""
+        bundle = self.filings.fetch(
+            asset,
+            as_of=as_of,
+            news_query=news_query,
+        )
+        return {"status": "IMPLEMENTED", "bundle": bundle.as_dict()}
+
+    def run_agents(
+        self,
+        symbol: str,
+        prices: Sequence[float],
+        *,
+        asset_class: str = "equity",
+        risk_limits: dict[str, float] | None = None,
+        portfolio: dict[str, float] | None = None,
+        metadata: dict[str, object] | None = None,
+        news: Sequence[dict[str, object]] = (),
+    ) -> dict[str, object]:
+        """Run the agent hierarchy for a single decision context."""
+        from ..agents import AgentContext
+
+        context = AgentContext(
+            symbol=symbol,
+            asset_class=asset_class,
+            prices=list(prices),
+            risk_limits=dict(risk_limits or {}),
+            portfolio=dict(portfolio or {}),
+            metadata=dict(metadata or {}),
+            news=tuple(news),
+        )
+        report = self.agents.run(context)
+        return {"status": "IMPLEMENTED", "report": report.as_dict()}
+
+    def optimize_portfolio(
+        self,
+        expected_returns: dict[str, float],
+        *,
+        volatilities: dict[str, float] | None = None,
+        method: str = "mvp",
+        risk_aversion: float = 1.0,
+    ) -> dict[str, object]:
+        """Run a portfolio optimiser. ``method`` is one of mvo / mvp / risk-parity."""
+        if not expected_returns:
+            raise ValueError("expected_returns must be non-empty")
+        symbols = tuple(expected_returns)
+        if method == "mvo":
+            result = mean_variance(
+                expected_returns, volatilities=volatilities, risk_aversion=risk_aversion
+            )
+        elif method == "mvp":
+            result = mvp_weights(symbols, volatilities=volatilities)
+        elif method == "risk-parity":
+            result = risk_parity(symbols, volatilities=volatilities)
+        else:
+            raise ValueError(f"unknown method: {method!r}")
+        return {"status": "IMPLEMENTED", "result": result.as_dict()}
+
+    def distributed_drain(self) -> dict[str, int]:
+        """Drain one job from every named pool (P2-4)."""
+        return self.distributed.drain()
 
     @staticmethod
     def _fitness(candidate: StrategyCandidate, prices: Sequence[float]) -> Fitness:

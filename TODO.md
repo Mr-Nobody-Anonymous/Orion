@@ -30,9 +30,10 @@ operational gap, **P2** = nice-to-have.
   - `latency.py` — `LatencyModel` (deterministic + jitter), `MarketImpactModel` (square-root impact).
   - `venue.py` — `SimulatedExchange` with: bid/ask spread, market hours, trading halts, auctions (open/close), borrow availability, short-sale constraints, financing costs, margin, funding, overnight gaps.
   - `account.py` — `SimulatedAccount` with position, cash, equity, buying power, margin, PnL; kill-switch; reconciliation report.
+  - `broker_adapter.py` — `SimulatedExchangeBroker` implementing the existing `BrokerAdapter` Protocol (`trading/execution.py`); translates `OrderRequest`/`Action` to `Order`/`OrderSide`, returns a `Fill` in the legacy shape so `brain.executive` and `orchestration.system` can use it without code change. Zero-impact by default; opt in via `enable_market_impact=True`.
   - `__init__.py` — re-exports.
-- Plugs into: existing `BrokerAdapter` Protocol in `src/orion/trading/execution.py` and `RiskEngine.assess`.
-- Tests: `tests/exchange/`.
+- Plugs into: existing `BrokerAdapter` Protocol in `src/orion/trading/execution.py` and `RiskEngine.assess`. `orion.trading` re-exports `SimulatedExchangeBroker` via lazy `__getattr__` to break the import cycle.
+- Tests: `tests/exchange/test_exchange.py` (existing P0-2 unit tests) and `tests/exchange/test_broker_adapter.py` (new — protocol conformance, market order routes through matching engine, limit order resting, account state, kill switch, reconciliation, pre-built exchange, short → sell side).
 
 ### ✅ P0-3 Ablation / out-of-sample evaluation lab
 - New: `src/orion/evaluation/`
@@ -40,21 +41,24 @@ operational gap, **P2** = nice-to-have.
   - `walk_forward.py` — contamination-safe walk-forward harness with embargo and purge.
   - `ablation.py` — `AblationSpec` (e.g. `Orion - memory - LLM - research - evolution - regime - ensemble - learning`), runner, statistical significance (paired t-test, Wilcoxon, bootstrap CI).
   - `report.py` — `EvaluationReport` with per-component delta, statistical significance, win-rate, drawdown comparison, decision summary.
+  - `lab.py` — `EvaluationLab`: ties the lab to `OrionSystem`, runs the walk-forward ablation, and persists a reproducible artifact tree (`config.json`/`dataset.json`/`provenance.json`/`results.json`/`ablation.json`) under `artifacts/evaluation/<run_id>/`.
   - `__init__.py` — re-exports.
-- Plugs into: existing `OrionSystem`, `ModelCouncil`, `MemoryStore`, `LayeredMemory`, `ExecutiveOrchestrator`, `EvolutionEngine`, `RegimeDetector`, `ResearchDiscovery`, `SelfImprovementEngine`.
-- Tests: `tests/evaluation/`.
+- Plug-in: `OrionSystem.run_evaluation(symbol, prices, ablations=[...], config=...)` in `src/orion/orchestration/system.py` returns the run id, artifact directory, and serialised report.
+- Tests: `tests/evaluation/test_evaluation_lab.py` (lab internals) and `tests/evaluation/test_evaluation_lab_integration.py` (new — full `OrionSystem.run_evaluation` end-to-end, artifact-tree shape and contents, significance, dataset checksum, short-series rejection).
 
 ---
 
 ## P1 — Operations and observability
 
 ### ✅ P1-1 Generated-code sandbox
-- New: `src/orion/coding/sandbox/`
+- New: `src/orion/coding/sandbox_v2/`
   - `policy.py` — `SandboxPolicy` (CPU time, memory, network, filesystem, allowed imports).
-  - `runner.py` — `run_in_subprocess` with `resource.setrlimit` (CPU, FSIZE, NOFILE), `subprocess.Popen` timeout, stdout/stderr capture, exit-code enforcement, filesystem chroot-equivalent (cwd sandbox).
-  - `__init__.py` — re-exports.
+  - `protocol.py` — child-interpreter program + `SandboxResult` dataclass (moved out of legacy module).
+  - `runner.py` — `run_isolated` with subprocess + rlimit + per-run tempdir + JSON-line protocol.
+  - `__init__.py` — canonical re-exports.
+- Back-compat shim: `src/orion/coding/sandbox.py` now re-exports the v2 surface so legacy `from orion.coding.sandbox import CodeSandbox, SandboxResult` continues to work; `CodeSandbox.__post_init__` preserves the legacy `(0, 120]` timeout validation.
 - Plugs into: `src/orion/coding/verification.py` and `src/orion/coding/generation.py`.
-- Tests: `tests/coding/test_sandbox.py`.
+- Tests: `tests/coding/test_sandbox_policy.py` (policy + runner) and `tests/coding/test_sandbox_compat.py` (legacy/v2 identity, v2 self-containment, legacy delegation contract).
 
 ### ✅ P1-2 Model registry v2
 - New: `src/orion/models/registry_v2/`
@@ -65,21 +69,30 @@ operational gap, **P2** = nice-to-have.
 - Plugs into: existing `ImmutableRegistry`, `PromotionGate`, `TrainingPipeline`.
 - Tests: `tests/registry_v2/`.
 
-### P1-3 Observability / control plane
+### ✅ P1-3 Observability / control plane
 - New: `src/orion/ops/`
-  - `metrics.py` — counter / gauge / histogram (in-memory + JSONL sink).
-  - `tracing.py` — span context, JSONL span sink.
-  - `health.py` — `HealthCheck` (data freshness, broker connectivity, model drift, risk, memory).
-  - `alerts.py` — `AlertEngine` (rules: drift > threshold, broker down, drawdown > limit).
+  - `metrics.py` — counter / gauge / histogram (in-memory + JSONL sink) with labels, percentiles, snapshot.
+  - `tracing.py` — span context (parent/child) with in-memory ring buffer + JSONL `SpanSink`.
+  - `health.py` — `HealthRegistry` + `HealthCheck` + standard checks (data freshness, model drift PSI, broker connectivity) with `HealthReport` aggregation.
+  - `alerts.py` — `AlertEngine` (rule-based) with built-in rules for broker disconnect, data staleness, model drift.
   - `__init__.py` — re-exports.
-- Plugs into: `src/orion/orchestration/system.py`, `src/orion/infrastructure/event_bus.py`.
+- Plugs into: `src/orion/orchestration/system.py`, `src/orion/infrastructure/event_bus.py`. Not yet wired into `OrionSystem` (next iteration).
+- Tests: `tests/ops/test_ops.py` (23 tests — counter/gauge/histogram, JSONL sink, label isolation, span parent/child, exception in span, sink JSONL, health registry, exception → CRITICAL, data-freshness / drift / broker standard checks, alert engine, rule exception swallowing).
 
-### P1-4 Persistent data store (opt-in)
+### ✅ P1-4 Persistent data store (opt-in)
 - New: `src/orion/storage/`
-  - `sqlite_store.py` — `SqliteStore` (zero-dep OLTP) for experiments, decisions, memory, predictions, orders, fills, portfolio states, model versions, research, provenance, audit events.
-  - `parquet_store.py` — `ParquetStore` (zero-dep CSV fallback when pyarrow missing) for time-series market data.
-  - `__init__.py` — re-exports.
-- Plugs into: `OrionSystem` is constructed against an optional `Store`; everything is still in-memory by default.
+  - `sqlite_store.py` — `SqliteStore` (zero-dep, stdlib `sqlite3`) for experiments, decisions, predictions, orders, fills, model versions, audit events. Every record carries `id`, `version_id`, `payload` (JSON), `created_at`. Query via `json_extract` on payload fields.
+  - `parquet_store.py` — `ParquetStore` (zero-dep CSV fallback when `pyarrow` missing) for time-series market data keyed by `(symbol, version_id)`. Real parquet when `pyarrow` is installed.
+  - `__init__.py` — re-exports + `new_version_id()` helper.
+- Plugs into: `OrionSystem` is constructed against an optional `Store`; everything is still in-memory by default. (Wiring is in the next iteration; the store layer itself is in.)
+- Tests: `tests/storage/test_storage.py` (12 tests — in-memory round-trip, where-clause filtering, limit, count, unknown table rejection, version_id override, file persistence, CSV round-trip, list_versions, missing read, nested values, parquet back-end when available).
+
+### ✅ `orion evaluate` CLI
+- New: `src/orion/cli/main.py` `evaluate` subcommand.
+- The CLI drives the P0-3 evaluation lab end-to-end: takes `--symbol`, `--prices` or `--prices-file`, optional `--baseline` (repeatable), optional `--ablation NAME MODULE.ATTR` (repeatable), walk-forward controls (`--train-size`, `--test-size`, `--step`, `--embargo`, `--purge`, `--no-walk-forward`), stress test (`--no-stress`, `--stress-noise`), `--reference`, and `--artifact-root`.
+- Output is JSON: command metadata + per-spec metrics + significance vs reference + stress test results + the artifact tree path.
+- Replaces the previous `evaluate` stub (which was just a model-promotion path); the capability matrix (test 20) is updated to use the longer default price series.
+- Tests: `tests/integration/test_evaluate_cli.py` (8 tests — all baselines, subset, `--no-ablation`, `--no-stress`, unknown baseline rejection, missing file, short series, artifact JSON well-formedness).
 
 ### P1-5 News / SEC / earnings ingestion
 - New: `src/orion/data/providers/filings/`

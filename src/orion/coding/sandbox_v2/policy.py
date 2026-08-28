@@ -26,6 +26,9 @@ class SandboxPolicy:
     allowed_imports: frozenset[str] = frozenset({
         "math", "statistics", "json", "collections", "itertools", "functools",
         "typing", "dataclasses", "enum", "re", "random", "datetime",
+        # Numeric / quant primitives — stdlib, no I/O, no network.
+        "decimal", "fractions", "numbers", "array", "bisect", "heapq",
+        "operator", "copy", "pprint", "string", "textwrap", "math",
     })
     forbidden_patterns: tuple[str, ...] = (
         r"\bos\.system\b",

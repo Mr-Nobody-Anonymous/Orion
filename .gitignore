@@ -14,6 +14,9 @@ env/
 .vscode/
 .idea/
 
+# Evaluation-lab / CLI run artifacts (regenerated on demand).
+artifacts/
+
 # Inner git directories inside vendored reference repos (never stage)
 source_repositories/**/.git
 source_repositories/**/.gitignore

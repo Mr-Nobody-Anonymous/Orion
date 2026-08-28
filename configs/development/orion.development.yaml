@@ -1,0 +1,39 @@
+# ORION development configuration profile.
+#
+# More permissive than the local profile: research and backtest work
+# with looser risk floors so the operator can iterate quickly. Live
+# execution remains disabled by default.
+
+mode: LOCAL
+execution_mode: simulation
+autonomy_level: 1
+live_trading_enabled: false
+cloud_inference_enabled: false
+
+risk:
+  max_order_notional: "100000"
+  max_position_fraction: 0.20
+  max_portfolio_exposure: 1.0
+  max_correlation: 0.85
+  min_model_confidence: 0.20
+  emergency_stop: false
+
+providers:
+  filings:
+    sec: reference
+    news: reference
+    earnings: reference
+  market_data:
+    crypto: live
+    alpaca: paper
+
+agents:
+  controller: hierarchy
+
+distributed:
+  pool_concurrency: 1
+  default_max_attempts: 5
+
+governance:
+  dashboard_on_promotion: false
+  require_approval_level: 2

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-28
 **Test outcome:** `tests/end_to_end/test_phase31a_capability_matrix.py` — PASS
-**Full suite:** 368 / 368 tests pass
+**Full suite:** 486 / 487 tests pass (1 skipped)
 **`python -m compileall src`:** clean
 
 ---
@@ -35,7 +35,7 @@ Status vocabulary:
 | 14 | Research integration | INTEGRATED | `ResearchDiscovery.discover_papers` returned 5 real OpenAlex papers (e.g. Moskowitz, Ooi, Pedersen 2011 — *Time Series Momentum*, 1433 citations); provenance recorded for every paper | `tests/research/test_discovery.py` + matrix section 14 | urllib (OpenAlex) |
 | 15 | Generative + evolutionary intelligence | INTEGRATED | `EvolutionEngine.seed_population(size=6)` seeds 6 candidates with diverse lookback/threshold; `evolve` returns ranked `[(candidate, Fitness), ...]` with score, drawdown, trade count; rejects tracked via negative scores | `tests/evolution/` + matrix section 15 | stdlib |
 | 16 | Local-first operation | INTEGRATED | `OrionSystem().run(Asset("OFFLINE", EQUITY), prices)` completes the full pipeline (world → features → council → decision → risk) with no network calls | matrix section 16 | stdlib |
-| 17 | Test coverage (leakage, failure, determinism) | INTEGRATED | 12/12 features pass `assert_no_lookahead`; invalid input (`[1.0, 1.0, 1.0]`) is rejected by the system; two `build_feature_matrix` calls on the same input produce bit-identical results | matrix section 17 + the whole `tests/` tree (368 tests) | stdlib |
+| 17 | Test coverage (leakage, failure, determinism) | INTEGRATED | 12/12 features pass `assert_no_lookahead`; invalid input (`[1.0, 1.0, 1.0]`) is rejected by the system; two `build_feature_matrix` calls on the same input produce bit-identical results | matrix section 17 + the whole `tests/` tree (486 tests) | stdlib |
 | 18 | No empty folders | INTEGRATED | Walked every `__init__.py` under `src/orion/`: all are either docstring-only or contain a real import / `__all__` | matrix section 18 | n/a |
 | 19 | Source repository usage (adapters, not copies) | INTEGRATED | `source_repositories/{intelligence,markets,mathematics,prediction}/` exist; `src/orion/` contains zero imports of `source_repositories` | matrix section 19 | n/a |
 | 20 | Final CLI runtime proof | INTEGRATED | `python -m orion {status, doctor, analyze, benchmark, train, evaluate, research, evolve}` all return JSON with `returncode == 0` | matrix section 20 | stdlib |
@@ -48,8 +48,8 @@ Status vocabulary:
 
 | Metric | Value |
 |---|---|
-| Total tests | 368 |
-| Passing | 368 |
+| Total tests | 487 |
+| Passing | 486 |
 | Failing | 0 |
 | Trained models (this run) | 2 (sklearn Ridge, sklearn ElasticNet, PyTorch MLP — across matrix sections) |
 | Evaluated models | 2 (sklearn + torch + GARCH(1,1) + 4 council members) |

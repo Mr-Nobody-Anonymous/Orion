@@ -102,14 +102,14 @@ Three repos are questionable/empty: `neural_prophet` is an empty checkout (only 
 | Repo                  | Style                       | Data flow             | Extensibility | Notes                                                  |
 | --------------------- | --------------------------- | --------------------- | ------------- | ------------------------------------------------------ |
 | qlib                  | Pipeline + factor library   | File-based provider   | High          | Best research harness; reuse data + alpha modules      |
-| vectorbt              | Vectorized pandas/numpy    | In-memory             | Medium        | Great for fast parameter sweeps                        |
+| vectorbt              | Vectorized pandas/numpy     | In-memory             | Medium        | Great for fast parameter sweeps                        |
 | backtrader            | Event-driven OOP            | Line/Cerebro          | Medium        | Mature but slower; good for live trading parity        |
-| Lean                  | Algorithm framework        | Lean Engine API       | High          | C# only; wrap as sidecar via REST or Docker            |
+| Lean                  | Algorithm framework         | Lean Engine API       | High          | C# only; wrap as sidecar via REST or Docker            |
 | FinRL-Meta            | DRL benchmark suite         | Gym envs              | High          | Reuse environments, not training code                  |
 | AgenticTrading        | LLM tool-calling shell      | JSON tool I/O         | Low           | Copy UX patterns only                                  |
 | hermes-agent          | Agent CLI w/ skills+memory  | YAML/JSON             | High          | Adopt skill registry, episodic memory schema           |
 | QuantMuse             | Monolithic quant app        | Internal              | Low           | Mine specific modules (factor, risk), not whole        |
-| ollama                | Daemon (Go)                 | HTTP                  | n/a           | Infrastructure, not a library                         |
+| ollama                | Daemon (Go)                 | HTTP                  | n/a           | Infrastructure, not a library                          |
 | homerun               | FastAPI + React SPA         | REST + WS             | High          | Adopt shadow-fill simulator + strategy registry        |
 | Kronos                | Pretrained TS foundation    | PyTorch               | Medium        | Inference wrapper only; fine-tune separately           |
 
@@ -135,10 +135,10 @@ Three repos are questionable/empty: `neural_prophet` is an empty checkout (only 
 
 | Engine      | Speed  | Live trading | Broker support         | ORION verdict                         |
 | ----------- | ------ | ------------ | ---------------------- | ------------------------------------- |
-| vectorbt    | ★★★★★  | –            | –                      | Primary backtester for vector sweeps   |
-| backtrader  | ★★     | ✔            | IB, Oanda, many        | Fallback engine; useful for live parity|
-| Lean        | ★★★★   | ✔            | IB, brokerages         | Optional sidecar (C# service)          |
-| freqtrade   | ★★★    | ✔            | Crypto exchanges       | Reference only; ORION stays broker-agnostic |
+| vectorbt    | ★★★★★  | –         | –                      | Primary backtester for vector sweeps   |
+| backtrader  | ★★     | ✔          | IB, Oanda, many        | Fallback engine; useful for live parity|
+| Lean        | ★★★★   | ✔         | IB, brokerages         | Optional sidecar (C# service)          |
+| freqtrade   | ★★★    | ✔          | Crypto exchanges       | Reference only; ORION stays broker-agnostic |
 | jesse       | ★★★★   | ✔            | Crypto (limited)       | Reference only                         |
 | FinRL-Meta  | n/a    | –            | –                      | Environments only                      |
 

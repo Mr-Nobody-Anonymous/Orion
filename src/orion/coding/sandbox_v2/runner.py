@@ -27,8 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .policy import SandboxPolicy
-
-from ..sandbox import SandboxResult, build_sandbox_program
+from .protocol import SandboxResult, build_sandbox_program
 
 
 def _new_temp_workdir() -> Path:

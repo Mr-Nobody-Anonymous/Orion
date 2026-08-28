@@ -6,9 +6,16 @@ Submodules:
   * :mod:`.latency`          — latency and market-impact models
   * :mod:`.account`          — simulated account with cash, positions, PnL, kill-switch
   * :mod:`.venue`            — :class:`SimulatedExchange` with market hours, halts, financing
+  * :mod:`.broker_adapter`   — :class:`SimulatedExchangeBroker` (BrokerAdapter
+                               protocol) so the event-driven exchange is a
+                               drop-in replacement for the legacy
+                               :class:`orion.trading.execution.SimulatedBroker`
+                               in :mod:`orion.brain.executive` and
+                               :mod:`orion.orchestration.system`.
 """
 
 from .account import SimulatedAccount
+from .broker_adapter import SimulatedExchangeBroker
 from .latency import LatencyConfig, MarketImpactConfig
 from .matching_engine import match
 from .order_book import (
@@ -34,6 +41,7 @@ __all__ = [
     "OrderType",
     "SimulatedAccount",
     "SimulatedExchange",
+    "SimulatedExchangeBroker",
     "SymbolSpec",
     "TimeInForce",
     "match",

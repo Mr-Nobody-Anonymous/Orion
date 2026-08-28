@@ -1,0 +1,47 @@
+# ORION cloud configuration profile.
+#
+# CLOUD mode is BLOCKED by default. This profile documents the
+# settings that would be required to enable it; the system refuses
+# to start without an explicit cloud provider, evaluation budget, and
+# per-provider evaluation. The operator must run the
+# ``orion promote-cloud-provider`` workflow before this profile can
+# actually be used.
+
+mode: CLOUD                  # blocked unless cloud.provider is set
+execution_mode: simulation
+autonomy_level: 2
+live_trading_enabled: false
+cloud_inference_enabled: false  # must be set to true after promotion
+
+risk:
+  max_order_notional: "25000"
+  max_position_fraction: 0.10
+  max_portfolio_exposure: 1.0
+  max_correlation: 0.70
+  min_model_confidence: 0.40
+  emergency_stop: false
+
+providers:
+  filings:
+    sec: live
+    news: live
+    earnings: live
+  market_data:
+    crypto: live
+    alpaca: paper
+
+cloud:
+  provider: null             # REQUIRED to be non-null for CLOUD mode
+  budget_usd_per_day: 0.0
+  evaluation_dataset: null   # REQUIRED
+
+agents:
+  controller: hierarchy
+
+distributed:
+  pool_concurrency: 4
+  default_max_attempts: 3
+
+governance:
+  dashboard_on_promotion: true
+  require_approval_level: 4

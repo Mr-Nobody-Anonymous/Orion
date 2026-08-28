@@ -14,7 +14,7 @@
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 306 passing](https://img.shields.io/badge/Tests-306%20passing-green.svg)](https://github.com/)
+[![Tests: 486 passing](https://img.shields.io/badge/Tests-486%20passing-green.svg)](https://github.com/)
 [![Mode: LOCAL](https://img.shields.io/badge/Inference-LOCAL-purple.svg)](https://ollama.com/)
 [![Execution: SIMULATION](https://img.shields.io/badge/Execution-SIMULATION-orange.svg)](https://github.com/)
 [![Safety: First](https://img.shields.io/badge/Safety-First-red.svg)](https://github.com/)
@@ -293,7 +293,7 @@ orion/
 ├── local_ai.py  providers.py  registry.py  risk.py  workflow.py  integrations.py
 └── __init__.py                     #   Public exports
 
-tests/                             # ✅ 306 passing
+tests/                             # ✅ 486 passing
 ├── unit/  integration/  end_to_end/  brain/  prediction/  trading/
 ├── research/  coding/  evolution/  learning/  memory/  models/
 ├── backtesting/  benchmarking/  mathematics/  security/  intelligence/
@@ -329,7 +329,8 @@ python -m orion benchmark --prices 100 101 100.5 102 103 104 105
 
 # Train / evaluate a residual model
 python -m orion train
-python -m orion evaluate
+python -m orion evaluate                                     # 200-bar synthetic default
+python -m orion evaluate --no-walk-forward --prices 100 101 100.5 102 103 104 105  # short series
 
 # Autonomous research against the public OpenAlex metadata API
 python -m orion research "market regime forecasting"
@@ -420,15 +421,17 @@ and generated code can never alter them.
 ## 🧪 Testing
 
 ```powershell
-python -m pytest tests -q       # full suite (306 tests)
+python -m pytest tests -q       # full suite (486 tests)
 python -m compileall src        # byte-compile every module
 python -m orion doctor          # health + safety posture check
 ```
 
-Currently **306 tests pass** across `tests/unit`, `tests/integration`,
+Currently **486 tests pass** across `tests/unit`, `tests/integration`,
 `tests/end_to_end`, plus per-domain suites for brain, prediction, trading,
 research, coding, evolution, learning, memory, models, backtesting,
-benchmarking, mathematics, security, intelligence, and world model. Tests
+benchmarking, mathematics, security, intelligence, evaluation, registry_v2,
+ops, storage, exchange, options, market_data, providers, brokers,
+backtesting, and world model. Tests
 cover **failure paths** (network-outage `BLOCKED` responses, risk-gate
 rejections, leakage detection, short-series inputs, look-ahead contamination,
 live-trading refusal), not just happy paths.
@@ -487,7 +490,7 @@ provenance/audit logs.
 
 | Capability | Status |
 |---|---|
-| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security | **IMPLEMENTED** (306 tests) |
+| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security | **IMPLEMENTED** (486 tests) |
 | Cloud inference | **BLOCKED** — `NullCloudProvider` raises until a configured, budgeted, evaluated provider exists |
 | Live execution | **BLOCKED** — `AlpacaAdapter` raises `LiveTradingDisabledError` by construction |
 | Generated-code runtime sandbox | **BLOCKED** — static verification gate in place; dedicated runtime sandbox required |

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Sequence
 
-from ..data.contracts import Action, Asset, Order, TradeProposal
+from ...data.contracts import Action, Asset, Order, TradeProposal
 
 
 @dataclass(frozen=True, slots=True)
