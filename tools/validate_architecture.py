@@ -23,82 +23,96 @@ SRC = ROOT / "src"
 ARCH_YAML = ROOT / "config" / "architecture.yaml"
 
 
+def _indent(raw: str) -> int:
+    return len(raw) - len(raw.lstrip(" \t"))
+
+
 def _parse_simple_yaml(path: Path) -> dict[str, Any]:
     """Tiny YAML reader sufficient for architecture.yaml.
 
-    The architecture spec uses only top-level scalars, mappings, and
-    ``- key: value`` list-of-dicts — no anchors, no flow syntax. We
-    deliberately avoid pulling in PyYAML to keep the validation tool
-    stdlib-only.
+    Supports nested mappings + list-of-dicts at arbitrary depth. Avoids
+    pulling PyYAML so the validator stays stdlib-only.
     """
-    result: dict[str, Any] = {}
-    lines = path.read_text(encoding="utf-8").splitlines()
-    i = 0
-    while i < len(lines):
-        raw = lines[i]
-        if not raw.strip() or raw.lstrip().startswith("#") or raw.startswith("---") or raw.startswith("..."):
-            i += 1
+    text_lines = path.read_text(encoding="utf-8").splitlines()
+    # Filter comments and blanks but remember original index for indent calc
+    tokens: list[tuple[int, str, str]] = []  # (indent, kind, content)
+    for raw in text_lines:
+        if not raw.strip() or raw.lstrip().startswith("#"):
             continue
-        # Top-level key (no leading whitespace)
-        if not raw.startswith((" ", "\t")) and ":" in raw:
-            key, _, value = raw.partition(":")
-            key = key.strip()
-            value = value.strip()
-            if value:
-                result[key] = _scalar(value)
-                i += 1
-                continue
-            # Map or list-of-dicts follows at deeper indent
-            child: list[Any] = []
-            j = i + 1
-            while j < len(lines):
-                child_raw = lines[j]
-                if not child_raw.strip() or child_raw.lstrip().startswith("#"):
-                    j += 1
+        if raw.startswith("---") or raw.startswith("..."):
+            continue
+        ind = _indent(raw)
+        stripped = raw.lstrip(" \t")
+        if stripped.startswith("- "):
+            tokens.append((ind, "list_item", stripped[2:].rstrip()))
+        else:
+            tokens.append((ind, "key", stripped.rstrip()))
+
+    pos = [0]
+
+    def peek() -> tuple[int, str, str] | None:
+        return tokens[pos[0]] if pos[0] < len(tokens) else None
+
+    def consume() -> tuple[int, str, str]:
+        t = tokens[pos[0]]
+        pos[0] += 1
+        return t
+
+    def parse_block(parent_indent: int) -> Any:
+        node: Any = None
+        while True:
+            cur = peek()
+            if cur is None or cur[0] < parent_indent:
+                return node
+            ind, kind, content = consume()
+            if kind == "key":
+                if ":" not in content:
                     continue
-                # Blank or outdented: stop
-                if not child_raw.startswith((" ", "\t")):
-                    break
-                # List item: "- key: value" or "- value"
-                stripped = child_raw.lstrip(" \t")
-                if stripped.startswith("- "):
+                key, _, value = content.partition(":")
+                key = key.strip()
+                value = value.strip()
+                if value:
+                    if node is None:
+                        node = {}
+                    node[key] = _scalar(value)
+                else:
+                    # Recurse into child block
+                    child_indent = ind + 1
+                    if node is None:
+                        node = {}
+                    node[key] = parse_block(child_indent)
+            else:  # list_item
+                # List at this indent; if next is a list item at the same indent
+                # it's a list of scalars. If next item is a key, it's a list
+                # of dicts.
+                if node is None:
+                    node = []
+                # Look ahead: if the list item content has ':' it's the start
+                # of a dict; the rest of its body comes from following
+                # deeper-indented lines.
+                if ":" in content:
                     item: dict[str, Any] = {}
-                    inner = stripped[2:]
-                    if ":" in inner:
-                        k, _, v = inner.partition(":")
-                        item[k.strip()] = _scalar(v.strip())
-                    else:
-                        item = _scalar(inner.strip())  # type: ignore[assignment]
-                    # Following indented key/value pairs belong to this item
-                    k = j + 1
-                    while k < len(lines):
-                        nxt = lines[k]
-                        if not nxt.strip():
-                            k += 1; continue
-                        if not nxt.startswith((" ", "\t")) or nxt.lstrip(" \t").startswith("- "):
+                    k, _, v = content.partition(":")
+                    item[k.strip()] = _scalar(v.strip())
+                    # Following more-indented keys are part of this item
+                    while True:
+                        cur2 = peek()
+                        if cur2 is None or cur2[0] <= ind:
                             break
-                        ns = nxt.lstrip(" \t")
-                        if ":" in ns:
-                            kk, _, vv = ns.partition(":")
-                            if isinstance(item, dict):
-                                item[kk.strip()] = _scalar(vv.strip())
-                        k += 1
-                    child.append(item)
-                    j = k
-                    continue
-                # Mapping continuation: "  key: value" or "  key:"
-                if ":" in stripped:
-                    item_kv: dict[str, Any] = {}
-                    kk, _, vv = stripped.partition(":")
-                    item_kv[kk.strip()] = _scalar(vv.strip()) if vv.strip() else None
-                    child.append(item_kv)
-                j += 1
-            # Decide: list of dicts (component) -> keep as list; otherwise group
-            result[key] = child
-            i = j
-            continue
-        i += 1
-    return result
+                        ind2, kind2, content2 = consume()
+                        if kind2 == "key" and ":" in content2:
+                            k2, _, v2 = content2.partition(":")
+                            item[k2.strip()] = _scalar(v2.strip()) if v2.strip() else None
+                        else:
+                            # Should not happen; rewind one
+                            pos[0] -= 1
+                            break
+                    node.append(item)
+                else:
+                    node.append(_scalar(content.strip()))
+        # unreachable; parser returns when indent drops
+
+    return parse_block(-1)  # type: ignore[return-value]
 
 
 def _scalar(value: str) -> Any:
