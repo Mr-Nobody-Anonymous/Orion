@@ -1,0 +1,2 @@
+[console_scripts]
+orion = orion.__main__:main
