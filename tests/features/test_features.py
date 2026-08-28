@@ -45,8 +45,12 @@ def test_provider_reports_live_status() -> None:
     status = provider()
     assert status.name == "technical"
     assert status.version == "1.0.0"
-    # TA-Lib 0.6.8 is installed on this machine; the provider must say so.
-    assert status.available is True
+    # The provider must report its *actual* state — True when TA-Lib is
+    # installed, False otherwise. It is never allowed to claim availability
+    # it does not have (zero-fake-integration contract).
+    import importlib.util
+    talib_installed = importlib.util.find_spec("talib") is not None
+    assert status.available is talib_installed
     assert "TA-Lib" in status.detail
 
 
