@@ -25,6 +25,7 @@ from ..data.contracts import Action, Asset, OrderRequest, TradeProposal
 from ..infrastructure.event_bus import EventBus
 from ..memory import LayeredMemory, MemoryLayer
 from ..trading.execution import BrokerAdapter
+from ..trading.exposure import exposure_from_broker
 from ..trading.risk import RiskEngine
 from ..world_model import FinancialWorldModel
 from .decision import DecisionContext, DecisionEngine
@@ -236,12 +237,13 @@ class ExecutiveOrchestrator:
         if decision in (Action.WAIT, Action.DO_NOTHING, Action.HOLD):
             return True, ()
         account = self.broker.get_account()
-        positions = self.broker.get_positions()
-        exposure = (
-            sum(abs(quantity) for quantity in positions.values()) / max(Decimal("1"), account.equity)
-            if account.equity > 0
-            else Decimal("1")
-        )
+        # Use market-value exposure (sum |qty * price| / equity) instead of
+        # the previous ``sum(abs(quantity)) / equity`` which is a
+        # dimensionally meaningless share-count / currency ratio. If a
+        # position has no current market quote it contributes zero to
+        # exposure and bumps the missing-quote counter on the breakdown.
+        breakdown = exposure_from_broker(self.broker, account.equity)
+        exposure = breakdown.total
         # Use the last observed price as the limit price for a realistic notional.
         limit_price = Decimal(str(self.world.state.get("last_price", Decimal("0")).value if hasattr(self.world.state.get("last_price", None), "value") else 0))
         if limit_price <= 0 and "last_price" in self.world.state:

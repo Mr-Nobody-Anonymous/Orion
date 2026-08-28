@@ -5,6 +5,7 @@ from decimal import Decimal
 from ..domain import Event, RiskDecision, TradeProposal
 from ..event_bus import EventBus
 from ..trading.execution import BrokerAdapter
+from ..trading.exposure import exposure_from_broker
 from ..trading.risk import RiskEngine
 
 
@@ -18,10 +19,19 @@ class ExecutiveBrain:
 
     def execute(self, proposal: TradeProposal) -> RiskDecision:
         account = self.broker.get_account()
-        positions = self.broker.get_positions()
-        exposure = sum(abs(quantity) for quantity in positions.values()) / max(Decimal("1"), account.equity)
-        decision = self.risk.assess(proposal, account.equity, exposure)
-        self.events.publish(Event("RiskAssessment", {"approved": decision.approved, "reasons": decision.reasons}))
+        # Use the dimensionally-correct market-value exposure instead of
+        # the previous ``sum(abs(quantity)) / equity`` (shares / dollars).
+        breakdown = exposure_from_broker(self.broker, account.equity)
+        decision = self.risk.assess(proposal, account.equity, breakdown.total)
+        self.events.publish(Event(
+            "RiskAssessment",
+            {
+                "approved": decision.approved,
+                "reasons": decision.reasons,
+                "exposure_total": str(breakdown.total),
+                "exposure_missing_quotes": breakdown.missing_count,
+            },
+        ))
         if not decision.approved:
             return decision
         fill = self.broker.place_order(proposal.order)

@@ -81,14 +81,24 @@ class ModelCouncil:
             raise ValueError("at least three strictly positive prices are required")
         weights = self.weights_for(regime)
         member_predictions: list[Prediction] = []
-        for member in self.members:
+        active_weights: list[float] = []
+        # CRITICAL: weights must be paired with members, not sliced by index.
+        # Earlier revisions took ``weights[: len(member_predictions)]`` which
+        # silently reassigned each surviving member the weight of the
+        # member at the *same index*, not its own. If member #2 of
+        # ``[A, B, C]`` fails, ``C`` would receive ``B``'s weight. The
+        # prediction would then be miscalibrated — for example a value
+        # member could inherit a weight intended for a momentum member.
+        # We now zip weights and members together and drop the pair
+        # together when a member raises.
+        for member, weight in zip(self.members, weights):
             try:
                 member_predictions.append(member.predict(asset, list(prices), horizon=horizon))
             except ValueError:
                 continue
+            active_weights.append(weight)
         if not member_predictions:
             raise ValueError("no model member produced a valid prediction")
-        active_weights = list(weights[: len(member_predictions)])
         total = sum(active_weights) or 1.0
         active_weights = [w / total for w in active_weights]
         expected = sum(

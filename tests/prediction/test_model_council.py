@@ -89,6 +89,66 @@ def test_council_survives_partial_member_failure() -> None:
     assert len(result.member_predictions) == 2
 
 
+def test_council_weights_are_remapped_not_sliced_when_member_fails() -> None:
+    """Regression: when a member fails, surviving members must keep their
+    own weight, not inherit the failed member's weight by index.
+
+    Setup: three members A, B, C with regime weights 0.5, 0.3, 0.2.
+    B fails. The surviving pair is (A, C) and their weights must be
+    (0.5, 0.2) — not (0.5, 0.3) as a naive ``weights[:len(survivors)]``
+    slice would produce.
+    """
+    from orion.data.contracts import Asset as _Asset
+    from orion.data.contracts import AssetClass as _Class
+    from orion.data.contracts import Prediction as _Prediction
+    from decimal import Decimal as _Dec
+
+    def make_stub(name: str, ret: float) -> object:
+        def predict(asset, prices, horizon="5d"):
+            return _Prediction(
+                asset=asset,
+                horizon=horizon,
+                expected_return=_Dec(str(ret)),
+                probability_bull=_Dec("0.6"),
+                probability_neutral=_Dec("0.2"),
+                probability_bear=_Dec("0.2"),
+                interval_low=_Dec(str(ret - 0.01)),
+                interval_high=_Dec(str(ret + 0.01)),
+                confidence=_Dec("0.5"),
+                model_name=name,
+            )
+        p = type("Stub", (), {"name": name, "predict": staticmethod(predict)})()
+        return p
+
+    class Failing:
+        name = "B"
+
+        def predict(self, asset, prices, horizon="5d"):
+            raise ValueError("boom")
+
+    a = make_stub("A", 0.01)
+    b = Failing()
+    c = make_stub("C", 0.05)
+    # Regime gives A=0.5, B=0.3, C=0.2 (sums to 1.0 already).
+    council = ModelCouncil(
+        (a, b, c),
+        regime_weights={"test": {"A": 0.5, "B": 0.3, "C": 0.2}},
+    )
+    result = council.predict(_Asset("X", _Class.EQUITY), PRICES, regime="test")
+    # Two survivors: A and C.
+    assert len(result.member_predictions) == 2
+    assert [p.model_name for p in result.member_predictions] == ["A", "C"]
+    # Correct remap: A's 0.5 / (0.5+0.2) ≈ 0.7143, C's 0.2 / 0.7 ≈ 0.2857.
+    # Old buggy code would have produced A=0.5/0.8=0.625, C=0.3/0.8=0.375.
+    w_a, w_c = result.member_weights
+    assert w_a == pytest.approx(0.5 / 0.7, abs=1e-9)
+    assert w_c == pytest.approx(0.2 / 0.7, abs=1e-9)
+    # And the resulting expected return must be 0.01 * w_a + 0.05 * w_c
+    # (NOT 0.01 * 0.625 + 0.05 * 0.375 = 0.025).
+    expected = 0.01 * w_a + 0.05 * w_c
+    assert float(result.prediction.expected_return) == pytest.approx(expected, abs=1e-9)
+
+
 def test_council_all_members_failing_raises() -> None:
     class Failing:
         name = "orion-failing"

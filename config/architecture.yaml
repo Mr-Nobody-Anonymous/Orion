@@ -413,3 +413,94 @@ governance:
     require_explicit_enable: true
     require_environment: live
     require_audit: true
+
+# --------------------------------------------------------------------------- planes
+# The Intelligence / Truth / Control / Capital dependency direction is the
+# single most important architectural rule in ORION. It is enforced
+# mechanically by ``tools/enforce_planes.py`` and the
+# ``tests/architecture/test_plane_separation.py`` test suite.
+#
+# Dependency direction:
+#
+#     INTELLIGENCE  ->  TRUTH  ->  CONTROL  ->  CAPITAL
+#
+# Intelligence must never import control. Control must never import
+# intelligence. Truth must not bypass control. Only the executive
+# brain (``brain.orchestrator`` and ``brain.executive``) is allowed
+# to bridge intelligence -> control; that bridge is the single
+# audited seam through which a decision reaches a broker.
+planes:
+  intelligence:
+    description: Creative, candidate-producing modules
+    members:
+      - intelligence
+      - agents
+      - brain
+      - research
+      - evolution
+      - hypothesis
+      - memory
+      - coding
+      - learning
+      - prediction
+    may_import_from: [truth, foundation]
+    may_not_import_from: [control]
+  truth:
+    description: Validates whether a candidate is actually true
+    members:
+      - data.contracts
+      - data.market_data
+      - data.validation
+      - data.providers
+      - evaluation
+      - benchmarking
+      - backtesting
+      - world_model
+      - simulation
+      - portfolio
+      - markets
+      - mathematics
+      - orchestration
+      - trading
+    may_import_from: [foundation]
+    may_not_import_from: [control]
+  control:
+    description: Affects money or system integrity
+    members:
+      - trading.execution
+      - trading.risk
+      - integrations.brokers
+      - security
+      - compliance
+      - dashboard
+      - ops
+    may_import_from: [truth, foundation]
+    may_not_import_from: [intelligence]
+  foundation:
+    description: Cross-cutting, neutral; not a plane
+    members:
+      - models
+      - infrastructure
+      - storage
+      - distributed
+      - cli
+    may_import_from: []
+    may_not_import_from: []
+  bridge:
+    description: >
+      The single allowed intelligence -> control seam. Only the
+      executive brain may reach across it, and only because it is
+      the orchestrator that sequences the cognitive loop.
+    members:
+      - brain.orchestrator
+      - brain.executive
+    may_import_from: [truth, foundation, control]
+    may_not_import_from: []
+  enforcement:
+    tool: tools/enforce_planes.py
+    test: tests/architecture/test_plane_separation.py
+    rule_summary: >
+      A module in the intelligence plane may not import from the
+      control plane. A module in the control plane may not import
+      from the intelligence plane. The only allowed intelligence
+      -> control bridge is brain.orchestrator and brain.executive.

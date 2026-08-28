@@ -82,3 +82,53 @@ def test_orchestrator_reflects_on_overshoot() -> None:
 
 def _phase_key(name: str) -> str:
     return name
+
+
+def test_orchestrator_uses_market_value_exposure_not_share_count() -> None:
+    """Regression: the executive loop must use market-value exposure.
+
+    Setup: pre-populate the broker with 1000 shares of a $200 asset and
+    $100,000 equity. The market-value exposure is 200,000/100,000 = 2.0
+    (over-levered). The buggy share-count formula would report
+    1000/100,000 = 0.01 (looks fine!). The risk gate should reject any
+    new order on this account because the market-value exposure
+    exceeds the default ``max_portfolio_exposure`` of 1.0.
+    """
+    from orion.brain.executive import ExecutiveBrain
+    from orion.domain import TradeProposal
+    from orion.data.contracts import Action, OrderRequest
+    from orion.event_bus import EventBus
+    from orion.trading.risk import RiskLimits, RiskEngine
+
+    asset = Asset("EXP", AssetClass.EQUITY)
+    broker = SimulatedBroker(starting_cash=Decimal("100000"))
+    broker.set_quote(
+        MarketQuote(asset, datetime.now(timezone.utc), Decimal("199"), Decimal("201"), Decimal("200"))
+    )
+    # Place a 500-share position at $200 = $100k of market value, so
+    # market-value exposure is 1.0 (= 100k/100k equity) and share-count
+    # exposure is 500/100000 = 0.005. The risk gate is configured to
+    # reject anything strictly above 1.0; the buggy share-count formula
+    # would have approved additional orders.
+    broker.place_order(
+        OrderRequest(asset=asset, quantity=Decimal("500"), side=Action.BUY, limit_price=Decimal("200"))
+    )
+    # Tight risk limit: any exposure > 1.0 is rejected.
+    risk = RiskEngine(
+        RiskLimits(
+            max_portfolio_exposure=Decimal("1.0"),
+            max_order_notional=Decimal("100000"),
+        )
+    )
+    brain = ExecutiveBrain(broker=broker, risk=risk, events=EventBus())
+    proposal = TradeProposal(
+        order=OrderRequest(asset=asset, quantity=Decimal("1"), side=Action.BUY, limit_price=Decimal("200")),
+        prediction=None,
+        rationale="regression-test",
+    )
+    decision = brain.execute(proposal)
+    # If the brain used the buggy share-count formula it would have
+    # allowed this order (0.01 < 1.0). With the correct market-value
+    # formula (2.0) it must reject.
+    assert decision.approved is False
+    assert any("exposure" in r.lower() for r in decision.reasons)

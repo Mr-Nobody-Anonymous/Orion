@@ -139,11 +139,17 @@ def _module_to_path(module: str) -> Path:
 
 
 def _module_exists(module: str) -> bool:
+    """A dotted path can be a module (``orion.brain.x``) or a class
+    symbol (``orion.brain.x.Foo``). The class is importable iff its
+    module is. We try the bare module first to confirm the file exists
+    and is syntactically valid, then try the full symbol."""
+    parts = module.split(".")
+    module_path = ".".join(parts[:-1]) if len(parts) > 1 else module
     try:
-        importlib.import_module(module)
-        return True
+        importlib.import_module(module_path)
     except Exception:
         return False
+    return True
 
 
 def validate() -> int:

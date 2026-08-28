@@ -44,6 +44,7 @@ from .ablation import (
     default_specs,
     run_ablation,
 )
+from .baselines_strategies import run_baseline_suite
 from .walk_forward import WalkForwardFold, build_folds
 
 
@@ -100,6 +101,7 @@ class LabArtifact:
     provenance_path: Path
     results_path: Path
     ablation_path: Path
+    baselines_path: Path
 
 
 def _serialise_summary(s: SpecSummary) -> dict[str, object]:
@@ -313,6 +315,34 @@ class EvaluationLab:
         }
         ablation_path.write_text(json.dumps(ablation_payload, indent=2, default=str))
 
+        # ---- 4) strategy-level baseline comparison --------------------
+        # The prediction-level ablation answers "does ORION forecast
+        # better?"; this block answers the more important question
+        # "does ORION make more money than the canonical baselines
+        # after realistic costs?"  The review of 2026-08-28 said
+        # ORION must beat buy-and-hold, momentum, mean-reversion, and
+        # a random negative control after costs before any
+        # intelligence advantage can be claimed.
+        cost_per_trade = 0.001
+        baseline_suite = run_baseline_suite(
+            self.prices, cost_per_trade=cost_per_trade, initial_equity=1.0
+        )
+        baselines_payload = {
+            "run_id": self.run_id,
+            "cost_per_trade": cost_per_trade,
+            "n_periods": len(self.prices),
+            "baselines": {
+                name: {
+                    "final_equity": res.final_equity,
+                    "n_trades": res.n_trades,
+                    "metrics": res.metrics,
+                }
+                for name, res in baseline_suite.items()
+            },
+        }
+        baselines_path = artifact_dir / "strategy_baselines.json"
+        baselines_path.write_text(json.dumps(baselines_payload, indent=2, default=str))
+
         artifact = LabArtifact(
             run_id=self.run_id,
             artifact_dir=artifact_dir,
@@ -321,6 +351,7 @@ class EvaluationLab:
             provenance_path=provenance_path,
             results_path=results_path,
             ablation_path=ablation_path,
+            baselines_path=baselines_path,
         )
         return artifact, report
 
