@@ -187,14 +187,20 @@ components:
     policy: every agent has clear responsibility, inputs, outputs, permissions, evaluation
 
   agent_kernel:
-    description: Persistent single-agent kernel (typed state, typed memory, capability executor, closed loop)
+    description: Persistent single-agent kernel (typed state, typed memory, capability executor, closed loop, hierarchical goals, calibrated beliefs, predict-before-act, persistent run loop, immutable invocation log, real goal manager)
     path: src/orion/agent
     depends_on: [intelligence, memory]
     entrypoints:
       - orion.agent.Agent
+      - orion.agent.AgentRun
       - orion.agent.CapabilityExecutor
+      - orion.agent.CapabilitySelector
+      - orion.agent.GoalManager
       - orion.agent.WorldState
-    policy: smallest possible closed loop; default policy is a no-op; honesty about unimplemented tools
+      - orion.agent.Prediction
+      - orion.agent.PredictionError
+      - orion.agent.InvocationRecord
+    policy: smallest possible closed loop; default policy is a no-op; honesty about unimplemented tools; immutable audit trail for every capability call; persistent loop that terminates only on goal / deadline / budget / blocked / no-source
 
   coding:
     description: Sandboxed code generation, verification, debugging, patching

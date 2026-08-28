@@ -24,8 +24,8 @@ baseline on the frozen holdout.
 | P0 (correctness & safety) | 3 | ✅ all done |
 | P1 (operations) | 6 | ✅ all done |
 | P2 (UX & governance) | 5 + 1 BLOCKED | ✅ all done (P2-6 is BLOCKED) |
-| Phase audit reports | 6 (31A–31F) | ✅ all done |
-| Total tests | 742 passing, 4 skipped, 0 failing | ✅ |
+| Phase audit reports | 7 (31A–31G) | ✅ all done |
+| Total tests | 771 passing, 4 skipped, 0 failing | ✅ |
 | ORION quality gates | 3 of 3 green | ✅ |
 
 For the per-phase build reports and the documentation

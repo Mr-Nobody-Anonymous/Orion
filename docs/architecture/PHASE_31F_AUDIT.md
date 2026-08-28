@@ -307,3 +307,15 @@ The agent kernel now has the primitives for
 session can build a *policy* that uses them. That
 policy, run end-to-end on a real backtest, is the
 evidence the previous audits have been asking for.
+
+---
+
+## 7. Cross-walk to Phase 31G
+
+The 2026-08-28 follow-up review agreed the 31F
+primitives were right but pointed out four more pieces
+the kernel still needed: a real tool executor with
+an immutable invocation log, a real persistent agent
+loop, a real goal manager, and predict-before-act.
+Phase 31G adds all four. See
+[PHASE_31G_AUDIT.md](PHASE_31G_AUDIT.md).

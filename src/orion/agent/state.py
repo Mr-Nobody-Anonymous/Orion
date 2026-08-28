@@ -357,6 +357,115 @@ class ActionOutcome:
 
 
 @dataclass(frozen=True, slots=True)
+class Prediction:
+    """A claim about what will happen *before* it does.
+
+    The 2026-08-28 review's point 8: a serious agent
+    predicts the outcome of an action *before* executing
+    it, then compares the prediction to the actual
+    observation and updates its beliefs. Without
+    prediction-then-compare, the agent cannot learn from
+    its own mistakes; it can only learn from external
+    truth.
+
+    A :class:`Prediction` is a frozen dataclass with:
+
+    * ``prediction_id`` — a unique identifier so the
+      :class:`Agent` can correlate the prediction with
+      the later observation.
+    * ``action`` — the action the agent *plans* to take.
+    * ``predicted_outcome`` — a free-form claim about
+      what will happen. The kernel does not interpret
+      it; the policy decides the schema. Examples:
+      ``{"kind": "price_update", "price": 152.0}``,
+      ``{"success": True}``,
+      ``{"rows": 1000}``.
+    * ``confidence`` — the agent's confidence in the
+      prediction, in [0, 1].
+    * ``created_at`` — when the prediction was made.
+    * ``step_count`` — the kernel's step_count at the
+      time the prediction was made. Used to order
+      predictions in the audit log.
+    """
+
+    prediction_id: str
+    action: Action
+    predicted_outcome: Mapping[str, Any]
+    confidence: float
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    step_count: int = 0
+
+    def __post_init__(self) -> None:
+        if not self.prediction_id:
+            raise ValueError("prediction_id must be non-empty")
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError(
+                f"confidence {self.confidence} not in [0, 1]"
+            )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "prediction_id": self.prediction_id,
+            "action": {
+                "capability": self.action.capability,
+                "args": dict(self.action.args),
+                "intent_id": self.action.intent_id,
+            },
+            "predicted_outcome": dict(self.predicted_outcome),
+            "confidence": self.confidence,
+            "created_at": self.created_at.isoformat(),
+            "step_count": self.step_count,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class PredictionError:
+    """The difference between a :class:`Prediction` and the
+    observation that resolved it.
+
+    This is the kernel's *learning signal*. Every
+    :meth:`WorldState.record_observation_for_prediction`
+    call returns a new :class:`PredictionError`; the
+    policy is then free to use it to update beliefs
+    (via :meth:`Belief.update`).
+
+    The kernel does not define a single "error" metric
+    because the right metric depends on the prediction
+    shape. The convention is:
+
+    * ``magnitude`` is the policy-supplied magnitude in
+      ``[0, 1]`` (``0`` = exact, ``1`` = maximally wrong).
+    * ``correct`` is ``True`` iff the policy's
+      :meth:`matches` function says the observation
+      matches the prediction. The kernel stores the
+      boolean; the policy computes it.
+    * ``observation`` is the observation that resolved
+      the prediction, for audit.
+    """
+
+    prediction: Prediction
+    observation: Observation
+    magnitude: float
+    correct: bool
+    resolved_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.magnitude <= 1.0:
+            raise ValueError(
+                f"magnitude {self.magnitude} not in [0, 1]"
+            )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "prediction": self.prediction.as_dict(),
+            "observation": self.observation.as_dict(),
+            "magnitude": self.magnitude,
+            "correct": self.correct,
+            "resolved_at": self.resolved_at.isoformat(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WorldState:
     """The persistent state of an ORION agent.
 
@@ -392,6 +501,17 @@ class WorldState:
     # outcome for. The kernel moves them to completed_actions
     # on the next step (when the next observation arrives).
     pending_actions: tuple[Action, ...] = ()
+    # The predictions the agent has made about upcoming
+    # observations. Predictions are kept until they are
+    # resolved by ``record_observation_for_prediction``.
+    # Bounded by ``max_predictions``; the oldest are
+    # dropped first.
+    predictions: tuple[Prediction, ...] = ()
+    # The prediction errors that have been resolved: the
+    # tuple of (prediction, observation, magnitude, correct).
+    # This is the kernel's *learning signal*. Bounded by
+    # ``max_prediction_errors``.
+    prediction_errors: tuple[PredictionError, ...] = ()
     # Free-form metadata for callers that want to attach
     # session ids, user ids, etc.
     meta: Mapping[str, Any] = field(default_factory=dict)
@@ -399,6 +519,8 @@ class WorldState:
     # can self-tune.
     max_observations: int = 256
     max_completed_actions: int = 1024
+    max_predictions: int = 256
+    max_prediction_errors: int = 1024
 
     def __post_init__(self) -> None:
         if self.step_count < 0:
@@ -407,6 +529,10 @@ class WorldState:
             raise ValueError("max_observations must be > 0")
         if self.max_completed_actions <= 0:
             raise ValueError("max_completed_actions must be > 0")
+        if self.max_predictions <= 0:
+            raise ValueError("max_predictions must be > 0")
+        if self.max_prediction_errors <= 0:
+            raise ValueError("max_prediction_errors must be > 0")
         for goal in self.goals:
             if not isinstance(goal, Goal):
                 raise ValueError("every entry in goals must be a Goal")
@@ -416,6 +542,14 @@ class WorldState:
             if belief.claim != claim:
                 raise ValueError(
                     f"belief key {claim!r} does not match belief.claim {belief.claim!r}"
+                )
+        for pred in self.predictions:
+            if not isinstance(pred, Prediction):
+                raise ValueError("every entry in predictions must be a Prediction")
+        for err in self.prediction_errors:
+            if not isinstance(err, PredictionError):
+                raise ValueError(
+                    "every entry in prediction_errors must be a PredictionError"
                 )
 
     # ------------------------------------------------------------------ queries
@@ -501,9 +635,134 @@ class WorldState:
             observations=self.observations,
             completed_actions=self.completed_actions,
             pending_actions=self.pending_actions,
+            predictions=self.predictions,
+            prediction_errors=self.prediction_errors,
             meta=self.meta,
             max_observations=self.max_observations,
             max_completed_actions=self.max_completed_actions,
+            max_predictions=self.max_predictions,
+            max_prediction_errors=self.max_prediction_errors,
+        )
+
+    def record_prediction(
+        self,
+        action: Action,
+        predicted_outcome: Mapping[str, Any],
+        confidence: float,
+        *,
+        prediction_id: str | None = None,
+    ) -> tuple["WorldState", Prediction]:
+        """Record a :class:`Prediction` for the upcoming ``action``.
+
+        Returns the new state and the prediction. The
+        prediction can later be resolved by
+        :meth:`record_observation_for_prediction`.
+
+        This is the kernel's "predict before you act"
+        primitive (review point 8). The kernel does not
+        interpret the predicted outcome; the policy decides
+        the shape. The state-side bookkeeping is just a
+        bounded ring of pending predictions.
+        """
+        if not 0.0 <= confidence <= 1.0:
+            raise ValueError(f"confidence {confidence} not in [0, 1]")
+        pred_id = prediction_id or f"{self.state_id}#{self.step_count + 1}#pred"
+        prediction = Prediction(
+            prediction_id=pred_id,
+            action=action,
+            predicted_outcome=dict(predicted_outcome),
+            confidence=confidence,
+            step_count=self.step_count,
+        )
+        new_predictions = list(self.predictions)
+        new_predictions.append(prediction)
+        if len(new_predictions) > self.max_predictions:
+            new_predictions = new_predictions[-self.max_predictions:]
+        return (
+            WorldState(
+                state_id=self.state_id,
+                created_at=self.created_at,
+                step_count=self.step_count,
+                goals=self.goals,
+                active_task=self.active_task,
+                last_observation=self.last_observation,
+                beliefs=self.beliefs,
+                observations=self.observations,
+                completed_actions=self.completed_actions,
+                pending_actions=self.pending_actions,
+                predictions=tuple(new_predictions),
+                prediction_errors=self.prediction_errors,
+                meta=self.meta,
+                max_observations=self.max_observations,
+                max_completed_actions=self.max_completed_actions,
+                max_predictions=self.max_predictions,
+                max_prediction_errors=self.max_prediction_errors,
+            ),
+            prediction,
+        )
+
+    def record_observation_for_prediction(
+        self,
+        prediction_id: str,
+        observation: Observation,
+        magnitude: float,
+        correct: bool,
+    ) -> tuple["WorldState", PredictionError]:
+        """Resolve a pending :class:`Prediction` with an observation.
+
+        Returns the new state and the :class:`PredictionError`.
+        The matching prediction is removed from the
+        pending ring; the new error is appended to the
+        error ring.
+
+        If no pending prediction matches ``prediction_id``,
+        a :class:`KeyError` is raised; the policy must
+        know what it predicted before it can resolve it.
+        """
+        if not 0.0 <= magnitude <= 1.0:
+            raise ValueError(f"magnitude {magnitude} not in [0, 1]")
+        new_predictions: list[Prediction] = []
+        matched: Prediction | None = None
+        for pred in self.predictions:
+            if pred.prediction_id == prediction_id and matched is None:
+                matched = pred
+                continue
+            new_predictions.append(pred)
+        if matched is None:
+            raise KeyError(
+                f"no pending prediction with id {prediction_id!r}"
+            )
+        err = PredictionError(
+            prediction=matched,
+            observation=observation,
+            magnitude=magnitude,
+            correct=correct,
+        )
+        new_errors = list(self.prediction_errors)
+        new_errors.append(err)
+        if len(new_errors) > self.max_prediction_errors:
+            new_errors = new_errors[-self.max_prediction_errors:]
+        return (
+            WorldState(
+                state_id=self.state_id,
+                created_at=self.created_at,
+                step_count=self.step_count,
+                goals=self.goals,
+                active_task=self.active_task,
+                last_observation=self.last_observation,
+                beliefs=self.beliefs,
+                observations=self.observations,
+                completed_actions=self.completed_actions,
+                pending_actions=self.pending_actions,
+                predictions=tuple(new_predictions),
+                prediction_errors=tuple(new_errors),
+                meta=self.meta,
+                max_observations=self.max_observations,
+                max_completed_actions=self.max_completed_actions,
+                max_predictions=self.max_predictions,
+                max_prediction_errors=self.max_prediction_errors,
+            ),
+            err,
         )
 
     def decompose_goal(
@@ -602,9 +861,13 @@ class WorldState:
             observations=self.observations,
             completed_actions=self.completed_actions,
             pending_actions=self.pending_actions,
+            predictions=self.predictions,
+            prediction_errors=self.prediction_errors,
             meta=self.meta,
             max_observations=self.max_observations,
             max_completed_actions=self.max_completed_actions,
+            max_predictions=self.max_predictions,
+            max_prediction_errors=self.max_prediction_errors,
         )
 
     def with_goal_status(
@@ -681,9 +944,13 @@ class WorldState:
             observations=self.observations,
             completed_actions=self.completed_actions,
             pending_actions=self.pending_actions,
+            predictions=self.predictions,
+            prediction_errors=self.prediction_errors,
             meta=self.meta,
             max_observations=self.max_observations,
             max_completed_actions=self.max_completed_actions,
+            max_predictions=self.max_predictions,
+            max_prediction_errors=self.max_prediction_errors,
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -707,12 +974,16 @@ class WorldState:
             "n_observations": len(self.observations),
             "n_completed_actions": len(self.completed_actions),
             "n_pending_actions": len(self.pending_actions),
+            "n_predictions": len(self.predictions),
+            "n_prediction_errors": len(self.prediction_errors),
             "meta": dict(self.meta),
         }
 
 
 def initial_state(goal: Goal, *, max_observations: int = 256,
-                   max_completed_actions: int = 1024) -> WorldState:
+                   max_completed_actions: int = 1024,
+                   max_predictions: int = 256,
+                   max_prediction_errors: int = 1024) -> WorldState:
     """Convenience constructor: a fresh state with one active goal.
 
     The returned state is in step 0 with an empty observation
@@ -722,4 +993,6 @@ def initial_state(goal: Goal, *, max_observations: int = 256,
         goals=(goal,),
         max_observations=max_observations,
         max_completed_actions=max_completed_actions,
+        max_predictions=max_predictions,
+        max_prediction_errors=max_prediction_errors,
     )

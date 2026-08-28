@@ -159,3 +159,65 @@ task. Both are deliberately not yet built — the
 sequencing argument from the 31D audit still holds.
 
 Tests: `tests/agent/test_beliefs_and_goals.py` (31 new tests).
+
+### Predict, plan, persist (added Phase 31G)
+
+The 2026-08-28 follow-up review agreed the 31F
+primitives were right but pointed out four more
+pieces the kernel still needed: a real tool executor
+with an immutable invocation log, a real persistent
+agent loop, a real goal manager, and predict-before-
+act. Phase 31G adds all four, all inside the kernel
+so every policy can use them.
+
+* **Predict before you act.** `WorldState.record_prediction(action, predicted_outcome, confidence)`
+  returns a new state and a `Prediction` with a
+  deterministic `prediction_id`. `WorldState.record_observation_for_prediction(prediction_id, observation, magnitude, correct)`
+  removes the matched prediction from the pending
+  ring and appends a `PredictionError` to the error
+  ring. The agent can use the error's magnitude as
+  evidence in `Belief.update`, closing the
+  "change my mind from data" loop.
+* **Real tool executor.** `CapabilityExecutor.execute_with_record(action, input, context, constraints)`
+  returns `(CapabilityResult, InvocationRecord)`.
+  The `InvocationRecord` is an immutable dataclass
+  with `tool / operation / inputs_hash / result_hash /
+  started_at / duration_seconds / success / cost_units
+  / risk / sandbox / approver / confidence / error`.
+  The executor's `records()` returns the bounded
+  invocation log; the existing `execute(...)` is
+  preserved and now wraps the new method.
+* **Real selector.** `CapabilitySelector.select(kind, plane, max_risk, required_permission, name_substring)`
+  picks tools by filter; `select_one(...)` returns the
+  highest-priority match or `None`. The selector is
+  the bit between the policy and the executor the
+  review asked for.
+* **Persistent agent loop.** `AgentRun` is a frozen
+  dataclass carrying `run_id / state / loop_status /
+  termination_reason / started_at / finished_at /
+  steps_taken / cost_units_used`. `Agent.run(max_steps, deadline, budget, observation_source, dispatcher)`
+  loops `step()` until `done` (active goal DONE),
+  `failed` (active goal BLOCKED or ABANDONED),
+  `blocked` (no active leaf, no source, source returns
+  None), or `exhausted` (max_steps / deadline /
+  budget). The `dispatcher` callback can return the
+  next observation from the kernel's chosen action,
+  closing the "policy → executor → observation →
+  policy" loop end-to-end.
+* **Real goal manager.** `GoalManager` exposes the
+  policy's vocabulary: `create / prioritize /
+  activate / pause / resume / block / abandon /
+  complete / retry / replan / decompose`. Every
+  operation records a `GoalHistoryEntry` in
+  `state.meta[f"goal_history:{goal_id}"]`, so the
+  agent's goal-level history is reconstructable from
+  the state alone.
+
+These are the kernel's Phase A primitives (per the
+reviewer's roadmap). The Phase B / C / D / E / F
+primitives — full planner, full research agent, full
+coding agent, causal model, value-of-information,
+self-model — are deliberately not yet built. The
+sequencing argument still holds.
+
+Tests: `tests/agent/test_phase_31g.py` (29 new tests).

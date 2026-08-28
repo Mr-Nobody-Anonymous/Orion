@@ -5,7 +5,7 @@ architecture, and the controlled self-improvement loops. It is accurate to the
 running implementation: statuses below are asserted by tests, and `BLOCKED`
 marks deliberately disabled capabilities.
 
-**Current state (2026-08-28):** 742 tests passing (4 skipped,
+**Current state (2026-08-28):** 771 tests passing (4 skipped,
 0 failing), all three ORION quality gates green
 (architecture-validation, plane-separation, pytest). The
 canonical application package is `src/orion/`. The
@@ -30,7 +30,8 @@ future reader can see the build order.
 | [PHASE_31D_AUDIT](architecture/PHASE_31D_AUDIT.md) | Capability registry, 23 tools, mechanical validation | 681/685 |
 | [PHASE_31E_AUDIT](architecture/PHASE_31E_AUDIT.md) | Persistent agent kernel, the smallest possible closed loop | 711/715 |
 | [PHASE_31F_AUDIT](architecture/PHASE_31F_AUDIT.md) | Calibrated belief updating + hierarchical goals | 742/746 |
-| [CHANGELOG](architecture/CHANGELOG.md) | Documentation unification pass | 742/746 |
+| [PHASE_31G_AUDIT](architecture/PHASE_31G_AUDIT.md) | Predict, plan, persist: tool executor + persistent loop + goal manager | 771/775 |
+| [CHANGELOG](architecture/CHANGELOG.md) | Documentation unification pass | 771/775 |
 
 ## Architecture
 

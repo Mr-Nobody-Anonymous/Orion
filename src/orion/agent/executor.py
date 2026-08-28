@@ -52,12 +52,14 @@ This is also the natural place to enforce:
 
 from __future__ import annotations
 
+import hashlib
 import inspect
 import time
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Mapping, Sequence
+from uuid import uuid4
 
 from ..intelligence.capability_registry import (
     CapabilityKind,
@@ -173,6 +175,13 @@ class CapabilityExecutor:
         self._registry = registry if registry is not None else default_registry()
         self._memory = memory if memory is not None else AgentMemory()
         self._impls: dict[str, CapabilityImpl] = dict(implementations or {})
+        # Phase 31G: the immutable invocation log. Every
+        # call to ``execute`` appends one record; the
+        # caller can read the log with ``records()`` to
+        # reconstruct what happened. Capped at 1024
+        # records by default to bound memory.
+        self._records: list[InvocationRecord] = []
+        self._max_records: int = 1024
 
     def register_implementation(self, capability: str, fn: CapabilityImpl) -> None:
         """Bind an implementation to a registered capability name.
@@ -194,6 +203,25 @@ class CapabilityExecutor:
         context: CapabilityContext,
         constraints: CapabilityConstraints | None = None,
     ) -> CapabilityResult:
+        """Execute a capability. Wraps :meth:`execute_with_record`
+        and discards the record for backward compatibility.
+        """
+        result, _record = self.execute_with_record(
+            capability, input, context, constraints
+        )
+        return result
+
+    def execute_with_record(
+        self,
+        capability: str,
+        input: Mapping[str, Any],
+        context: CapabilityContext,
+        constraints: CapabilityConstraints | None = None,
+    ) -> tuple[CapabilityResult, InvocationRecord]:
+        """Execute a capability and return the (result, record)
+        pair. The record is appended to the executor's
+        in-memory log.
+        """
         if capability not in self._registry:
             raise CapabilityNotFoundError(capability)
         tool = self._registry.get(capability)
@@ -202,8 +230,59 @@ class CapabilityExecutor:
         self._check_permissions(tool, context)
         # 2. Risk gate
         self._check_risk(tool, context)
-        # 3. Dispatch
-        return self._dispatch(tool, input, context, constraints)
+        # 3. Dispatch and record
+        started_at = datetime.now(timezone.utc)
+        result = self._dispatch(tool, input, context, constraints)
+        inputs_hash = self._hash_mapping({"args": dict(input), "caller": context.caller})
+        result_hash = self._hash_mapping({
+            "success": result.success,
+            "output": result.output,
+            "error": result.error,
+        })
+        record = InvocationRecord(
+            invocation_id=str(uuid4()),
+            tool=tool.name,
+            operation=capability,
+            inputs_hash=inputs_hash,
+            result_hash=result_hash,
+            started_at=started_at,
+            duration_seconds=result.execution_time_seconds,
+            success=result.success,
+            cost_units=result.cost_units,
+            risk=tool.risk.value,
+            sandbox=tool.integration.value,
+            approver=context.risk_approver,
+            confidence=result.confidence,
+            error=result.error,
+        )
+        self._records.append(record)
+        if len(self._records) > self._max_records:
+            self._records = self._records[-self._max_records:]
+        return result, record
+
+    @staticmethod
+    def _hash_mapping(m: Mapping[str, Any]) -> str:
+        """Stable, short hash of a mapping for the invocation
+        log. JSON is not used because the values can include
+        non-JSON types; we use ``repr`` and SHA-256.
+        """
+        h = hashlib.sha256()
+        for key in sorted(m.keys()):
+            h.update(repr(key).encode("utf-8"))
+            h.update(b"=")
+            h.update(repr(m[key]).encode("utf-8"))
+            h.update(b";")
+        return h.hexdigest()[:16]
+
+    def records(self) -> tuple[InvocationRecord, ...]:
+        """Return the executor's immutable invocation log.
+
+        The log is in append order. The first record is
+        the oldest call. The log is bounded by
+        ``max_records``; the oldest records are dropped
+        first.
+        """
+        return tuple(self._records)
 
     def _check_permissions(self, tool: Tool, context: CapabilityContext) -> None:
         for required in tool.permissions:
@@ -310,3 +389,139 @@ class CapabilityExecutor:
 
     def memory(self) -> AgentMemory:
         return self._memory
+
+
+# --------------------------------------------------------------------------- Phase 31G
+# CapabilitySelector + InvocationRecord. These are the
+# runtime pieces the 2026-08-28 review (point 3) said are
+# "probably the single most important implementation after
+# the registry." The selector chooses a registered tool by
+# kind / risk / permission; the executor records every
+# invocation as an immutable record for the audit log.
+
+
+@dataclass(frozen=True, slots=True)
+class InvocationRecord:
+    """An immutable record of one capability call.
+
+    The 2026-08-28 review's point 3: "every invocation
+    should generate an immutable record" with at least
+    the tool, operation, input/output hashes, started_at,
+    duration, and success flag. The executor builds one
+    per call and appends it to an in-memory list; the
+    list is the kernel's truthful "what did I do?" log.
+    """
+
+    invocation_id: str
+    tool: str
+    operation: str
+    inputs_hash: str
+    result_hash: str
+    started_at: datetime
+    duration_seconds: float
+    success: bool
+    cost_units: float = 0.0
+    risk: str = ""
+    sandbox: str = ""
+    approver: str = ""
+    confidence: float = 1.0
+    error: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "invocation_id": self.invocation_id,
+            "tool": self.tool,
+            "operation": self.operation,
+            "inputs_hash": self.inputs_hash,
+            "result_hash": self.result_hash,
+            "started_at": self.started_at.isoformat(),
+            "duration_seconds": self.duration_seconds,
+            "success": self.success,
+            "cost_units": self.cost_units,
+            "risk": self.risk,
+            "sandbox": self.sandbox,
+            "approver": self.approver,
+            "confidence": self.confidence,
+            "error": self.error,
+        }
+
+
+class CapabilitySelector:
+    """Picks a registered :class:`Tool` for a given task.
+
+    The 2026-08-28 review's point 1: between the
+    :class:`CapabilityRegistry` (catalogue) and the
+    executor (dispatcher) there should be a *selector*
+    that chooses the right tool by kind, risk,
+    required permission, etc. The selector is the
+    kernel's "which tool is best for this?" primitive.
+
+    The selector does not call the tool — that is the
+    executor's job. The selector only picks a candidate
+    (or a ranked list of candidates) and surfaces the
+    reasons for the ranking. The policy decides.
+
+    The ranking is deterministic and the reasons are
+    recorded in the returned :class:`Selection` so the
+    audit log can show *why* a tool was chosen.
+    """
+
+    def __init__(self, registry: CapabilityRegistry | None = None) -> None:
+        self._registry = registry if registry is not None else default_registry()
+
+    def select(
+        self,
+        *,
+        kind: CapabilityKind | None = None,
+        plane: Plane | None = None,
+        max_risk: RiskLevel | None = None,
+        required_permission: str | None = None,
+        name_substring: str | None = None,
+    ) -> tuple[Tool, ...]:
+        """Return every tool matching the query, in deterministic
+        order (alphabetical by name).
+
+        The query is the union of the optional filters. A
+        ``None`` filter is a wildcard.
+        """
+        from ..intelligence.capability_registry import CapabilityQuery
+        kinds = (kind,) if kind is not None else ()
+        planes = (plane,) if plane is not None else ()
+        query = CapabilityQuery(
+            kinds=kinds,
+            planes=planes,
+            max_risk=max_risk,
+            name_contains=name_substring or "",
+            has_permission=required_permission or "",
+        )
+        return self._registry.search(query)
+
+    def select_one(
+        self,
+        *,
+        kind: CapabilityKind | None = None,
+        plane: Plane | None = None,
+        max_risk: RiskLevel | None = None,
+        required_permission: str | None = None,
+        name_substring: str | None = None,
+    ) -> Tool | None:
+        """Return the highest-priority tool matching the query,
+        or ``None`` if there is no match.
+
+        The current "priority" is alphabetical; the
+        :class:`CapabilitySelector` does not invent a
+        ranking function. A future session can add
+        self-model-aware ranking (review point 13:
+        "capability learning") without changing the
+        selector's contract.
+        """
+        matches = self.select(
+            kind=kind,
+            plane=plane,
+            max_risk=max_risk,
+            required_permission=required_permission,
+            name_substring=name_substring,
+        )
+        if not matches:
+            return None
+        return matches[0]

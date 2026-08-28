@@ -30,7 +30,7 @@ brings every document to a single, current state.
 
 | Quantity | Value | Where it is enforced |
 | --- | --- | --- |
-| Passing tests | **742** | `pytest tests` |
+| Passing tests | **771** | `pytest tests` |
 | Skipped tests | 4 | `pytest tests` |
 | Failing tests | 0 | `pytest tests` |
 | Architecture-validation successes | **65** | `tools/validate_architecture.py` |

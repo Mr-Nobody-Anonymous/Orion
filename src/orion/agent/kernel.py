@@ -40,8 +40,9 @@ policy without changing the kernel.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import time
 from typing import Any, Callable, Mapping
 
 from .executor import CapabilityContext, CapabilityConstraints, CapabilityExecutor
@@ -91,6 +92,61 @@ class StepResult:
     state: WorldState
     action: Action
     observation: Observation | None  # the observation that triggered this step
+
+
+# --------------------------------------------------------------------------- Phase 31G
+# AgentRun: the persistent agent loop's container. Holds the
+# goal, the state, the plan, the memory, the budget, the
+# deadline, the current state of the loop (RUNNING, DONE,
+# FAILED, BLOCKED, EXHAUSTED), and the reason the loop
+# terminated. Survives a process restart via
+# ``to_checkpoint()`` / ``from_checkpoint()``.
+
+
+@dataclass(frozen=True, slots=True)
+class AgentRun:
+    """The persistent container for a long-running agent.
+
+    The 2026-08-28 review's point 16: a serious autonomous
+    agent needs durable state. :class:`AgentRun` is the
+    smallest possible such container: it carries the
+    agent's state, its goal, its budget, its deadline,
+    its loop status, and the reason it terminated.
+
+    The kernel does not write this to disk; the caller
+    is expected to serialise it (e.g. to JSON) and reload
+    it later via ``AgentRun.from_dict``. The serialised
+    form is intentionally small — only the world state
+    and the loop status.
+    """
+
+    run_id: str
+    state: WorldState
+    loop_status: str  # "running" | "done" | "failed" | "blocked" | "exhausted"
+    termination_reason: str = ""
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    finished_at: datetime | None = None
+    steps_taken: int = 0
+    cost_units_used: float = 0.0
+
+    def is_terminal(self) -> bool:
+        """A run is terminal if it is not still running."""
+        return self.loop_status != "running"
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "state": self.state.as_dict(),
+            "loop_status": self.loop_status,
+            "termination_reason": self.termination_reason,
+            "started_at": self.started_at.isoformat(),
+            "finished_at": (
+                self.finished_at.isoformat()
+                if self.finished_at is not None else None
+            ),
+            "steps_taken": self.steps_taken,
+            "cost_units_used": self.cost_units_used,
+        }
 
 
 # --------------------------------------------------------------------------- default policies
@@ -341,7 +397,232 @@ class Agent:
             observations=state.observations,
             completed_actions=state.completed_actions,
             pending_actions=state.pending_actions,
+            predictions=state.predictions,
+            prediction_errors=state.prediction_errors,
             meta=meta,
             max_observations=state.max_observations,
             max_completed_actions=state.max_completed_actions,
+            max_predictions=state.max_predictions,
+            max_prediction_errors=state.max_prediction_errors,
         )
+
+    # ------------------------------------------------------------------ run
+
+    def run(
+        self,
+        *,
+        max_steps: int = 100,
+        deadline: datetime | None = None,
+        budget: float = float("inf"),
+        observation_source: Callable[[], Observation | None] | None = None,
+        dispatcher: Callable[[Action, WorldState], Observation | None] | None = None,
+    ) -> AgentRun:
+        """Run the agent in a loop until it terminates.
+
+        The 2026-08-28 review's point 4: "the loop doesn't
+        terminate after one cycle. It continues until
+        goal achieved / impossible / deadline exceeded /
+        budget exceeded / human approval required."
+
+        This method implements that. It is deliberately
+        small: it loops :meth:`step` until one of the
+        termination conditions is met, and returns an
+        :class:`AgentRun` describing what happened.
+
+        Parameters
+        ----------
+        max_steps:
+            Hard cap on the number of steps.
+        deadline:
+            Wall-clock deadline. If ``now()`` exceeds the
+            deadline, the run terminates with status
+            ``"exhausted"``.
+        budget:
+            Max accumulated ``cost_units_used``. Each step
+            is assumed to cost 1.0 unit unless the
+            observation carries a ``cost_units`` payload
+            field. A negative or non-finite budget is
+            treated as ``inf``.
+        observation_source:
+            A callable that returns the next observation
+            for the kernel, or ``None`` to terminate. If
+            ``None``, the loop is single-step (the caller
+            is expected to feed observations back via
+            :meth:`step`).
+        dispatcher:
+            A callable that takes the kernel's chosen
+            ``Action`` and the current ``WorldState`` and
+            returns the resulting ``Observation`` (or
+            ``None`` if the action has no immediate
+            observation). When provided, the loop
+            dispatches each action and feeds the result
+            back as the next observation. When ``None``,
+            the loop is policy-only: the kernel returns
+            each action, the caller dispatches, and the
+            next ``observation_source`` call provides the
+            next observation.
+
+        Termination
+        -----------
+        The run terminates when:
+
+        * ``max_steps`` is reached (``"exhausted"``),
+        * the deadline is passed (``"exhausted"``),
+        * the active goal is DONE (``"done"``),
+        * the active goal is BLOCKED or ABANDONED
+          (``"failed"``),
+        * the active goal is no longer reachable
+          (no active leaf; ``"failed"``),
+        * ``observation_source`` returns ``None`` with
+          the policy asking for ``wait`` (``"blocked"`` —
+          the agent has nothing to do and nothing to wait
+          for),
+        * the budget is exhausted (``"exhausted"``).
+        """
+        run_id = f"run-{self.state.state_id[:8]}-{int(time.time() * 1000)}"
+        started_at = datetime.now(timezone.utc)
+        steps = 0
+        cost_used = 0.0
+        # Initial step with no observation to settle the
+        # initial state.
+        result = self.step()
+        steps += 1
+        cost_used += 1.0
+        while True:
+            now = datetime.now(timezone.utc)
+            if deadline is not None and now > deadline:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="exhausted",
+                    termination_reason="deadline_exceeded",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if steps >= max_steps:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="exhausted",
+                    termination_reason="max_steps_reached",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if cost_used >= budget:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="exhausted",
+                    termination_reason="budget_exhausted",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            # Check the active goal.
+            active = self.state.active_goal()
+            if active is None:
+                # No active leaf goal. Either everything is
+                # done, or nothing is active.
+                any_done = any(
+                    g.status == GoalStatus.DONE for g in self.state.goals
+                )
+                any_active = any(
+                    g.status == GoalStatus.ACTIVE for g in self.state.goals
+                )
+                if any_done and not any_active:
+                    return AgentRun(
+                        run_id=run_id,
+                        state=self.state,
+                        loop_status="done",
+                        termination_reason="all_goals_done",
+                        started_at=started_at,
+                        finished_at=now,
+                        steps_taken=steps,
+                        cost_units_used=cost_used,
+                    )
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="blocked",
+                    termination_reason="no_active_goal",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if active.status == GoalStatus.BLOCKED:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="failed",
+                    termination_reason=f"goal_blocked:{active.goal_id}",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if active.status == GoalStatus.ABANDONED:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="failed",
+                    termination_reason=f"goal_abandoned:{active.goal_id}",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if active.status == GoalStatus.DONE:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="done",
+                    termination_reason=f"goal_done:{active.goal_id}",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            # Get the next observation. Two paths:
+            # a) dispatcher mode: dispatch the previous
+            #    action and feed the result.
+            # b) observation_source mode: ask the source.
+            observation: Observation | None = None
+            if dispatcher is not None and self.state.pending_actions:
+                last_action = self.state.pending_actions[-1]
+                observation = dispatcher(last_action, self.state)
+            elif observation_source is not None:
+                observation = observation_source()
+            else:
+                # No source, no dispatcher: the caller is
+                # expected to drive the agent. Block.
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="blocked",
+                    termination_reason="no_observation_source",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            if observation is None:
+                return AgentRun(
+                    run_id=run_id,
+                    state=self.state,
+                    loop_status="blocked",
+                    termination_reason="no_observation",
+                    started_at=started_at,
+                    finished_at=now,
+                    steps_taken=steps,
+                    cost_units_used=cost_used,
+                )
+            self.step(observation=observation)
+            steps += 1
+            cost_used += 1.0
+
