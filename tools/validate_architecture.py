@@ -158,7 +158,7 @@ def validate() -> int:
 
     # Check core components and their paths
     components = spec.get("components", {})
-    if not isinstance(components, dict):
+    if not isinstance(components, dict) or not components:
         print("ERROR: 'components' missing or malformed in architecture.yaml", file=sys.stderr)
         return 2
 
@@ -206,8 +206,8 @@ def validate() -> int:
     # Asset classes
     ac = spec.get("asset_classes", {})
     if isinstance(ac, dict):
-        enabled = ac.get("enabled", [])
-        supports = ac.get("architecture_supports", [])
+        enabled = ac.get("enabled", []) or []
+        supports = ac.get("architecture_supports", []) or []
         if not enabled:
             failures.append("asset_classes: no enabled classes (at least EQUITY required)")
         if not supports:
@@ -230,9 +230,15 @@ def validate() -> int:
     al = spec.get("autonomy_levels", [])
     if isinstance(al, list):
         levels = [a.get("level") if isinstance(a, dict) else a for a in al]
-        if 0 not in levels:
+        levels_int = []
+        for lv in levels:
+            try:
+                levels_int.append(int(lv))
+            except (TypeError, ValueError):
+                pass
+        if 0 not in levels_int:
             failures.append("autonomy_levels: level 0 must be declared")
-        if max(levels) < 4:
+        if not levels_int or max(levels_int) < 4:
             warnings.append("autonomy_levels: max level below 4")
         successes.append(f"autonomy_levels: {levels}")
 
