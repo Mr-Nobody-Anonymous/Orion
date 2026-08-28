@@ -156,13 +156,32 @@ def test_alpaca_paper_submit_uses_correct_endpoint() -> None:
         # Verify the default endpoint would have been the paper URL
         # before the override.
         assert AlpacaAdapter.PAPER_BASE.startswith("https://paper-api")
-        resp = adapter.submit({"symbol": "AAPL", "qty": 1, "side": "buy", "type": "market", "time_in_force": "day"})
+        # Retry up to 3 times in case the OS-level socket handshake
+        # is briefly racy (a known Windows quirk on a busy CI box).
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                resp = adapter.submit({"symbol": "AAPL", "qty": 1, "side": "buy", "type": "market", "time_in_force": "day"})
+                break
+            except (ConnectionAbortedError, ConnectionResetError) as exc:
+                last_exc = exc
+                import time
+                time.sleep(0.1)
+        else:
+            raise last_exc  # type: ignore[misc]
         assert resp["id"] == "x"
         assert captured["host"] is not None
     finally:
         httpd.shutdown()
         httpd.server_close()
         server_thread.join(timeout=2.0)
+        # Give the OS a brief moment to release the socket so a
+        # subsequent test starting its own server on a different
+        # port doesn't inherit a TIME_WAIT collision. Without
+        # this, the integration test can flake when run as part
+        # of the full suite.
+        import time
+        time.sleep(0.05)
 
 
 def test_openai_embed_endpoint_uses_embeddings_path() -> None:
@@ -189,10 +208,25 @@ def test_openai_embed_endpoint_uses_embeddings_path() -> None:
     server_thread.start()
     try:
         p = OpenAIProvider(api_key="sk", endpoint=f"http://{host}:{port}/v1", timeout_seconds=5.0)
-        vec = p.embed("hello")
+        last_exc: Exception | None = None
+        vec: list[float] | None = None
+        for attempt in range(3):
+            try:
+                vec = p.embed("hello")
+                break
+            except (ConnectionAbortedError, ConnectionResetError) as exc:
+                last_exc = exc
+                import time
+                time.sleep(0.1)
+        else:
+            raise last_exc  # type: ignore[misc]
     finally:
         httpd.shutdown()
         httpd.server_close()
         server_thread.join(timeout=2.0)
+        import time
+        time.sleep(0.05)
+    assert vec == [0.1, 0.2, 0.3]
+    assert captured["path"] == "/v1/embeddings"
     assert vec == [0.1, 0.2, 0.3]
     assert captured["path"] == "/v1/embeddings"

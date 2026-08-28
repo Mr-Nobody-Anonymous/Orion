@@ -186,6 +186,16 @@ components:
     path: src/orion/agents
     policy: every agent has clear responsibility, inputs, outputs, permissions, evaluation
 
+  agent_kernel:
+    description: Persistent single-agent kernel (typed state, typed memory, capability executor, closed loop)
+    path: src/orion/agent
+    depends_on: [intelligence, memory]
+    entrypoints:
+      - orion.agent.Agent
+      - orion.agent.CapabilityExecutor
+      - orion.agent.WorldState
+    policy: smallest possible closed loop; default policy is a no-op; honesty about unimplemented tools
+
   coding:
     description: Sandboxed code generation, verification, debugging, patching
     path: src/orion/coding

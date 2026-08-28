@@ -188,3 +188,16 @@ The next session should focus on producing that evidence:
    (`- memory`, `- research`, `- LLM`, `- evolution`, `- ensemble`,
    `- regime`, `- learning`) and report which component actually
    contributed the edge.
+
+---
+
+## 7. Cross-walk to later phases
+
+This report ends at 649 passing tests. Subsequent phases:
+
+* [PHASE_31D_AUDIT.md](PHASE_31D_AUDIT.md) — 681/685, the
+  capability registry (23 tools).
+* [PHASE_31E_AUDIT.md](PHASE_31E_AUDIT.md) — 711/715, the
+  persistent agent kernel.
+* [CHANGELOG.md](CHANGELOG.md) — the documentation unification
+  pass.

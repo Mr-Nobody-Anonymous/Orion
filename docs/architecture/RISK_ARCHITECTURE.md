@@ -71,3 +71,17 @@ executive loop (`ExecutiveOrchestrator`) treats a risk rejection as
 learning, and generated code **cannot** modify risk limits, enable live
 trading, raise exposure caps, or change security permissions. Kill-switch
 support is expressed as `RiskLimits.emergency_stop`.
+
+## Agent-kernel interaction (added Phase 31E)
+
+The persistent agent kernel ([`src/orion/agent/`](../../src/orion/agent/))
+honours the same invariant: a `HIGH`-risk capability call
+must carry an `approver` in the `CapabilityContext`, otherwise
+`CapabilityExecutor.execute` raises `RiskGateError` *before*
+running the implementation. This means an agent can never
+silently make a capital-moving call; the gate is checked in
+the same place for both the 16-phase executive and the
+agent-kernel loop. The kernel's executor is a strict
+superset of the executive's `RiskEngine.assess`: it adds
+permission check, capability-existence check, and risk-gate
+check before the implementation is ever invoked.

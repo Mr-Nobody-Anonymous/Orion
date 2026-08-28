@@ -1,8 +1,17 @@
 # ORION Component Integration Matrix
 
-**Date:** 2026-08-27  
-**Scope:** 30 legacy checkouts under `C:\Users\hp\Desktop\Orion`, plus the ORION core.  
+**Date:** 2026-08-27 (original); cross-walk added 2026-08-28
+**Scope:** 30 legacy checkouts under `C:\Users\hp\Desktop\Orion`, plus the ORION core.
 **Method:** targeted inspection of repository manifests, READMEs, entry points, and license files. This matrix is an engineering decision record, not a claim that every upstream feature has been validated in production.
+
+**Current state (2026-08-28):** 711 tests passing, all three
+ORION quality gates green. The capability registry
+([PHASE_31D_AUDIT.md](../architecture/PHASE_31D_AUDIT.md)) and
+the persistent agent kernel
+([PHASE_31E_AUDIT.md](../architecture/PHASE_31E_AUDIT.md)) are
+the runtime layer that wraps the per-repository decisions in
+this matrix. See [CHANGELOG.md](../architecture/CHANGELOG.md)
+for the documentation cross-walk.
 
 ## Canonical ORION Layers
 

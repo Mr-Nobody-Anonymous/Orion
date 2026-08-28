@@ -34,6 +34,7 @@ is BLOCKED by default (`LiveTradingDisabledError`).
 |---|---|---|
 | Deterministic pre-trade gate | IMPLEMENTED | — |
 | Kill switch | IMPLEMENTED | `RiskLimits.emergency_stop` |
+| Agent-kernel risk gate (Phase 31E) | IMPLEMENTED | `CapabilityExecutor.execute` raises `RiskGateError` for `HIGH`-risk tools without an `approver` in `CapabilityContext`. |
 | Live execution | BLOCKED | requires explicit enablement + credential-isolated, audited adapter. |
 
 See also [risk architecture](../architecture/RISK_ARCHITECTURE.md).

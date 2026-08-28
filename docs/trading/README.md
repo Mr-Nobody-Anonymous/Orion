@@ -28,6 +28,14 @@ Modules: `trading/` — `execution.py`, `risk.py`, `strategies/catalog.py`,
   overriding the risk engine.
 - **Paper execution only** — live trading requires an explicit, deliberate
   configuration change and a credential-isolated adapter.
+- **Exposure is market-value based.** `trading/exposure.py::compute_exposure`
+  returns `sum(|qty × price|) / equity` — the dimensionally correct ratio.
+  The earlier `sum(abs(quantity)) / equity` form (shares vs currency) was
+  fixed in [PHASE_31C_REVIEW_RESPONSE.md §1.2](../architecture/PHASE_31C_REVIEW_RESPONSE.md).
+- **Factor-neutral baseline.** A buy-and-hold, momentum, mean-reversion,
+  factor-neutral, and random-null strategy are all available as comparison
+  baselines via `src/orion/evaluation/baselines.py`. See
+  [PHASE_31C_REVIEW_RESPONSE.md §3](../architecture/PHASE_31C_REVIEW_RESPONSE.md).
 
 See also [risk](../risk/README.md) and
 [risk architecture](../architecture/RISK_ARCHITECTURE.md).

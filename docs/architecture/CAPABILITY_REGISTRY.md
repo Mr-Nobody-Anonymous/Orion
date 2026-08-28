@@ -54,3 +54,26 @@ This registry records the audit of preserved repositories and the executable ORI
 - Live execution is deliberately disabled. It cannot be enabled by research, learning, or generated code.
 - Upstream GPL/AGPL/Commons-Clause code is retained for audit and worker/reference analysis, not copied into the canonical package.
 - Generated code passes static verification only. A dedicated process/container sandbox is required before execution can be marked implemented.
+
+## From catalogue to callable (Phase 31D / 31E)
+
+The table above is the audit. The **runtime** that turns
+this catalogue into a callable surface is the
+`CapabilityRegistry` and the `CapabilityExecutor`. The
+registry is the static type catalogue of every tool
+ORION knows about; the executor is the function that
+checks permission, checks risk, runs the registered
+implementation, and returns a structured
+`CapabilityResult`. The persistent agent kernel
+([`src/orion/agent/kernel.py`](../../src/orion/agent/kernel.py))
+is the loop that calls the executor and writes the
+result back to the agent's self-model.
+
+* Registry module: `src/orion/intelligence/capability_registry.py`
+  — 23 tools (14 internal, 9 reference upstream), 22 tests.
+* Executor module: `src/orion/agent/executor.py` — permission
+  check + risk gate + honest "no implementation" result for
+  advertised-but-unwired tools.
+* Kernel module: `src/orion/agent/kernel.py` — closed loop.
+* Audit: [PHASE_31D_AUDIT.md](PHASE_31D_AUDIT.md) for the
+  registry; [PHASE_31E_AUDIT.md](PHASE_31E_AUDIT.md) for the kernel.

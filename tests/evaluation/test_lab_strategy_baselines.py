@@ -54,7 +54,13 @@ def test_lab_writes_strategy_baselines_file(tmp_path: Path) -> None:
     payload = json.loads(artifact.baselines_path.read_text())
     assert payload["cost_per_trade"] == 0.001
     assert payload["n_periods"] == len(prices)
-    assert set(payload["baselines"].keys()) == {"buy_and_hold", "momentum", "mean_reversion", "random"}
+    assert set(payload["baselines"].keys()) == {
+        "buy_and_hold",
+        "momentum",
+        "mean_reversion",
+        "factor_neutral",
+        "random_null",
+    }
 
 
 def test_lab_baselines_block_is_self_describing() -> None:

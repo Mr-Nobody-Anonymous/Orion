@@ -84,6 +84,8 @@ coordinated whole.
 | Executive | `brain/orchestrator.py` (`ExecutiveOrchestrator`), `brain/executive.py` |
 | Risk | `trading/risk.py` (`RiskEngine`) |
 | Execution | `trading/execution.py` (`SimulatedBroker`) |
+| Capability registry | `intelligence/capability_registry.py` (23 tools, see [PHASE_31D_AUDIT.md](PHASE_31D_AUDIT.md)) |
+| Persistent agent kernel | `agent/` (`WorldState`, `AgentMemory`, `CapabilityExecutor`, `Agent.step`) |
 
 ## Determinism and safety
 
@@ -91,5 +93,12 @@ coordinated whole.
   every `LoopTrace` is reproducible.
 - Content processes through the **risk gate before any fill**; risk is
   deterministic and independent of language models.
+- The agent kernel is deterministic given identical `(state, observation,
+  policy)` tuples, except for the per-Agent `state_id` UUID that seeds
+  `Action.intent_id`. The *content* of the action is identical.
+- The capability registry is a **frozen catalogue** with mechanical
+  validation: a `HIGH`-risk tool must declare `capital` / `read_secrets` /
+  `modify_self`; a control-plane tool that touches capital is forced to
+  `HIGH` risk.
 - Live execution and cloud inference are **BLOCKED** by construction
   (`LiveTradingDisabledError`, `CloudProviderUnavailable`).

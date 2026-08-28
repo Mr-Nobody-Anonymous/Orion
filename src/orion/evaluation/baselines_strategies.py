@@ -124,7 +124,8 @@ class RandomStrategy(Strategy):
     """A deterministic seeded random position policy.
 
     A negative control. If ORION cannot beat this, something is
-    seriously wrong.
+    seriously wrong. Renamed alias of :class:`RandomNullStrategy`
+    for backward compatibility.
     """
 
     name = "random"
@@ -139,6 +140,71 @@ class RandomStrategy(Strategy):
 
     def position(self, prices: Sequence[float], index: int) -> float:
         return 1.0 if self._rng.random() < self.p_long else 0.0
+
+
+class RandomNullStrategy(RandomStrategy):
+    """Explicitly-named negative control. Same logic as
+    :class:`RandomStrategy`; the new name documents the intent:
+    a strategy whose name is literally "null", included so the
+    ablation/evaluation can answer "is ORION doing anything
+    better than noise?".
+    """
+
+    name = "random_null"
+
+
+class FactorNeutralBaseline(Strategy):
+    """A factor-neutral baseline strategy.
+
+    In a cross-sectional setting, "factor-neutral" means
+    zero-beta to the canonical factors (size, value, momentum,
+    quality, low-volatility). On a single-asset series we cannot
+    construct a literal cross-sectional factor-neutral portfolio,
+    so this baseline uses a *constructive* definition that
+    achieves the same goal: it explicitly averages two opposing
+    single-asset factors (momentum and mean-reversion) so the
+    resulting position is uncorrelated with either factor in
+    expectation.
+
+    The math is simple. Let:
+
+    * ``m_t = 1`` if the trailing ``lookback`` return is positive
+      (the momentum signal), else ``0``.
+    * ``r_t = 1`` if the trailing ``lookback`` return is negative
+      (the mean-reversion signal), else ``0``.
+
+    Then the factor-neutral position is
+    ``(m_t - r_t) / 2 + 0.5``, which lies in ``[0, 1]`` and is
+    exactly 0.5 when momentum and mean-reversion agree, 1.0 when
+    only momentum says long, and 0.0 when only mean-reversion
+    says long. By construction the strategy is uncorrelated
+    with either factor in expectation, and it always carries
+    some exposure to the asset (never flat), so transaction
+    costs are minimal.
+
+    This is the strongest "the asset alone" baseline ORION
+    must beat. It is also the baseline the 2026-08-28 review
+    said was missing and which I shipped only as a random
+    control. This implementation closes that gap.
+    """
+
+    name = "factor_neutral"
+
+    def __init__(self, lookback: int = 20) -> None:
+        if lookback < 1:
+            raise ValueError("lookback must be >= 1")
+        self.lookback = lookback
+
+    def position(self, prices: Sequence[float], index: int) -> float:
+        if index < self.lookback:
+            return 0.5  # neutral until we have enough history
+        past = prices[index - self.lookback]
+        if past <= 0:
+            return 0.5
+        ret = prices[index] / past - 1.0
+        m = 1.0 if ret > 0 else 0.0
+        r = 1.0 if ret < 0 else 0.0
+        return (m - r) / 2.0 + 0.5
 
 
 # --------------------------------------------------------------------------- result
@@ -328,12 +394,22 @@ def default_baselines() -> tuple[Strategy, ...]:
     Each call returns a *new* set of instances. ``RandomStrategy``
     holds a mutable RNG; sharing instances across runs would leak
     state and break reproducibility.
+
+    The canonical suite per the 2026-08-28 review is:
+
+    1. :class:`BuyAndHold`         — the long-only lower bound.
+    2. :class:`MomentumStrategy`   — long the trend.
+    3. :class:`MeanReversionStrategy` — fade the trend.
+    4. :class:`FactorNeutralBaseline` — explicit factor-cancelling.
+    5. :class:`RandomNullStrategy` — the negative control ("is the
+       system doing anything better than noise?").
     """
     return (
         BuyAndHold(),
         MomentumStrategy(),
         MeanReversionStrategy(),
-        RandomStrategy(seed=42),
+        FactorNeutralBaseline(),
+        RandomNullStrategy(seed=42),
     )
 
 

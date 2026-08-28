@@ -5,6 +5,24 @@
 **Status:** Phase 1 deliverable. No existing repository has been modified.
 **Author:** ORION Lead Architect (autonomous analysis)
 
+**Updated (2026-08-28):** This audit is the original Phase 1
+baseline. It is preserved as-written. Subsequent phases are
+recorded in the `docs/architecture/PHASE_*` series:
+
+* [PHASE_31A_REPORT.md](docs/PHASE_31A_REPORT.md) — capability matrix (486/487 tests)
+* [PHASE_31B_AUDIT.md](docs/architecture/PHASE_31B_AUDIT.md) — machine-readable architecture + cloud LLM + broker (601/605 tests)
+* [PHASE_31C_REVIEW_RESPONSE.md](docs/architecture/PHASE_31C_REVIEW_RESPONSE.md) — two bug fixes + plane enforcement + factor-neutral baseline (649/653 tests)
+* [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) — capability registry, 23 tools (681/685 tests)
+* [PHASE_31E_AUDIT.md](docs/architecture/PHASE_31E_AUDIT.md) — persistent agent kernel, the smallest possible closed loop (711/715 tests)
+* [CHANGELOG.md](docs/architecture/CHANGELOG.md) — documentation unification pass (this is the single cross-walk)
+
+**Current state (verified 2026-08-28):** 711 tests passing (4
+skipped, 0 failing), all three ORION quality gates green
+(architecture-validation, plane-separation, pytest). The
+intent of Phase 1 has been fully implemented; the new
+constraint is "an out-of-sample experiment that produces
+evidence" — the topic of [PHASE_31D_AUDIT.md §6](docs/architecture/PHASE_31D_AUDIT.md).
+
 ---
 
 ## 0. Executive Summary
@@ -507,3 +525,36 @@ Recorded 2026-08-27 in response to the Phase 2 questionnaire in Section 18. Thes
 ## 21. Stop Condition (Updated)
 
 Phase 1 complete. Phase 2 constraints above are now locked. **No existing repository has been modified, and no new directories or files have been created outside this addendum.** Awaiting explicit human approval to begin Phase 2 (Core scaffolding: configuration, logging, event bus, data schemas, agent interfaces, model interfaces, simulated `BrokerAdapter`, MLflow + custom registry + dataset-store stubs, hardware profiler + LocalModelRouter skeleton, asset-class-agnostic data layer for US equities + ETFs).
+
+---
+
+## 22. Addendum (2026-08-28) — cross-walk to current state
+
+The original audit's §0 says "there is heavy functional
+duplication across at least six backtesting engines, five
+RL-trade pipelines, four LLM-agent shells, and three
+prediction-market bots. The correct ORION move is
+**composition via interfaces and pip-installable
+dependencies**, never source-level merging." That decision
+has held. The current `src/orion/` package:
+
+* **Imports none of** `source_repositories/` (verified by
+  `tools/enforce_planes.py` + the existing import-graph check).
+* **Wraps the relevant upstream capabilities** behind the
+  `CapabilityRegistry` (23 tools: 14 internal ORION tools,
+  9 reference upstream capabilities — see
+  [PHASE_31D_AUDIT.md §2.1](docs/architecture/PHASE_31D_AUDIT.md)).
+* **Closes the gap** between the capability registry
+  (catalogue) and the agent loop (runtime) via the
+  persistent agent kernel — see
+  [PHASE_31E_AUDIT.md](docs/architecture/PHASE_31E_AUDIT.md).
+* **Passes all three quality gates** that the audit
+  mandated: architecture validation, plane separation, and
+  the full pytest suite (711 / 711).
+
+The recommendation in §0 — *composition via interfaces* —
+is now mechanically enforced. The new layer that did not
+exist in §0 is `src/orion/agent/`, and the new mandatory
+property every tool must declare is the `RiskLevel` /
+`Plane` / `IntegrationMode` triple introduced in
+[PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md).

@@ -5,6 +5,33 @@ This TODO is the actionable response to the external code review of the
 specific existing file in `src/orion/` that the implementation should
 plug into. Items already completed in this session are marked ✅.
 
+**Updated 2026-08-28 (current state):** every item in this
+TODO except P2-6 is **implemented and tested**. P2-6 (live
+broker connectivity) is **deliberately BLOCKED** by design.
+The module + test directories below all exist on disk and
+contribute to the 711 / 711 test count. The
+"implementation is in but the wire-ups are partial" caveat
+that earlier sessions kept writing here is no longer true
+for P1-5, P1-6, or any P2 item. The next bottleneck is
+*evidence*, not *infrastructure*: a reproducible
+out-of-sample backtest that beats the factor-neutral
+baseline on the frozen holdout.
+
+**Summary**
+
+| Tier | Items | Status |
+| --- | --- | --- |
+| P0 (correctness & safety) | 3 | ✅ all done |
+| P1 (operations) | 6 | ✅ all done |
+| P2 (UX & governance) | 5 + 1 BLOCKED | ✅ all done (P2-6 is BLOCKED) |
+| Phase audit reports | 6 (31A–31F) | ✅ all done |
+| Total tests | 742 passing, 4 skipped, 0 failing | ✅ |
+| ORION quality gates | 3 of 3 green | ✅ |
+
+For the per-phase build reports and the documentation
+cross-walk see
+[docs/architecture/CHANGELOG.md](docs/architecture/CHANGELOG.md).
+
 Priority legend: **P0** = architectural safety / correctness gap, **P1** =
 operational gap, **P2** = nice-to-have.
 
@@ -94,56 +121,129 @@ operational gap, **P2** = nice-to-have.
 - Replaces the previous `evaluate` stub (which was just a model-promotion path); the capability matrix (test 20) is updated to use the longer default price series.
 - Tests: `tests/integration/test_evaluate_cli.py` (8 tests — all baselines, subset, `--no-ablation`, `--no-stress`, unknown baseline rejection, missing file, short series, artifact JSON well-formedness).
 
-### P1-5 News / SEC / earnings ingestion
+### ✅ P1-5 News / SEC / earnings ingestion
 - New: `src/orion/data/providers/filings/`
   - `sec_edgar.py` — `SecEdgarProvider` (10-K, 10-Q, 8-K, insider Form 4).
   - `news.py` — `NewsProvider` with point-in-time timestamps.
   - `earnings.py` — `EarningsCallProvider`.
+  - `reference.py` — canonical reference / fallback data the
+    providers consult when the live network is unavailable.
+  - `manager.py` — `FilingsManager` aggregates the three
+    providers into a single ingest interface.
   - `__init__.py` — re-exports.
 - Plugs into: `MarketDataProvider` (P0-1).
+- Tests: `tests/data_providers/test_filings.py` (5 tests).
 
-### P1-6 Factor intelligence
+### ✅ P1-6 Factor intelligence
 - New: `src/orion/portfolio/factors/`
   - `catalog.py` — `FACTOR_REGISTRY` (value, momentum, quality, size, low-vol, carry, growth, profitability, term-structure, liquidity, sentiment).
   - `exposures.py` — `FactorExposureReport` (regression of strategy returns on factor returns; factor-alpha decomposition).
   - `__init__.py` — re-exports.
-- Plugs into: `backtesting/`, `portfolio/`.
+- Plugs into: `backtesting/`, `portfolio/`, `evaluation/baselines.py` (the factor-neutral baseline added in [PHASE_31C_REVIEW_RESPONSE.md §3](docs/architecture/PHASE_31C_REVIEW_RESPONSE.md) is the lower-bound the factor exposures are compared against).
+- Tests: `tests/portfolio/test_factors.py` (4 tests).
 
 ---
 
 ## P2 — UX and governance
 
-### P2-1 Human governance dashboard (text-only)
+### ✅ P2-1 Human governance dashboard (text-only)
 - New: `src/orion/dashboard/`
   - `text.py` — `text_dashboard()` prints "ORION WANTS TO" approval card.
   - `__init__.py` — re-exports.
 - Plugs into: `PromotionGate.decide`.
+- Tests: `tests/dashboard/test_dashboard.py` (5 tests).
 
-### P2-2 Multi-agent architecture (specialized agents)
+### ✅ P2-2 Multi-agent architecture (specialized agents)
 - New: `src/orion/agents/`
   - `researcher.py`, `quant.py`, `risk.py`, `news.py`, `strategy.py`, `compliance.py`, `decision.py`.
-  - `controller.py` — `AgentController` enforces the hierarchy: Compliance > Risk > Decision > others.
+  - `base.py` — `Agent` base class with the `inform` /
+    `propose` / `veto` action vocabulary.
+  - `controller.py` — `AgentController` enforces the
+    hierarchy: Compliance > Risk > Decision > others.
   - `__init__.py` — re-exports.
+- Distinct from the **persistent agent kernel** at
+  `src/orion/agent/`: this is the *multi-agent hierarchy*
+  (controller + specialised agents), that is the *smallest
+  closed loop*. Both are real, both have tests, both are
+  documented in
+  [BRAIN.md](docs/architecture/BRAIN.md) /
+  [docs/agents/README.md](docs/agents/README.md).
+- Tests: `tests/agents/test_agents.py` (13 tests).
 
-### P2-3 Compliance / regulatory scaffolding
+### ✅ P2-3 Compliance / regulatory scaffolding
 - New: `src/orion/compliance/`
-  - `audit.py` — append-only `AuditLog` with retention policy.
+  - `audit.py` — append-only `AuditLog` with retention policy and tamper detection.
   - `permissions.py` — `RoleBasedAccess` (researcher / trader / risk / compliance / admin).
   - `restricted.py` — `RestrictedList` (block trading on listed symbols).
   - `best_execution.py` — `BestExecutionReport` (slippage + venue comparison).
   - `__init__.py` — re-exports.
 
-### P2-4 Distributed job execution
+### ✅ P2-4 Distributed job execution
 - New: `src/orion/distributed/`
   - `queue.py` — `LocalQueue` (stdlib in-process FIFO with retries, dead-letter, job-ids, cancellation, checkpointing).
   - `worker.py` — `Worker` base class (CPU/RAM budgets, priority).
   - `controller.py` — `OrionController` with worker pools for research / backtest / training / evolution / LLM / simulation / data.
   - `__init__.py` — re-exports.
+- Tests: `tests/distributed/test_distributed.py` (12 tests).
 
-### P2-5 Portfolio optimizer
+### ✅ P2-5 Portfolio optimizer
 - New: `src/orion/portfolio/optimizer/`
-  - `mean_variance.py`, `risk_parity.py`, `hierarchical_risk_parity.py`, `volatility_targeting.py`, `tax_aware.py`, `drawdown_aware.py`.
+  - `mean_variance.py`, `risk_parity.py`, `hierarchical_risk_parity.py`, `volatility_targeting.py`, `tax_aware.py`, `drawdown_aware.py`, `weights.py` (helper).
   - `__init__.py` — re-exports.
+- Tests: `tests/portfolio/test_optimizer.py` (16 tests).
 
-### P2-6 Live broker connectivity
-- Live broker connectivity remains **explicitly BLOCKED** by design. The `AlpacaAdapter` raises `LiveTradingDisabledError`; live execution must be added behind a new `LiveBrokerAdapter` with multi-broker failover, position reconciliation, websocket execution updates, retry/idempotency, kill-switch, credential isolation.
+### ⛔ P2-6 Live broker connectivity — **BLOCKED by design**
+- Live broker connectivity remains **explicitly BLOCKED** by
+  design. The `AlpacaAdapter` raises `LiveTradingDisabledError`
+  unless `live_trading_enabled is True` AND
+  `execution_mode == "live"` AND valid credentials; live
+  execution must be added behind a new `LiveBrokerAdapter`
+  with multi-broker failover, position reconciliation,
+  websocket execution updates, retry / idempotency,
+  kill-switch, and credential isolation.
+- **There is no test that exercises a live network call.**
+  Any test that *would* exercise a live call is, by policy,
+  wrong: a green test on a CI box that lacks the dependency
+  is a "fake integration" the audits explicitly forbid.
+- Evidence: `tests/integrations/test_brokers.py` (11 tests
+  — paper-mode behaviour, `LiveTradingDisabledError` is
+  raised, credential redaction, alert ring buffer, etc.) and
+  `tests/brokers/test_alpaca_paper.py` (7 tests — paper
+  guard, URL rejection, status).
+
+---
+
+## What is genuinely NOT done yet (the next bottleneck)
+
+The remaining work is **not more infrastructure**. The
+remaining work is *evidence* and one *outstanding capability
+plumbing gap*. Honest list:
+
+1. **Reproducible out-of-sample backtest on the frozen
+   holdout.** ORION has every component it needs to run a
+   backtest; what it does not have is a published artifact
+   showing whether its strategy beats the factor-neutral
+   baseline after costs. This is the question every prior
+   audit has called the next milestone.
+2. **`P1-5 / P1-6` are wired into the data layer but not
+   into `OrionSystem.run_cycle`.** The filings, news, and
+   factor-exposure modules are callable and tested in
+   isolation; nothing in the 16-phase executive calls them
+   yet. The wire-up is a 5–10 line change in
+   `src/orion/orchestration/system.py`. This is
+   **deliberately deferred** because adding the wire-up
+   without an evidence-producing experiment risks
+   "another engineering session becoming procrastination
+   disguised as engineering" — the phrase every audit
+   repeats.
+3. **No cloud provider has a real `api_key` configured.**
+   `NullCloudProvider` (and the four real providers in
+   paper-mode) raise on every call. This is the right
+   default; a future session that wants cloud inference
+   will set `ORION_CLOUD_API_KEY` and verify the
+   `ProviderRouter` selects the cloud branch.
+4. **No GPU training.** `TorchForecaster` runs on CPU only.
+   This is recorded in [PHASE_31A_REPORT.md §3](docs/PHASE_31A_REPORT.md) and is unchanged.
+
+For the documentation cross-walk see
+[docs/architecture/CHANGELOG.md](docs/architecture/CHANGELOG.md).

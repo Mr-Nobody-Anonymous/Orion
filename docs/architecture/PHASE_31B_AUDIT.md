@@ -189,3 +189,19 @@ Per the audit's binding constraints:
   `src/orion/`.** The reference / adapter / sidecar / benchmark
   pattern is preserved; ORION ships its own implementation
   informed by the upstream surface, never copies of it.
+
+---
+
+## 10. Cross-walk to later phases
+
+This report ends at 601 passing tests. Subsequent phases:
+
+* [PHASE_31C_REVIEW_RESPONSE.md](PHASE_31C_REVIEW_RESPONSE.md) —
+  649/653, two bug fixes + plane enforcement + factor-neutral
+  baseline.
+* [PHASE_31D_AUDIT.md](PHASE_31D_AUDIT.md) — 681/685, the
+  capability registry (23 tools).
+* [PHASE_31E_AUDIT.md](PHASE_31E_AUDIT.md) — 711/715, the
+  persistent agent kernel.
+* [CHANGELOG.md](CHANGELOG.md) — the documentation unification
+  pass; single cross-walk for every doc.
