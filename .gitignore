@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Inner git directories inside vendored reference repos (never stage)
+source_repositories/**/.git
+source_repositories/**/.gitignore
+source_repositories/**/.gitattributes
+
+# Vendored reference repositories (1.7 GB locally, not pushed to git).
+# These are research material consulted while designing ORION; the actual
+# capabilities ORION reuses are imported via adapters under src/orion/.
+source_repositories/
