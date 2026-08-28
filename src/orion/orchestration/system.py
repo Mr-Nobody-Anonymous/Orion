@@ -68,7 +68,7 @@ class OrionSystem:
         self.validator = DataQualityValidator()
         self.decision_engine = DecisionEngine()
         self.evolution = EvolutionEngine()
-        self.council = build_default_council()
+        self.council_model = build_default_council()
         self.ml_forecaster = MLRidgeForecaster()
         self.reasoner = FinancialReasoner()
         # P1-5: filings manager wired with the deterministic reference
@@ -167,7 +167,7 @@ class OrionSystem:
         # Model council: each member's view plus disagreement, so the executive
         # can see what every model believes and where they diverge.
         try:
-            council_result = self.council.predict(asset, prices, regime=self.world.market.regime.value)
+            council_result = self.council_model.predict(asset, prices, regime=self.world.market.regime.value)
             council_payload = council_result.as_dict()
         except ValueError:
             council_payload = {"status": "UNAVAILABLE", "reason": "insufficient-valid-prices"}
@@ -204,7 +204,7 @@ class OrionSystem:
     def council(self, symbol: str, prices: Sequence[float]) -> dict[str, object]:
         """Ask every council member for its view and report disagreement."""
         try:
-            result = self.council.predict(Asset(symbol, AssetClass.EQUITY), prices)
+            result = self.council_model.predict(Asset(symbol, AssetClass.EQUITY), prices)
         except ValueError as error:
             return {"status": "UNAVAILABLE", "reason": str(error)}
         return result.as_dict()

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,10 +7,29 @@ name = "orion"
 version = "0.1.0"
 description = "ORION financial intelligence platform"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    # All ORION stdlib-only modules work without any of these; the
+    # packages below are optional integrations that enhance the
+    # system when present. ``provider.status()`` reports whether each
+    # is available.
+    "requests>=2.28",
+]
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
+ml = [
+    "numpy>=1.23",
+    "scikit-learn>=1.0",
+    "torch>=2.0",
+]
+data = [
+    "ccxt>=4.0",
+    "alpaca-trade-api>=3.0",
+]
+dev = [
+    "wheel",
+    "build",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

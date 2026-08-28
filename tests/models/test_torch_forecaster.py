@@ -6,8 +6,10 @@ import random
 
 import pytest
 
-from orion.data.contracts import Asset, AssetClass
-from orion.prediction.models.torch import (
+pytest.importorskip("torch", reason="PyTorch is an optional dependency")
+
+from orion.data.contracts import Asset, AssetClass  # noqa: E402
+from orion.prediction.models.torch import (  # noqa: E402
     TorchArtifact,
     TorchForecaster,
     TorchTrainingConfig,

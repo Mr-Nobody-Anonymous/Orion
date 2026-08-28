@@ -6,8 +6,10 @@ import random
 
 import pytest
 
-from orion.data.contracts import Asset, AssetClass
-from orion.prediction.models.sklearn import (
+pytest.importorskip("sklearn", reason="scikit-learn is an optional dependency")
+
+from orion.data.contracts import Asset, AssetClass  # noqa: E402
+from orion.prediction.models.sklearn import (  # noqa: E402
     SklearnForecaster,
     TrainingWindow,
     TrainedModelArtifact,

@@ -16,8 +16,14 @@ import time
 from decimal import Decimal
 from pathlib import Path
 
-import numpy as np
-import pytest
+import numpy as np  # noqa: E402
+import pytest  # noqa: E402
+
+# ML dependencies are optional; sections that need them will skip
+# individually if the package is missing.
+HAS_SKLEARN = pytest.importorskip("sklearn", reason="scikit-learn is an optional dependency")
+HAS_TORCH = pytest.importorskip("torch", reason="PyTorch is an optional dependency")
+np = pytest.importorskip("numpy", reason="numpy is an optional dependency")
 
 REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "src"
