@@ -20,6 +20,19 @@ from ..intelligence.sentiment import SentimentAnalyzer
 from ..prediction.machine_learning import MLRidgeForecaster
 from ..intelligence.llm.providers import create_local_llm_provider
 from ..learning.self_improvement import SelfImprovementEngine
+from ..learning.mistakes import LessonStore, MistakeAnalyzer, TradeOutcome
+from ..learning.learner import MistakeLearner
+from ..experiments import ExperimentTracker, ExperimentRecord
+from ..strategies import StrategyRegistry, StrategyStatus, StrategyVersion
+from ..infrastructure.hardware_profiler import (
+    DEFAULT_TIERS,
+    ExtendedHardwareProfile,
+    HardwareProfiler,
+    LocalModelRouter,
+    ModelTier,
+    TASK_COMPLEXITY,
+)
+from ..integrations.brokers import BrokerRegistry
 from ..memory import LayeredMemory, MemoryLayer, MemoryStore
 from ..prediction.ensembles.model_council import build_default_council
 from ..prediction.forecasting import PredictionEnsemble
@@ -105,6 +118,24 @@ class OrionSystem:
         # P1-6: factor cache is recomputed on demand; the registry is
         # always available.
         self.factor_names: tuple[str, ...] = FACTOR_NAMES
+        # Learning-from-mistakes: persistent lesson store + analyzer
+        # feeding the prioritized replay buffer after every closed trade.
+        self.mistakes = MistakeAnalyzer(store=LessonStore())
+        # P4-3 unified mistake-learning surface: every trade (sim + demo)
+        # funnels through this single learner.
+        self.learner = MistakeLearner(store=self.mistakes.store, analyzer=self.mistakes)
+        # Experiment tracking + strategy lineage registries (audit §21).
+        # Both are append-only and persist under artifacts/.
+        self.experiments = ExperimentTracker()
+        self.strategies = StrategyRegistry()
+        # Hardware-aware local model router (audit §11/§12). The router is
+        # lazy because snapshotting hardware does work and many tests do
+        # not need a decision; the operator may inject a profile.
+        self.hardware_profile: ExtendedHardwareProfile | None = None
+        self.model_router: LocalModelRouter | None = None
+        # Multi-platform broker registry + kill switch (demo-first by
+        # construction). Configured from .env at construction time.
+        self.broker_registry = BrokerRegistry(self.config)
 
     def status(self) -> dict[str, object]:
         _, router, hardware = create_local_llm_provider()
@@ -399,6 +430,258 @@ class OrionSystem:
             news_query=news_query,
         )
         return {"status": "IMPLEMENTED", "bundle": bundle.as_dict()}
+
+    def reflect_on_trade(self, outcome: TradeOutcome) -> dict[str, object]:
+        """Learn from a closed trade (simulation, demo, or live).
+
+        Classifies the mistake (if any), persists the lesson, and feeds
+        the prioritized replay buffer so future training emphasizes the
+        worst outcomes.
+        """
+        lessons = self.mistakes.analyze(outcome)
+        return {
+            "status": "IMPLEMENTED",
+            "lessons": [lesson.as_dict() for lesson in lessons],
+            "summary": self.mistakes.summary(),
+        }
+
+    def record_trade_outcome(self, outcome: TradeOutcome) -> dict[str, object]:
+        """P4-3 unified entry point: every closed trade (sim or demo)
+        funnels through ``MistakeLearner`` so the persisted timeline
+        is the single source of truth.
+        """
+        lessons = self.learner.record(outcome)
+        return {
+            "status": "IMPLEMENTED",
+            "lessons": [lesson.as_dict() for lesson in lessons],
+            "analysis": self.learner.analysis(),
+        }
+
+    def lesson_analysis(self) -> dict[str, object]:
+        return {"status": "IMPLEMENTED", **self.learner.analysis()}
+
+    def deliberate_with_peers(self, question: str) -> dict[str, object]:
+        """Consult every cloud AI configured in the environment.
+
+        Providers are constructed from ``.env`` / OS env keys
+        (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, Azure).
+        With no keys configured the council is honestly unavailable.
+        """
+        from ..intelligence.peer_ai import PeerAICouncil
+        from ..models.cloud.factory import create_cloud_providers_from_env
+
+        council = PeerAICouncil(providers=create_cloud_providers_from_env())
+        insights = council.deliberate(question)
+        return {
+            "status": "IMPLEMENTED" if insights else "UNAVAILABLE",
+            "peers": council.peers(),
+            "insights": [insight.as_dict() for insight in insights],
+            "failures": [failure.as_dict() for failure in council.failures],
+            "consensus": council.consensus(),
+        }
+
+    def start_experiment(
+        self,
+        name: str,
+        *,
+        tags: dict[str, str] | None = None,
+        params: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        """Start a tracked experiment (audit §21 MLflow-compatible interface)."""
+        record = self.experiments.start(name, tags=tags, params=params)
+        return {"status": "IMPLEMENTED", "experiment": record.as_dict()}
+
+    def experiments_summary(self) -> dict[str, object]:
+        return {"status": "IMPLEMENTED", **self.experiments.summary()}
+
+    def register_strategy(
+        self,
+        name: str,
+        *,
+        rules: dict[str, object],
+        universe: Sequence[str] = (),
+        risk_params: dict[str, object] | None = None,
+        cost_model: str = "v1",
+        regimes: Sequence[str] = (),
+        lineage: Sequence[str] = (),
+        backtest_ref: str = "",
+        walk_forward_ref: str = "",
+    ) -> dict[str, object]:
+        """Register an immutable strategy version with full lineage."""
+        version = self.strategies.register(
+            name,
+            rules=rules,
+            universe=universe,
+            risk_params=risk_params,
+            cost_model=cost_model,
+            regimes=regimes,
+            lineage=lineage,
+            backtest_ref=backtest_ref,
+            walk_forward_ref=walk_forward_ref,
+        )
+        return {"status": "IMPLEMENTED", "strategy": version.describe()}
+
+    def strategy_lineage(self, name: str) -> dict[str, object]:
+        chain = self.strategies.lineage(name)
+        if chain is None:
+            raise ValueError(f"unknown strategy {name!r}")
+        return {"status": "IMPLEMENTED", "name": name, "lineage": chain}
+
+    def promote_strategy(
+        self,
+        name: str,
+        target: str,
+        *,
+        by: str = "operator",
+    ) -> dict[str, object]:
+        """Advance a strategy along its audited lifecycle (deny-by-default)."""
+        version = self.strategies.transition(name, StrategyStatus(target), by=by)
+        return {
+            "status": "IMPLEMENTED",
+            "strategy": version.describe(),
+            "note": "promotion requires validation; PRODUCTION needs prior APPROVED",
+        }
+
+    def strategy_registry_summary(self) -> dict[str, object]:
+        return {"status": "IMPLEMENTED", **self.strategies.summary()}
+
+    def snapshot_hardware(self) -> dict[str, object]:
+        """Snapshot the local host (RAM, CPU, disk, ollama availability)."""
+        self.hardware_profile = HardwareProfiler().snapshot()
+        return {
+            "status": "IMPLEMENTED",
+            "hardware": self.hardware_profile.as_dict(),
+            "tiers": {key: dict(value) for key, value in DEFAULT_TIERS.items()},
+            "complexities": list(TASK_COMPLEXITY),
+        }
+
+    def select_local_model(
+        self,
+        complexity: str = "standard",
+        *,
+        context_tokens: int = 0,
+        latency_budget_s: float | None = None,
+    ) -> dict[str, object]:
+        """Pick a model tier (audit §11) and surface the justification."""
+        if self.model_router is None or self.hardware_profile is None:
+            self.hardware_profile = HardwareProfiler().snapshot()
+        self.model_router = LocalModelRouter(profile=self.hardware_profile)
+        tier = self.model_router.select(
+            complexity,
+            context_tokens=context_tokens,
+            latency_budget_s=latency_budget_s,
+        )
+        return {
+            "status": "IMPLEMENTED",
+            "tier": tier.as_dict(),
+            "hardware": self.hardware_profile.as_dict(),
+        }
+
+    def evaluate(
+        self,
+        symbol: str,
+        prices: Sequence[float],
+        *,
+        close_price: float | None = None,
+        predicted_return: float | None = None,
+        mode: str = "simulation",
+        strategy_name: str | None = None,
+        experiment_name: str | None = None,
+    ) -> dict[str, object]:
+        """End-to-end workflow: predict → decide → (paper-)trade → reflect → log.
+
+        This is the integration seam the audit's §37 "Final Completion
+        Standard" demands. Every step is real:
+        * ``self.run`` produces a decision through the safe simulated broker
+        * ``MistakeAnalyzer`` records the outcome (lessons + replay)
+        * an :class:`ExperimentRecord` is opened and closed around the run
+        * the trade is also routed through the :class:`BrokerRegistry` so
+          the kill switch / live gate / kill-dry-run contract is enforced
+        * if ``strategy_name`` is given, the strategy lineage is recorded
+          in the strategy registry against the latest cycle.
+        """
+        if len(prices) < 3:
+            raise ValueError("at least three prices are required")
+        exp = (
+            self.experiments.start(experiment_name or f"evaluate:{symbol}")
+            if experiment_name is not None or strategy_name is not None
+            else None
+        )
+
+        # 1. predict + decide (the existing safe loop)
+        run_result = self.analyze(symbol, prices, actual_return=None)
+
+        # 2. reflect on the closed trade (if a close + prediction were given)
+        lessons: list = []
+        if close_price is not None:
+            predicted = float(run_result.get("prediction", {}).get("expected_return", 0.0) or 0.0) if predicted_return is None else predicted_return
+            outcome = TradeOutcome(
+                symbol=symbol,
+                side="buy",
+                quantity=1.0,
+                entry_price=float(prices[-1]),
+                exit_price=float(close_price),
+                predicted_return=predicted,
+                mode=mode,
+                regime=str(run_result.get("market_regime", "unknown")),
+                equity=100_000.0,
+            )
+            lessons = self.mistakes.analyze(outcome)
+
+        # 3. paper trade via the broker registry (dry-run by default)
+        order: dict[str, object] = {"status": "SKIPPED", "reason": "no venue configured"}
+        if self.broker_registry.configured():
+            try:
+                order = self.broker_registry.submit(
+                    symbol,
+                    side="BUY",
+                    quantity=1.0,
+                    order_type="MARKET",
+                    price=float(prices[-1]),
+                    dry_run=True,
+                )
+            except Exception as exc:  # noqa: BLE001 - surface as a recorded failure
+                order = {"status": "ERROR", "error": str(exc)}
+
+        # 4. strategy lineage (append a new version per call)
+        strategy_record: dict[str, object] | None = None
+        if strategy_name is not None:
+            run_metrics = dict(run_result.get("backtest", {}) or {})
+            version = self.strategies.register(
+                strategy_name,
+                rules={
+                    "momentum_signal": str(run_result.get("quant_signal", {})),
+                    "decision": str(run_result.get("decision", "")),
+                },
+                universe=(symbol,),
+                regimes=(str(run_result.get("market_regime", "unknown")),),
+                lineage=(
+                    f"prices:{len(prices)}",
+                    f"forecaster:{run_result.get('prediction', {}).get('model_name', 'unknown')}",
+                    f"decision:{run_result.get('decision', 'unknown')}",
+                ),
+                backtest_ref=f"bt:{run_metrics.get('total_return', 0.0):.4f}",
+            )
+            strategy_record = version.describe()
+
+        if exp is not None:
+            self.experiments.log_metric(
+                exp.experiment_id,
+                "backtest_total_return",
+                float((run_result.get("backtest", {}) or {}).get("total_return", 0.0) or 0.0),
+            )
+            self.experiments.finish(exp.experiment_id)
+
+        return {
+            "status": "IMPLEMENTED",
+            "experiment": exp.as_dict() if exp else None,
+            "decision": run_result.get("decision"),
+            "prediction": run_result.get("prediction"),
+            "backtest": run_result.get("backtest"),
+            "lessons": [lesson.as_dict() for lesson in lessons],
+            "order": order,
+            "strategy": strategy_record,
+        }
 
     def run_agents(
         self,

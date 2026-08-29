@@ -26,6 +26,8 @@ from .base import (
     HttpCloudConfig,
     env_or_none,
 )
+from .factory import cloud_provider_status, create_cloud_providers_from_env
+from .gemini import GeminiProvider
 from .http import HttpProvider
 from .openai import OpenAIProvider
 from .provider import CloudProviderUnavailable, NullCloudProvider
@@ -37,9 +39,12 @@ __all__ = [
     "CloudProviderError",
     "CloudProviderStatus",
     "CloudProviderUnavailable",
+    "GeminiProvider",
     "HttpCloudConfig",
     "HttpProvider",
     "NullCloudProvider",
     "OpenAIProvider",
+    "cloud_provider_status",
+    "create_cloud_providers_from_env",
     "env_or_none",
 ]

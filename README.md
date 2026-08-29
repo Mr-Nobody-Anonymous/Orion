@@ -14,14 +14,25 @@
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 771 passing](https://img.shields.io/badge/Tests-771%20passing-green.svg)](https://github.com/)
+[![Tests: 849 passing](https://img.shields.io/badge/Tests-849%20passing-green.svg)](https://github.com/)
 [![Mode: LOCAL](https://img.shields.io/badge/Inference-LOCAL-purple.svg)](https://ollama.com/)
-[![Execution: SIMULATION](https://img.shields.io/badge/Execution-SIMULATION-orange.svg)](https://github.com/)
+[![Execution: SIM + DEMO](https://img.shields.io/badge/Execution-SIM%20%2B%20DEMO-orange.svg)](https://github.com/)
 [![Safety: First](https://img.shields.io/badge/Safety-First-red.svg)](https://github.com/)
 [![Zero Fake Integrations](https://img.shields.io/badge/Zero%20Fake-Integrations-green.svg)](https://github.com/)
 [![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
 
-> **771 tests passing. No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
+> **849 tests passing. No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
+
+**New (this session):** multi-venue **demo trading** adapters (Alpaca, Binance,
+Kraken, Coinbase, OANDA, IBKR — testnet/paper endpoints by default, live
+multi-gated), a **learning-from-mistakes** loop (`MistakeAnalyzer` + persistent
+lesson store feeding the replay buffer), a **peer-AI council** that learns from
+every external AI configured in `.env` (OpenAI / Anthropic / Gemini / Azure),
+the **Mission Control** web dashboard (`orion serve`), an **append-only
+experiment tracker** (JSONL + optional MLflow backend), an **immutable
+strategy registry** with full lineage and audited lifecycle, and a
+**machine-verified upstream provenance manifest** (29/30 canonical URLs
+reachable; 12 moved/renamed URLs recovered via search + `git ls-remote`).
 
 ---
 
@@ -493,9 +504,16 @@ provenance/audit logs.
 
 | Capability | Status |
 |---|---|
-| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act) | **IMPLEMENTED** (771 tests) |
-| Cloud inference | **BLOCKED** — `NullCloudProvider` raises until a configured, budgeted, evaluated provider exists |
-| Live execution | **BLOCKED** — `AlpacaAdapter` raises `LiveTradingDisabledError` by construction |
+| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act) | **IMPLEMENTED** (849 tests) |
+| Demo broker adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR) + `BrokerRegistry` + kill switch | **IMPLEMENTED** — demo/testnet endpoints by default, discovered from `.env` |
+| Learning from mistakes (`MistakeAnalyzer`, `LessonStore`, replay feed, `OrionSystem.reflect_on_trade`) | **IMPLEMENTED** |
+| Peer-AI council (learn from OpenAI / Anthropic / Gemini / Azure via `.env` keys) + Gemini provider | **IMPLEMENTED** — opt-in; no key → honestly unavailable |
+| Mission Control web dashboard (`orion serve`) | **IMPLEMENTED** — stdlib-only, binds 127.0.0.1 by default |
+| Append-only experiment tracker (JSONL + MLflow backend) | **IMPLEMENTED** — default JSONL, MLflow opt-in via `ExperimentTracker("mlflow", ...)` |
+| Immutable strategy registry with full lineage + gated lifecycle | **IMPLEMENTED** — `EXPERIMENTAL → VALIDATING → APPROVED → PRODUCTION → RETIRED`, JSONL persistent |
+| Upstream provenance manifest (verified via `git ls-remote`) | **IMPLEMENTED** — 29/30 URLs reachable, 12 moved canonical URLs recovered, empty husks removed |
+| Cloud inference | **GATED** — providers activate only with an API key in `.env`/env; without one, `NullCloudProvider` still raises |
+| Live execution | **BLOCKED by default** — requires `execution_mode="live"` AND `live_trading_enabled=True` AND per-venue `*_MODE=live`; kill switch enforced process-wide |
 | Generated-code runtime sandbox | **BLOCKED** — static verification gate in place; dedicated runtime sandbox required |
 | Heavyweight upstream runtimes (QLib, Kronos, FinGPT, QuantLib) | **WORKER / REFERENCE** — preserved unmodified under `source_repositories/` |
 

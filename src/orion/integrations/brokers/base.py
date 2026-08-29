@@ -21,6 +21,7 @@ Paper trading is allowed by default; live trading is not.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import time
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -99,6 +100,19 @@ class BaseBrokerAdapter(ABC):
         """Return the structured health status of this adapter."""
 
     # ------------------------------------------------------------------ guards
+
+    def submit(self, order: Mapping[str, Any]) -> dict[str, Any]:
+        """Submit an order after the final live-mode safety brake.
+
+        Live orders are intentionally slow (250 ms) so an operator
+        window always exists. Adapters may override for vendor quirks
+        but must keep the live guard.
+        """
+        config = getattr(self, "config", None)
+        if config is not None and config.execution_mode == "live":
+            self._require_live_explicit()
+            time.sleep(0.25)
+        return self._submit(order)
 
     def _require_live_explicit(self) -> None:
         if not self.config.live_trading_enabled or self.config.execution_mode != "live":

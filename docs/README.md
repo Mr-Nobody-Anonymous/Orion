@@ -5,7 +5,7 @@ architecture, and the controlled self-improvement loops. It is accurate to the
 running implementation: statuses below are asserted by tests, and `BLOCKED`
 marks deliberately disabled capabilities.
 
-**Current state (2026-08-28):** 771 tests passing (4 skipped,
+**Current state (2026-08-28):** 849 tests passing (4 skipped,
 0 failing), all three ORION quality gates green
 (architecture-validation, plane-separation, pytest). The
 canonical application package is `src/orion/`. The
@@ -13,7 +13,10 @@ machine-readable architecture spec is
 [`config/architecture.yaml`](../config/architecture.yaml) and
 the source-repository manifest is
 [`source_repositories/MANIFEST.yaml`](../source_repositories/MANIFEST.yaml).
-Both are validated by `tools/run_all_gates.py`.
+Both are validated by `tools/run_all_gates.py`. Upstream
+canonical URLs are verified against
+[`UPSTREAM_VERIFICATION.yaml`](../source_repositories/UPSTREAM_VERIFICATION.yaml)
+(29/30 reachable; 12 moved/renamed canonical URLs recovered).
 
 ## Phase audit reports
 

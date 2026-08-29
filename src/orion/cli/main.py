@@ -194,6 +194,61 @@ def build_parser() -> argparse.ArgumentParser:
     optimizer_parser.add_argument("--risk-aversion", type=float, default=1.0)
     optimizer_parser.add_argument("--target-volatility", type=float, default=0.10,
                                     help="Target portfolio vol for the vol-target method.")
+
+    # --- Mission control (web dashboard) --------------------------------
+    serve_parser = subparsers.add_parser("serve", help="Run the web mission-control dashboard.")
+    serve_parser.add_argument("--host", default=None, help="Bind host (default: ORION_WEB_HOST or 127.0.0.1).")
+    serve_parser.add_argument("--port", type=int, default=None, help="Bind port (default: ORION_WEB_PORT or 8787).")
+    serve_parser.add_argument("--no-browser", action="store_true", help="Do not open a browser tab.")
+
+    # --- TUI mission control (terminal dashboard) -----------------------
+    tui_parser = subparsers.add_parser("tui", help="Run the terminal mission-control dashboard (read-first, stdlib-only).")
+    tui_parser.add_argument("--once", action="store_true", help="Print a single frame and exit (for logs and CI).")
+    tui_parser.add_argument("--width", type=int, default=None, help="Render width in columns (default: terminal width).")
+    tui_parser.add_argument("--refresh", type=float, default=2.0, help="Refresh interval in seconds (default: 2.0).")
+    tui_parser.add_argument("--interactive", action="store_true",
+                              help="Read key presses (q=quit, k=engage kill switch, K=disengage, c=run paper cycle).")
+
+    # --- Hardware + model router (audit §11) ---------------------------
+    hardware_parser = subparsers.add_parser("hardware", help="Snapshot local hardware + Ollama availability.")
+    hardware_parser.add_argument("--json", action="store_true", help="Emit JSON only (default JSON).")
+
+    model_parser = subparsers.add_parser("model", help="Pick a model tier via LocalModelRouter.")
+    model_parser.add_argument("--complexity", default="standard", choices=["cheap", "standard", "deep"])
+    model_parser.add_argument("--context-tokens", type=int, default=0)
+    model_parser.add_argument("--latency-budget-s", type=float, default=None)
+
+    # --- Experiment + strategy registries (audit §21) -----------------
+    experiment_parser = subparsers.add_parser("experiment", help="Start a tracked experiment.")
+    experiment_parser.add_argument("name")
+    experiment_parser.add_argument("--tag", action="append", default=[], help="Key=value tag (repeatable).")
+
+    strategy_parser = subparsers.add_parser("strategy", help="Register an immutable strategy version.")
+    strategy_parser.add_argument("name")
+    strategy_parser.add_argument("--rule", action="append", required=True, help="Key=value rule (repeatable).")
+    strategy_parser.add_argument("--universe", nargs="*", default=[])
+    strategy_parser.add_argument("--lineage", nargs="*", default=[])
+    strategy_parser.add_argument("--backtest", default="")
+
+    promote_parser = subparsers.add_parser("promote", help="Advance a strategy along its lifecycle.")
+    promote_parser.add_argument("name")
+    promote_parser.add_argument("target", choices=["validating", "approved", "production", "rejected", "retired"])
+
+    # --- P4-5 single CLI surface --------------------------------------
+    brokers_parser = subparsers.add_parser("brokers", help="List the broker catalogue (P4-2).")
+    brokers_parser.add_argument("--ping", action="store_true", help="Probe each venue (read-only).")
+    brokers_parser.add_argument("--missing-only", action="store_true", help="Only show venues with missing env keys.")
+
+    lessons_parser = subparsers.add_parser("lessons-analysis", help="Show the unified mistake analysis (P4-3).")
+    lessons_parser.add_argument("--symbol", default=None, help="Filter to one symbol.")
+    lessons_parser.add_argument("--top", type=int, default=5, help="Top-N symbols.")
+
+    cycle_parser = subparsers.add_parser("cycle", help="One end-to-end decision cycle.")
+    cycle_parser.add_argument("symbol", nargs="?", default="DEMO")
+    cycle_parser.add_argument("--prices", nargs="+", type=float, default=None)
+    cycle_parser.add_argument("--close", type=float, default=None, help="If given, reflect on this exit price.")
+    cycle_parser.add_argument("--strategy", default=None, help="Strategy name to register with lineage.")
+
     return parser
 
 
@@ -626,6 +681,69 @@ def _run_agents_cli(system, args) -> dict[str, object]:
     }
 
 
+def _run_serve_cli(args) -> dict[str, object]:
+    """``orion serve`` — run the web mission-control dashboard."""
+    import os
+    import webbrowser
+
+    from ..dashboard.web import serve
+
+    host = args.host or os.environ.get("ORION_WEB_HOST") or "127.0.0.1"
+    port = int(args.port or os.environ.get("ORION_WEB_PORT") or 8787)
+    if not args.no_browser:
+        try:
+            webbrowser.open(f"http://{host}:{port}")
+        except Exception:  # noqa: BLE001 - headless boxes must not crash the server
+            pass
+    serve(host=host, port=port)
+    return {"command": "serve", "status": "stopped", "host": host, "port": port}
+
+
+def _run_tui_cli(args) -> dict[str, object]:
+    """``orion tui`` — render the terminal mission-control dashboard.
+
+    ``--once`` prints a single frame (handy for ``watch`` loops and
+    CI smoke tests). Without ``--once`` the run loop refreshes on a
+    timer; ``--interactive`` enables key bindings (q/c/k/K/?/r).
+
+    The TUI is read-first: it never imports a real broker adapter,
+    never makes a cloud LLM call, and never writes to disk. The
+    kill-switch and paper-cycle actions go through the same
+    :class:`DashboardState` the web API uses, so the gating is
+    identical to the web dashboard.
+    """
+    from ..dashboard.tui import RenderOptions, TuiApp, TuiRenderer, print_tui
+    from ..dashboard.web import DashboardState
+    from ..learning.mistakes import LessonStore
+
+    system = OrionSystem(OrionConfig())
+    lesson_store = LessonStore()
+    state = DashboardState(system=system, lesson_store=lesson_store)
+    width = int(args.width) if args.width else None
+    if args.once:
+        # Single frame; honour NO_COLOR / FORCE_COLOR. Exit cleanly.
+        text = print_tui(state, width=width, force_ansi=None)
+        return {
+            "command": "tui",
+            "mode": "once",
+            "rendered_bytes": len(text),
+        }
+    renderer = TuiRenderer(options=RenderOptions(width=width or 100, ansi=None))
+    app = TuiApp(
+        state=state,
+        renderer=renderer,
+        refresh_seconds=float(args.refresh),
+        interactive=bool(args.interactive),
+    )
+    frames = app.run()
+    return {
+        "command": "tui",
+        "mode": "loop",
+        "frames_rendered": frames,
+        "interactive": bool(args.interactive),
+    }
+
+
 def _run_dashboard_cli(args) -> dict[str, object]:
     """``orion dashboard`` — render the human governance card."""
     from ..dashboard import build_approval_card, card_to_json, text_dashboard
@@ -713,6 +831,97 @@ def _run_distributed_cli(args) -> dict[str, object]:
     }
 
 
+def _run_hardware_cli(system, args) -> dict[str, object]:
+    return system.snapshot_hardware()
+
+
+def _run_model_cli(system, args) -> dict[str, object]:
+    return system.select_local_model(
+        args.complexity,
+        context_tokens=int(args.context_tokens),
+        latency_budget_s=args.latency_budget_s,
+    )
+
+
+def _run_experiment_cli(system, args) -> dict[str, object]:
+    tags: dict[str, str] = {}
+    for raw in args.tag:
+        if "=" in raw:
+            k, _, v = raw.partition("=")
+            tags[k.strip()] = v.strip()
+    return system.start_experiment(args.name, tags=tags)
+
+
+def _run_strategy_cli(system, args) -> dict[str, object]:
+    rules: dict[str, str] = {}
+    for raw in args.rule:
+        if "=" in raw:
+            k, _, v = raw.partition("=")
+            rules[k.strip()] = v.strip()
+    if not rules:
+        raise SystemExit("at least one --rule key=value is required")
+    return system.register_strategy(
+        args.name,
+        rules=rules,
+        universe=tuple(args.universe),
+        lineage=tuple(args.lineage),
+        backtest_ref=args.backtest,
+    )
+
+
+def _run_promote_cli(system, args) -> dict[str, object]:
+    return system.promote_strategy(args.name, args.target)
+
+
+def _run_brokers_cli(args) -> dict[str, object]:
+    """``orion brokers`` — show the catalogue (P4-2) and optionally ping."""
+    from ..integrations.brokers import (
+        BROKERS,
+        catalogue_as_dict,
+        missing_keys_all,
+        ping_all,
+    )
+
+    missing = missing_keys_all()
+    payload: dict[str, object] = {
+        "catalogue": catalogue_as_dict(),
+        "missing_keys": missing,
+    }
+    if args.missing_only:
+        payload["catalogue"]["venues"] = [
+            v for v in payload["catalogue"]["venues"] if missing.get(v["venue"])
+        ]
+    if args.ping:
+        payload["health"] = [h.as_dict() for h in ping_all(timeout=0.5)]
+    return payload
+
+
+def _run_lessons_analysis_cli(system, args) -> dict[str, object]:
+    """``orion lessons-analysis`` — show the unified analysis (P4-3)."""
+    analysis = system.lesson_analysis()
+    if args.symbol:
+        per = analysis["all_time"]["by_symbol"]
+        filtered = {symbol: per.get(symbol, 0) for symbol in [args.symbol] if symbol in per}
+        analysis["all_time"]["by_symbol"] = filtered
+    else:
+        top = dict(sorted(analysis["all_time"]["by_symbol"].items(), key=lambda kv: kv[1], reverse=True)[: args.top])
+        analysis["all_time"]["by_symbol"] = top
+    return {"status": "IMPLEMENTED", **analysis}
+
+
+def _run_cycle_cli(system, args) -> dict[str, object]:
+    """``orion cycle`` — one end-to-end decision cycle (P4-5)."""
+    prices = args.prices or [100, 101, 100.5, 102, 103, 104, 105]
+    result = system.evaluate(
+        args.symbol,
+        prices,
+        close_price=args.close,
+        strategy_name=args.strategy,
+        experiment_name=f"cycle:{args.symbol}",
+    )
+    return {"status": "IMPLEMENTED", "cycle": result}
+
+
 def _run_optimizer_cli(args) -> dict[str, object]:
     """``orion optimize`` — exercise the portfolio optimiser."""
     from ..portfolio.optimizer import (
@@ -762,6 +971,9 @@ def _run_optimizer_cli(args) -> dict[str, object]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    from ..infrastructure.env import load_env
+
+    load_env()  # populate os.environ from a repository-root .env (no override)
     parser = build_parser()
     args = parser.parse_args(argv)
     config = OrionConfig()
@@ -807,6 +1019,26 @@ def main(argv: list[str] | None = None) -> None:
         payload = _run_distributed_cli(args)
     elif command == "optimize":
         payload = _run_optimizer_cli(args)
+    elif command == "serve":
+        payload = _run_serve_cli(args)
+    elif command == "tui":
+        payload = _run_tui_cli(args)
+    elif command == "hardware":
+        payload = _run_hardware_cli(system, args)
+    elif command == "model":
+        payload = _run_model_cli(system, args)
+    elif command == "experiment":
+        payload = _run_experiment_cli(system, args)
+    elif command == "strategy":
+        payload = _run_strategy_cli(system, args)
+    elif command == "promote":
+        payload = _run_promote_cli(system, args)
+    elif command == "brokers":
+        payload = _run_brokers_cli(args)
+    elif command == "lessons-analysis":
+        payload = _run_lessons_analysis_cli(system, args)
+    elif command == "cycle":
+        payload = _run_cycle_cli(system, args)
     else:
         parser.error(f"unknown command: {command}")
         return

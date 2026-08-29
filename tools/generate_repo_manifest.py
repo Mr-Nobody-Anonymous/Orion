@@ -62,29 +62,34 @@ POLICY: dict[str, dict[str, str]] = {
     "vectorbt":                {"category": "trading", "purpose": "Vectorized backtesting (primary engine)", "integration_mode": "adapter", "status": "preserved"},
 }
 
-# Canonical upstream URLs (per audit). Used as the "expected" URL.
+# Canonical upstream URLs (per audit + verified 2026-08-28 via
+# github.com search + git ls-remote). Where the originally recorded
+# URL was moved/deleted, the verified canonical location is used.
+# intelligent-trading-bot has no public upstream (0 search results;
+# the recorded asadm/vibranium is dead) and remains documented as
+# unreachable in source_repositories/UPSTREAM_VERIFICATION.yaml.
 CANONICAL: dict[str, str] = {
-    "AgenticTrading":          "https://github.com/piyush11aug/AgenticTrading",
+    "AgenticTrading":          "https://github.com/Open-Finance-Lab/AgenticTrading",
     "airllm":                  "https://github.com/lyogavin/airllm",
     "FinGPT":                  "https://github.com/AI4Finance-Foundation/FinGPT",
-    "hermes-agent":            "https://github.com/just-every/hermes-agent",
-    "intelligent-trading-bot": "https://github.com/asadm/vibranium",
-    "kimi-k3-in-c":            "https://github.com/scythebww/kimi-k3-in-c",
+    "hermes-agent":            "https://github.com/NousResearch/hermes-agent",
+    "intelligent-trading-bot": "",
+    "kimi-k3-in-c":            "https://github.com/FareedKhan-dev/kimi-k3-in-c",
     "ollama":                  "https://github.com/ollama/ollama",
-    "QuantMuse":               "https://github.com/a-dorgham/QuantMuse",
-    "Vibe-Trading":            "https://github.com/jo-inc/coding-vibe-agent",
-    "homerun":                 "https://github.com/mandiant/homerun",
-    "polymarket-kalshi-weather-bot":     "https://github.com/mandiant/polymarket-kalshi-weather-bot",
-    "Prediction-Markets-Trading-Bot-Toolkits": "https://github.com/mandiant/Prediction-Markets-Trading-Bot-Toolkits",
+    "QuantMuse":               "https://github.com/0xemmkty/QuantMuse",
+    "Vibe-Trading":            "https://github.com/HKUDS/Vibe-Trading",
+    "homerun":                 "https://github.com/braedonsaunders/homerun",
+    "polymarket-kalshi-weather-bot":     "https://github.com/suislanchez/polymarket-kalshi-weather-bot",
+    "Prediction-Markets-Trading-Bot-Toolkits": "https://github.com/HarrierOnChain/Prediction-Markets-Trading-Bot-Toolkits",
     "py_vollib":               "https://github.com/vollib/py_vollib",
     "QuantLib":                "https://github.com/lballabio/QuantLib",
-    "Kronos":                  "https://github.com/decisionintelligence/Kronos",
+    "Kronos":                  "https://github.com/shiyu-coder/Kronos",
     "neural_prophet":          "https://github.com/ourownstory/neural_prophet",
     "qlib":                    "https://github.com/microsoft/qlib",
     "Time-Series-Library":     "https://github.com/thuml/Time-Series-Library",
-    "a-evolve":                "https://github.com/alexzhang13/a-evolve",
+    "a-evolve":                "https://github.com/A-EVO-Lab/a-evolve",
     "assume":                  "https://github.com/assume-framework/assume",
-    "evolver":                 "https://github.com/dzhng/evolver",
+    "evolver":                 "https://github.com/EvoMap/evolver",
     "backtrader":              "https://github.com/mementum/backtrader",
     "FinRL":                   "https://github.com/AI4Finance-Foundation/FinRL",
     "FinRL-Meta":              "https://github.com/AI4Finance-Foundation/FinRL-Meta",
@@ -92,12 +97,27 @@ CANONICAL: dict[str, str] = {
     "freqtrade":               "https://github.com/freqtrade/freqtrade",
     "jesse":                   "https://github.com/jesse-ai/jesse",
     "Lean":                    "https://github.com/QuantConnect/Lean",
-    "Stock-Trading-Environment": "https://github.com/sanketx/Stock-Trading-Environment",
+    "Stock-Trading-Environment": "https://github.com/notadamking/Stock-Trading-Environment",
     "vectorbt":                "https://github.com/polakowo/vectorbt",
 }
 
 
+def _git_dir(p: Path) -> bool:
+    """True only when ``p`` is itself a git working tree (has a .git entry)."""
+    return (p / ".git").exists()
+
+
 def _git(p: Path, *args: str) -> str:
+    """Run a git command only inside an actual git checkout.
+
+    Without this guard, ``git -C <copy-without-.git>`` walks *up* the
+    directory tree and reports the enclosing ORION repository's HEAD,
+    branch, and remote — fabricating provenance for upstream checkouts
+    that are plain file copies. We refuse to read git metadata from a
+    directory that is not itself a repository.
+    """
+    if not _git_dir(p):
+        return ""
     try:
         return subprocess.check_output(["git", "-C", str(p), *args], stderr=subprocess.DEVNULL).decode().strip()
     except Exception:
@@ -146,6 +166,7 @@ def build() -> str:
         lines.append(f"{cat}:")
         for repo, policy in sorted(by_cat[cat]):
             local = SRC / cat / repo
+            is_git = _git_dir(local)
             head = _git(local, "rev-parse", "HEAD")
             branch = _git(local, "rev-parse", "--abbrev-ref", "HEAD")
             short = head[:12] if head else "unknown"
@@ -157,11 +178,16 @@ def build() -> str:
             lines.append(f"  - name: {repo}")
             lines.append(f"    canonical_url: {_safe_yaml(upstream)}")
             lines.append(f"    local_path: source_repositories/{cat}/{repo}")
-            lines.append(f"    branch: {_safe_yaml(branch or 'unknown')}")
-            lines.append(f"    commit: {_safe_yaml(head or 'unknown')}")
+            # Provenance honesty: a checkout without its own .git directory
+            # is a preserved copy — upstream commit/branch are unknowable from
+            # the filesystem and must not be guessed. Only real git checkouts
+            # carry real git metadata.
+            lines.append(f"    checkout_type: {'git' if is_git else 'copy'}")
+            lines.append(f"    branch: {_safe_yaml(branch if is_git and branch else 'n/a')}")
+            lines.append(f"    commit: {_safe_yaml(head if is_git and head else 'unknown')}")
             lines.append(f"    commit_short: {_safe_yaml(short)}")
             lines.append(f"    license_file: {_safe_yaml(lic)}")
-            lines.append(f"    origin_remote: {_safe_yaml(remote)}")
+            lines.append(f"    origin_remote: {_safe_yaml(remote if is_git else '')}")
             lines.append(f"    purpose: {_safe_yaml(policy['purpose'])}")
             lines.append(f"    integration_mode: {policy['integration_mode']}")
             lines.append(f"    status: {status}")

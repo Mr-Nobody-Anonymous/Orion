@@ -11,17 +11,47 @@ summarises an :class:`orion.agent.AgentRun` end-to-end. The
 HTML page is intended for human review, not for production
 dashboards. It contains no JavaScript and no external
 resources.
+
+The TUI counterpart in :mod:`orion.dashboard.tui` is the
+read-first, stdlib-only terminal dashboard for SSH sessions,
+``tmux`` panes, ``watch`` loops, and CI logs. It reads from the
+same :class:`DashboardState` as the web API and renders an ANSI
+sparkline + venue/peer/lesson/trade feed. No new dependencies.
 """
 
 from __future__ import annotations
 
-from .html import build_html_dashboard
 from .text import ApprovalCard, build_approval_card, card_to_json, text_dashboard
+from .tui import (
+    KillSwitchSnapshot,
+    LessonSnapshot,
+    PeerSnapshot,
+    RenderOptions,
+    TradeSnapshot,
+    TuiApp,
+    TuiRenderer,
+    TuiSnapshot,
+    VenueSnapshot,
+    print_tui,
+)
+from .web import DashboardState, create_server, serve
 
 __all__ = [
     "ApprovalCard",
+    "DashboardState",
+    "KillSwitchSnapshot",
+    "LessonSnapshot",
+    "PeerSnapshot",
+    "RenderOptions",
+    "TradeSnapshot",
+    "TuiApp",
+    "TuiRenderer",
+    "TuiSnapshot",
+    "VenueSnapshot",
     "build_approval_card",
-    "build_html_dashboard",
     "card_to_json",
+    "create_server",
+    "print_tui",
+    "serve",
     "text_dashboard",
 ]

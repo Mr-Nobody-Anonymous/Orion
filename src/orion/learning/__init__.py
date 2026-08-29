@@ -18,6 +18,8 @@ from .evaluation import (
     regime_breakdown,
 )
 from .experience import ExperienceReplay, ReplayItem
+from .learner import MistakeLearner
+from .mistakes import Lesson, LessonStore, MistakeAnalyzer, TradeOutcome
 from .promotion import CandidateEvaluation, PromotionOutcome, PromotionPipeline
 from .self_improvement import Experience, SelfImprovementEngine
 from .training import TrainedResidualModel, TrainingPipeline
@@ -30,13 +32,18 @@ __all__ = [
     "DatasetVersion",
     "Experience",
     "ExperienceReplay",
+    "Lesson",
+    "LessonStore",
     "ModelCard",
     "ModelEvaluator",
+    "MistakeAnalyzer",
+    "MistakeLearner",
     "PromotionOutcome",
     "PromotionPipeline",
     "ReplayItem",
     "RegimePerformance",
     "SplitPolicyViolation",
+    "TradeOutcome",
     "TrainedResidualModel",
     "TrainingPipeline",
     "SelfImprovementEngine",

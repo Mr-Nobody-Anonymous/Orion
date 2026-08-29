@@ -17,7 +17,9 @@ Modules: `trading/` — `execution.py`, `risk.py`, `strategies/catalog.py`,
 | Strategy catalog | IMPLEMENTED | `strategies/catalog.py` |
 | Risk gate | IMPLEMENTED | `RiskEngine`, `RiskLimits` |
 | Asset-class specialists | IMPLEMENTED | `markets/*` specialists (equity, etf, crypto, futures, fx, commodity, fixed income, options, prediction markets) |
-| Live broker (Alpaca) | BLOCKED | `AlpacaAdapter` raises `LiveTradingDisabledError` |
+| Demo broker adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR) | IMPLEMENTED | `integrations/brokers/*` — testnet/paper endpoints by default, env-discovered |
+| Venue routing + kill switch | IMPLEMENTED | `integrations/brokers/registry.py` (`BrokerRegistry`, `KillSwitch`) |
+| Live broker execution | BLOCKED by default | requires `execution_mode="live"` AND `live_trading_enabled=True` AND per-venue `*_MODE=live`; kill switch enforced |
 
 ## Design notes
 
