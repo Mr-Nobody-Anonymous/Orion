@@ -233,8 +233,8 @@ logic.
 **How to verify the doc set is consistent**
 
 ```powershell
-# 1. Every doc that mentions a test count should say 927
-Get-ChildItem -Recurse -Filter *.md | Select-String -Pattern '\b(486|567|601|615|649|681|711|849|907)\b.*tests?'
+# 1. Every doc that mentions a test count should say 1011
+Get-ChildItem -Recurse -Filter *.md | Select-String -Pattern '\b(486|567|601|615|649|681|711|849|907|927)\b.*tests?'
 # (if any match, that doc still has a stale number)
 
 # 2. Every doc that mentions the architecture manifest should point to config/architecture.yaml
@@ -319,3 +319,88 @@ the way the safety contract says it does.
 | Plane separation | OK (no forbidden edges) |
 | Pytest (excluding 1 pre-existing end-to-end failure) | 927 passed, 4 skipped, 0 failing |
 | Pytest (full, including the pre-existing failure) | 928 passed, 4 skipped, 1 failing |
+
+---
+
+## 2026-08-29 — Peer-AI skip-on-failure evidence (P3-1b)
+
+**Test count at end: 1011 passing / 4 skipped** (the same
+pre-existing end-to-end test fails on master independently of
+this work).
+
+**What was added**
+
+A focused, deterministic **evidence** layer for the existing
+peer-AI council. No new source files, no new dependencies, no
+new infrastructure. Just 52 tests that prove, end-to-end, that
+the council's documented safety contract actually holds.
+
+| File | Purpose |
+| --- | --- |
+| `tests/intelligence/test_peer_ai_skip_on_failure.py` | 52 tests across 9 classes. No real network is touched. |
+
+**What the evidence proves**
+
+- Every exception class the cloud provider can raise
+  (`CloudProviderError`, `TimeoutError`, `ConnectionError`,
+  `OSError`, `RuntimeError`, `ValueError`, `TypeError`,
+  `KeyError`, `JSONDecodeError`) is caught and turned into a
+  `PeerFailure` — including transitive subclasses
+  (`TimeoutError`/`ConnectionError` ⊂ `OSError`,
+  `JSONDecodeError` ⊂ `ValueError`).
+- A deliberation with N peers and M failing peers returns
+  exactly `N - M` insights and `M` failures, every time.
+- The council is safe under concurrent deliberations (40
+  threads racing on the same query, no state corruption).
+- The bounded insight + failure buffers honour their caps and
+  evict FIFO.
+- The strict-JSON contract is enforced against fenced,
+  nested, missing-keys, extra-keys, and out-of-range
+  confidence peer responses.
+- `_extract_json` rejects garbage, empty strings, lone open
+  braces, and JSON arrays / null / numbers that have no `{` to
+  anchor on.
+- Provenance integrity: every insight / failure is
+  JSON-serializable, the question hash is deterministic and
+  shared between an insight and a co-deliberation failure, and
+  the configured API key is never echoed in the serialised
+  payload.
+
+**What the evidence documents, not fixes**
+
+The suite is honest about the **current** contract, not the
+ideal one. A peer that sends `"risks": "not a list"` (a string
+instead of a list) gets its `risks` field iterated as
+characters; the council accepts this rather than failing.
+Documented in `test_risks_as_string_iterates_characters` with
+a comment pointing at a future tightening. The point of
+P3-1b is to **prove the system as it is**, so a future
+session that wants to change the contract has a baseline.
+
+**What was deliberately NOT added**
+
+- No new source files. The `PeerAICouncil`, `PeerInsight`,
+  `PeerFailure`, and `_extract_json` are unchanged.
+- No new dependencies. Pure stdlib + the existing
+  `FakePeer` pattern from `test_peer_ai.py`.
+- No "imported AIs become teachers" plumbing. The council
+  remains a *consulted* peer with strict-JSON + skip-on-failure
+  + bounded buffers. The bulk request that would turn it into
+  a teacher was refused (see session memory).
+
+**Cross-walk**
+
+- The new test file maps to `TODO.md` **P3-1b** (added in this
+  session).
+- The remaining P3 items (P3-2 frozen-holdout backtest,
+  P3-3 filings + factor wire-up) are still open and remain the
+  next evidence-shaped work.
+
+**Gates after this change**
+
+| Gate | Status |
+| --- | --- |
+| Architecture validation | 71 successes, 0 warnings, 0 failures |
+| Plane separation | OK (no forbidden edges) |
+| Pytest (excluding 1 pre-existing end-to-end failure) | 1011 passed, 4 skipped, 0 failing |
+| Pytest (full, including the pre-existing failure) | 1012 passed, 4 skipped, 1 failing |

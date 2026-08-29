@@ -8,14 +8,15 @@ plug into. Items already completed in this session are marked ✅.
 **Updated 2026-08-29 (current state):** every P0/P1/P2 item in this
 TODO remains **implemented and tested**. A new P3 tier captures
 the *evidence* work that turns existing implementation into proof.
-P3-1 (paper-Alpaca evidence through the registry) is **done**;
-P3-2 (frozen-holdout backtest) and P3-3 (filings + factor
-wire-up) are still open. The module + test directories all
-exist on disk and contribute to the **927 / 931** test count
-(one pre-existing end-to-end test fails on master independently
-of any P3 work). The next bottleneck is still *evidence*: a
-reproducible out-of-sample backtest that beats the factor-neutral
-baseline on the frozen holdout.
+P3-1 (paper-Alpaca evidence) and P3-1b (peer-AI skip-on-failure
+evidence) are both **done**; P3-2 (frozen-holdout backtest) and
+P3-3 (filings + factor wire-up) are still open. The module +
+test directories all exist on disk and contribute to the
+**1011 / 1015** test count (one pre-existing end-to-end test
+fails on master independently of any P3 work). The next
+bottleneck is still *evidence*: a reproducible out-of-sample
+backtest that beats the factor-neutral baseline on the frozen
+holdout.
 
 **Summary**
 
@@ -24,9 +25,9 @@ baseline on the frozen holdout.
 | P0 (correctness & safety) | 3 | ✅ all done |
 | P1 (operations) | 6 | ✅ all done |
 | P2 (UX & governance) | 5 + P2-6 | ✅ all done (P2-6: demo ✅, live gated ⛔) |
-| P3 (evidence) | 3 | 1 done, 2 open |
+| P3 (evidence) | 3 | 2 done (P3-1, P3-1b), 1 open (P3-2) plus P3-3 |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
-| Total tests | 927 passing, 4 skipped, 1 pre-existing failure | ✅ |
+| Total tests | 1011 passing, 4 skipped, 1 pre-existing failure | ✅ |
 | ORION quality gates | 2 of 3 green (architecture + plane separation ✅, pytest blocked by pre-existing failure) | ⚠️ |
 
 For the per-phase build reports and the documentation
@@ -443,11 +444,53 @@ narrow, auditable, reversible, and produces a runnable artifact.
     - `OrionConfig.validate()` rejects every invalid
       `execution_mode` / `live_trading_enabled` combination
       mechanically.
-- Test count after this: **927 passing, 4 skipped** (one
+- Test count after P3-1: **927 passing, 4 skipped** (one
   pre-existing end-to-end test fails on master independently).
 - Plugs into: existing `BrokerRegistry` + `KillSwitch` +
   `AlpacaAdapter` + `DashboardState` + `TuiSnapshot`. No new
   source files. No new dependencies. No new infrastructure.
+
+### ✅ P3-1b Peer-AI skip-on-failure evidence
+- New: `tests/intelligence/test_peer_ai_skip_on_failure.py`
+  - **52 tests**, all passing. The suite proves the
+    `PeerAICouncil` safety contract documented in
+    `orion.intelligence.peer_ai`:
+    - *“A peer that errors, times out, or returns unparseable
+      output is recorded as a failure and skipped, never allowed
+      to break the council.”*
+  - The suite proves, without any real network call:
+    - Every exception class the cloud provider can raise
+      (`CloudProviderError`, `TimeoutError`, `ConnectionError`,
+      `OSError`, `RuntimeError`, `ValueError`, `TypeError`,
+      `KeyError`, `JSONDecodeError`) is caught and turned into a
+      `PeerFailure` — including transitive subclasses
+      (`TimeoutError`/`ConnectionError` ⊂ `OSError`,
+      `JSONDecodeError` ⊂ `ValueError`).
+    - A deliberation with N peers and M failing peers returns
+      exactly `N - M` insights and `M` failures, every time.
+    - The council is safe under concurrent deliberations (40
+      threads racing on the same query, no state corruption).
+    - The bounded insight + failure buffers honour their caps and
+      evict FIFO.
+    - The strict-JSON contract is enforced against fenced,
+      nested, missing-keys, extra-keys, and out-of-range
+      confidence peer responses.
+    - `_extract_json` rejects garbage, empty strings, lone
+      open braces, and JSON arrays / null / numbers that have no
+      `{` to anchor on.
+    - Provenance integrity: every insight / failure is
+      JSON-serializable, the question hash is deterministic and
+      shared between an insight and a co-deliberation failure,
+      and the configured API key is never echoed in the
+      serialised payload.
+- Test count after P3-1b: **1011 passing, 4 skipped** (one
+  pre-existing end-to-end test fails on master independently).
+- Plugs into: existing `PeerAICouncil`, `PeerInsight`,
+  `PeerFailure`, `_extract_json`, and the cloud-provider base.
+  No new source files. No new dependencies. No new
+  infrastructure.
+
+### 🔲 P3-2 Reproducible out-of-sample backtest on the frozen holdout
 
 ### 🔲 P3-2 Reproducible out-of-sample backtest on the frozen holdout
 - Carried over from the section above. The P0-3 ablation lab

@@ -1,0 +1,981 @@
+# SPDX-FileCopyrightText: ASSUME Developers
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+import calendar
+import inspect
+import logging
+import os
+import random
+import re
+import shutil
+import sys
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from functools import wraps
+from itertools import groupby
+from operator import itemgetter
+from pathlib import Path
+
+import dateutil.rrule as rr
+import numpy as np
+import pandas as pd
+import yaml
+from pyomo.opt import check_available_solvers
+
+from assume.common.base import BaseStrategy, LearningStrategy
+from assume.common.exceptions import AssumeException
+from assume.common.fast_pandas import FastSeries
+from assume.common.market_objects import MarketProduct, Orderbook
+
+logger = logging.getLogger(__name__)
+
+freq_map = {
+    "h": rr.HOURLY,
+    "hour": rr.HOURLY,
+    "m": rr.MINUTELY,
+    "min": rr.MINUTELY,
+    "d": rr.DAILY,
+    "day": rr.DAILY,
+    "w": rr.WEEKLY,
+    "week": rr.WEEKLY,
+}
+
+# Solver priority order for fallback selection.
+SUPPORTED_SOLVERS = ["highs", "gurobi", "glpk", "cbc", "cplex"]
+
+# Backend-specific aliases for solver names.
+PYOMO_SOLVER_ALIASES = {"highs": "appsi_highs"}
+
+
+def initializer(func):
+    """
+    Automatically assigns the parameters.
+
+    Args:
+        func (callable): The function to be initialized.
+
+    Returns:
+        callable: The wrapper function.
+
+    Examples:
+        >>> class process:
+        ...     @initializer
+        ...     def __init__(self, cmd, reachable=False, user='root'):
+        ...         pass
+        >>> p = process('halt', True)
+        >>> p.cmd, p.reachable, p.user
+        ('halt', True, 'root')
+    """
+    names, varargs, keywords, defaults, *_ = inspect.getfullargspec(func)
+
+    @wraps(func)
+    def wrapper(self, *args, **kargs):
+        for name, arg in list(zip(names[1:], args)) + list(kargs.items()):
+            setattr(self, name, arg)
+
+        for name, default in zip(reversed(names), reversed(defaults)):
+            if not hasattr(self, name):
+                setattr(self, name, default)
+
+        func(self, *args, **kargs)
+
+    return wrapper
+
+
+def get_available_products(market_products: list[MarketProduct], startdate: datetime):
+    """
+    Get all available products for a given startdate.
+
+    Args:
+        market_products (list[MarketProduct]): List of market products.
+        startdate (datetime.datetime): The startdate.
+
+    Returns:
+        list[MarketProduct]: List of available products.
+    """
+    options = []
+    for product in market_products:
+        start = startdate + product.first_delivery
+        if isinstance(product.duration, rr.rrule):
+            starts = list(product.duration.xafter(start, product.count + 1), inc=True)
+            for i in range(product.count):
+                period_start = starts[i]
+                period_end = starts[i + 1]
+                options.append((period_start, period_end, product.only_hours))
+        else:
+            for i in range(product.count):
+                period_start = start + product.duration * i
+                period_end = start + product.duration * (i + 1)
+                options.append((period_start, period_end, product.only_hours))
+    return options
+
+
+def plot_orderbook(orderbook: Orderbook, results: list[dict]):
+    """
+    Plot the merit order of bids for each node in a separate subplot.
+
+    Args:
+        orderbook (Orderbook): The orderbook.
+        results (list[dict]): The results of the clearing.
+
+    Returns:
+        tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]: The figure and axes of the plot.
+    """
+
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+
+    bids = defaultdict(list)
+    orderbook.sort(key=itemgetter("node"))
+    for node_id, orders in groupby(orderbook, itemgetter("node")):
+        bids[node_id].extend(list(map(itemgetter("price", "volume"), orders)))
+    number_of_nodes = len(bids.keys()) or 1
+
+    fig, ax = plt.subplots(1, number_of_nodes, sharey=True)
+    if number_of_nodes == 1:
+        ax = [ax]
+
+    # split the bids into buy and sell bids for each node separately
+    for i in range(number_of_nodes):
+        # split the bids into buy and sell bids in lists of tuples
+        supply_bids = [(price, quantity) for price, quantity in bids[i] if quantity > 0]
+        demand_bids = [
+            (price, -quantity) for price, quantity in bids[i] if quantity < 0
+        ]
+
+        # sort the bids by price
+        supply_bids.sort(key=lambda x: x[0])
+        demand_bids.sort(key=lambda x: x[0], reverse=True)
+
+        # find the cumulative sum of the quantity of the bids
+        cum_supply_bids = 0
+        # find the cumulative sum of the quantity of the bids
+        cum_demand_bids = 0
+
+        # iterate through supply bids and plot them
+        for n, bid in enumerate(supply_bids):
+            price, quantity = bid
+            ax[i].plot(
+                [cum_supply_bids, cum_supply_bids + quantity], [price, price], "b-"
+            )
+            cum_supply_bids += quantity
+            if n < len(supply_bids) - 1:
+                ax[i].plot(
+                    [cum_supply_bids, cum_supply_bids],
+                    [price, supply_bids[n + 1][0]],
+                    "b-",
+                )
+        # iterate through demand bids and plot them
+        for n, bid in enumerate(demand_bids):
+            price, quantity = bid
+            ax[i].plot(
+                [cum_demand_bids, cum_demand_bids + quantity], [price, price], "r-"
+            )
+            cum_demand_bids += quantity
+            if n < len(demand_bids) - 1:
+                ax[i].plot(
+                    [cum_demand_bids, cum_demand_bids],
+                    [price, demand_bids[n + 1][0]],
+                    "r-",
+                )
+        # plot the market clearing price and quantity
+        if len(results) == i:
+            price = 0
+            contracted_supply = 0
+            contracted_demand = 0
+        else:
+            price = results[i]["price"]
+            contracted_supply = results[i]["supply_volume"]
+            contracted_demand = results[i]["demand_volume"]
+        inflow = contracted_supply - contracted_demand
+        ax[i].plot([contracted_supply, contracted_supply], [0, price], "k--")
+        ax[i].plot([0, contracted_supply], [price, price], "k--")
+        ax[i].plot(contracted_supply, price, "ko")
+
+        # add text under the plot to show the market clearing price and quantity
+        ax[i].text(0.05, -0.3, "Results:", transform=ax[i].transAxes)
+        ax[i].text(0.05, -0.375, f"Price: {price:.1f}", transform=ax[i].transAxes)
+        ax[i].text(
+            0.05,
+            -0.45,
+            f"Accepted supply: {contracted_supply:.1f}",
+            transform=ax[i].transAxes,
+        )
+        ax[i].text(
+            0.05,
+            -0.525,
+            f"Accepted demand: {contracted_demand:.1f}",
+            transform=ax[i].transAxes,
+        )
+        ax[i].text(0.05, -0.6, f"Total Export: {inflow:.1f}", transform=ax[i].transAxes)
+        ax[i].set_title(f"Node {str(i)}")
+        ax[i].set_xlabel("Quantity")
+        ax[i].set_ylabel("Price")
+
+        # plot legend outside the plot and only for last subplot
+        if i == number_of_nodes - 1:
+            ax[i].legend(
+                handles=[
+                    Line2D([0], [0], linewidth=1, color="b", label="Supply"),
+                    Line2D([0], [0], linewidth=1, color="r", label="Demand"),
+                ],
+                bbox_to_anchor=(1.05, 1),
+                loc="upper left",
+                borderaxespad=0.0,
+            )
+
+        # set x limits to 0 and max of supply or demand
+        ax[i].set_xlim(0, max(cum_supply_bids, cum_demand_bids))
+        ax[i].set_ylim(bottom=0)
+    plt.subplots_adjust(wspace=0.3)
+
+    return fig, ax
+
+
+def visualize_orderbook(order_book: Orderbook):
+    """
+    Visualize the orderbook.
+
+    Args:
+        order_book (Orderbook): The orderbook.
+    """
+
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+
+    tab20_cmap = plt.get_cmap("tab20c")
+    max_block_count = max([o.get("block_id", 1) for o in order_book])
+
+    order_book.sort(key=itemgetter("block_id", "link"))
+    start_times = sorted(set(o["start_time"] for o in order_book))
+    y_past = pd.Series(0.0, index=start_times)
+    for i, bids_grouped in groupby(order_book, itemgetter("block_id")):
+        my_cmap_raw = np.array(tab20_cmap.colors) * i / max_block_count
+        my_cmap = ListedColormap(my_cmap_raw)
+
+        for j, o in groupby(bids_grouped, itemgetter("link")):
+            s = pd.Series(0.0, index=start_times)
+            o = list(o)
+            for order in o:
+                s[order["start_time"]] += order["volume"]
+            if (s > 0).any():
+                plt.bar(
+                    s.index, s.values, bottom=y_past, color=my_cmap.colors[(j + 1) % 20]
+                )
+                y_past += s
+    plt.title("Orderbook")
+    plt.xlabel("hour")
+    plt.xticks(rotation=80)
+    plt.ylabel("MW")
+    plt.show()
+
+
+def aggregate_step_amount(orderbook: Orderbook, begin=None, end=None, groupby=None):
+    """
+    Step function with bought volume, allows setting timeframe through begin and end, and group by columns in groupby.
+
+    Args:
+        orderbook (Orderbook): The orderbook.
+        begin (datetime, optional): The begin time. Defaults to None.
+        end (datetime, optional): The end time. Defaults to None.
+        groupby (list[str], optional): The columns to group by. Defaults to None.
+
+    Returns:
+        list[tuple[datetime, float, str, str]]: The aggregated orderbook timeseries.
+
+    Examples:
+        If called without groupby, this returns the aggregated orderbook timeseries
+    """
+
+    if groupby is None:
+        groupby = []
+    deltas = []
+
+    # first we are creating a list of tuples with the following form:
+    # start, delta_volume, bid_id, market_id
+    for bid in orderbook:
+        add = ()
+        for field in groupby:
+            add += (bid[field],)
+        if bid["only_hours"] is None and not isinstance(bid["accepted_volume"], dict):
+            deltas.append((bid["start_time"], bid["accepted_volume"]) + add)
+            deltas.append((bid["end_time"], -bid["accepted_volume"]) + add)
+        elif isinstance(bid["accepted_volume"], dict):
+            start_hour = bid["start_time"]
+            end_hour = bid["end_time"]
+            duration = (end_hour - start_hour) / len(bid["accepted_volume"])
+            for key in bid["accepted_volume"].keys():
+                deltas.append((key, bid["accepted_volume"][key]) + add)
+                deltas.append((key + duration, -bid["accepted_volume"][key]) + add)
+        else:
+            # only_hours allows to have peak or off-peak bids
+            start_hour, end_hour = bid["only_hours"]
+            duration_hours = end_hour - start_hour
+            if duration_hours <= 0:
+                duration_hours += 24
+
+            starts = rr.rrule(
+                rr.DAILY,
+                dtstart=bid["start_time"],
+                byhour=start_hour,
+                until=bid["end_time"],
+            )
+            for date in starts:
+                start = date
+                end = date + timedelta(hours=duration_hours)
+                deltas.append((start, bid["volume"]) + add)
+                deltas.append((end, -bid["volume"]) + add)
+    aggregation = defaultdict(list)
+    # current_power is separated by group
+    current_power = defaultdict(lambda: 0)
+    for d_tuple in sorted(deltas, key=lambda i: i[0]):
+        time, delta, *groupdata = d_tuple
+        groupdata_str = "_".join(groupdata)
+        current_power[groupdata_str] += delta
+        # we don't know what the power will be at "end" yet
+        # as a new order with this start point might be added
+        # afterwards - so the end is excluded here
+        # this also makes sure that each timestamp is only written
+        # once when iteratively calling this function
+        if (not begin or time >= begin) and (not end or time < end):
+            if aggregation[groupdata_str] and aggregation[groupdata_str][-1][0] == time:
+                aggregation[groupdata_str][-1][1] = current_power[groupdata_str]
+            else:
+                d_list = list(d_tuple)
+                d_list[1] = current_power[groupdata_str]
+                aggregation[groupdata_str].append(d_list)
+
+    return [j for sub in list(aggregation.values()) for j in sub]
+
+
+def separate_orders(orderbook: Orderbook):
+    """
+    Separate orders with several hours into single hour orders.
+
+    Args:
+        orderbook (Orderbook): The orderbook.
+
+    Returns:
+        list: The updated orderbook.
+
+    Note:
+        This function separates orders with several hours into single hour orders and modifies the orderbook in place.
+    """
+
+    # separate orders with several hours into single hour orders
+    delete_orders = []
+    for order in orderbook:
+        if any([isinstance(value, dict) for value in order.values()]):
+            start_hour = order["start_time"]
+            end_hour = order["end_time"]
+            order_len = max(
+                len(value) for value in order.values() if isinstance(value, dict)
+            )
+            duration = (end_hour - start_hour) / order_len
+
+            for start in pd.date_range(start_hour, end_hour - duration, freq=duration):
+                single_order = order.copy()
+                for key in order.keys():
+                    if isinstance(order[key], dict):
+                        single_order.update({key: order[key][start]})
+                if single_order != order:
+                    single_order.update(
+                        {
+                            "start_time": start,
+                            "end_time": start + duration,
+                        }
+                    )
+
+                orderbook.append(single_order)
+
+            delete_orders.append(order)
+
+    for order in delete_orders:
+        orderbook.remove(order)
+
+    return orderbook
+
+
+def get_products_index(orderbook: Orderbook) -> pd.DatetimeIndex:
+    """
+    Creates an index containing all start times of orders in orderbook and all between.
+
+    Args:
+        orderbook (Orderbook): The orderbook.
+
+    Returns:
+        pd.DatetimeIndex: The index containing all start times of orders in orderbook and all between.
+    """
+    if orderbook == []:
+        return []
+
+    # get the minimum and maximum "start_time" for all orders in orderbook
+    start_time = orderbook[0]["start_time"]
+    end_time = orderbook[0]["start_time"]
+    duration = orderbook[0]["end_time"] - orderbook[0]["start_time"]
+
+    for order in orderbook:
+        if order["start_time"] < start_time:
+            start_time = order["start_time"]
+        if order["end_time"] > end_time:
+            end_time = order["end_time"]
+        if order["end_time"] - order["start_time"] < duration:
+            duration = order["end_time"] - order["start_time"]
+
+    index_products = pd.date_range(
+        start_time,
+        end_time - duration,
+        freq=duration,
+    )
+
+    return index_products
+
+
+def timestamp2datetime(timestamp: float):
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).replace(tzinfo=None)
+
+
+def datetime2timestamp(datetime: datetime):
+    return calendar.timegm(datetime.utctimetuple())
+
+
+def create_rrule(start, end, freq):
+    freq, interval = convert_to_rrule_freq(freq)
+
+    recurrency_rule = rr.rrule(
+        freq=freq,
+        interval=interval,
+        dtstart=start,
+        until=end,
+        cache=True,
+    )
+
+    return recurrency_rule
+
+
+def convert_to_rrule_freq(string: str) -> tuple[int, int]:
+    """
+    Convert a string to a rrule frequency and interval.
+
+    Args:
+        string (str): The string to be converted. Should be in the format of "1h" or "1d" or "1w".
+
+    Returns:
+        tuple[int, int]: The rrule frequency and interval.
+    """
+
+    # try to identify the frequency and raise an error if it is not found
+    try:
+        freq = freq_map["".join(re.findall(r"\D", string))]
+    except KeyError:
+        raise ValueError(
+            f"Frequency '{string}' not supported. Supported frequencies are {list(freq_map.keys())}"
+        )
+
+    interval = int("".join(re.findall(r"\d", string)))
+
+    return freq, interval
+
+
+def adjust_unit_operator_for_learning(
+    bidding_strategies: dict[str, str],
+    world_bidding_strategies: dict[str, BaseStrategy],
+    unit_operator_id: str,
+):
+    """
+    Check if any of the bidding strategies are learning strategies.
+    And change the unit operator to RL if learning strategies are found.
+
+    Args:
+        bidding_strategies (dict[str, str]): The bidding strategies for the unit.
+        world_bidding_strategies (dict[str, BaseStrategy]): The bidding strategies of the World
+        unit_operator_id (str): The identifier of the unit operator.
+
+    Returns:
+        str: The corrected unit operator identifier.
+
+    """
+    if unit_operator_id == "Operator-RL":
+        return unit_operator_id
+    for strategy in bidding_strategies.values():
+        if issubclass(world_bidding_strategies[strategy], LearningStrategy):
+            unit_operator_id = "Operator-RL"
+            logger.debug(
+                "Your chosen unit operator %s for the learning unit %s was overwritten with 'Operator-RL', "
+                "since all learning units need to be handled by one unit operator.",
+                unit_operator_id,
+                id,
+            )
+
+    return unit_operator_id
+
+
+def create_incidence_matrix(lines, buses, zones_id=None):
+    # Determine nodes based on whether we're working with zones or individual buses
+    if zones_id:
+        nodes = buses[zones_id].unique()  # Use zones as nodes
+        node_mapping = buses[zones_id].to_dict()  # Map bus IDs to zones
+    else:
+        nodes = buses.index.values  # Use buses as nodes
+        node_mapping = {bus: bus for bus in nodes}  # Identity mapping for buses
+
+    # Use the line indices as columns for the incidence matrix
+    line_indices = lines.index.values
+
+    # Initialize incidence matrix as a DataFrame for easier label-based indexing
+    incidence_matrix = pd.DataFrame(0, index=nodes, columns=line_indices)
+
+    # Fill in the incidence matrix by iterating over lines
+    for line_idx, line in lines.iterrows():
+        bus0 = line["bus0"]
+        bus1 = line["bus1"]
+
+        # Retrieve mapped nodes (zones or buses)
+        node0 = node_mapping.get(bus0)
+        node1 = node_mapping.get(bus1)
+
+        # Ensure both nodes are valid and part of the defined nodes
+        if (
+            node0 is not None
+            and node1 is not None
+            and node0 in nodes
+            and node1 in nodes
+        ):
+            if node0 != node1:  # Only create incidence for different nodes
+                # Create a directed incidence matrix (definition according to Wikipedia https://en.wikipedia.org/wiki/Incidence_matrix)
+                incidence_matrix.at[node0, line_idx] = -1  # leaving node
+                incidence_matrix.at[node1, line_idx] = 1  # entering node
+
+    # Return the incidence matrix as a Data
+    return incidence_matrix
+
+
+def normalize_availability(powerplants_df, availability_df):
+    # Create a copy of the availability dataframe to avoid modifying the original
+    normalized_df = availability_df.copy()
+
+    # Iterate through each column in the availability dataframe
+    for column in normalized_df.columns:
+        # Check if any value in the column is greater than 1
+        if (normalized_df[column] > 1).any():
+            try:
+                # Get the max_power for the current unit from the powerplants dataframe
+                max_power = powerplants_df.loc[column, "max_power"]
+
+                # Normalize the entire column
+                normalized_df[column] = normalized_df[column] / max_power
+
+                # Ensure all values are between 0 and 1
+                normalized_df[column] = normalized_df[column].clip(0, 1)
+            except KeyError:
+                logger.warning(
+                    f"Unit '{column}' not found in powerplants dataframe. Skipping normalization for this unit."
+                )
+
+    return normalized_df
+
+
+def rename_study_case(path: str, old_key: str, new_key: str):
+    """
+    Rename key in config file and save changes.
+
+    This function makes changes to the config file.
+    Background is so that study cases can be simulated multiple times under different names with the same configuration.
+
+    Args:
+        path (str): The path to the config file.
+        old_key (str): The original name of the key without adjustments. E.g. study_case from available_examples: "base".
+        new_key (str): The name of the key with adjustments. E.g. added run number: "base_run_1".
+    """
+    # Read the YAML file
+    with open(path) as file:
+        data = yaml.safe_load(file)
+
+    # store modifications to the config file
+    data[new_key] = data.pop(old_key)
+
+    # Write the modified data back to the file
+    with open(path, "w") as file:
+        yaml.safe_dump(data, file, sort_keys=False)
+
+
+def convert_tensors(data):
+    """
+    Recursively checks if the data contains PyTorch tensors and converts them to
+    native Python types (floats, ints, lists).
+
+    Supports:
+    - pandas.Series (vectorized for efficiency)
+    - Lists of dictionaries (including nested structures)
+    - Any nested list/dict structure
+
+    Args:
+        data (pandas.Series, list, dict, or other Python data types)
+
+    Returns:
+        The data with all tensors converted to Python-native types.
+    """
+    try:
+        import torch as th
+
+        def convert_tensor_batch(tensors):
+            # stack all tensors and push them over to CPU together to avoid unperformed multiple GPU-CPU transfers
+            batch = th.stack(tensors, dim=0).cpu()
+            return batch.tolist()
+
+        def collect_tensors_with_paths(data, path=None, collected=None):
+            """
+            Recursively collect all torch.Tensors from nested data structures,
+            storing both the tensor and its location path.
+            Returns a copy of the structure with placeholders for tensors.
+            """
+            if collected is None:
+                collected = []
+            if path is None:
+                path = []
+
+            if isinstance(data, pd.Series):
+                new_series = pd.Series(index=data.index, name=data.name, dtype=object)
+                for idx, x in data.items():
+                    new_val, collected = collect_tensors_with_paths(
+                        x, path + [idx], collected
+                    )
+                    new_series[idx] = new_val
+                return new_series, collected
+
+            elif isinstance(data, dict):
+                new_dict = {}
+                for k, v in data.items():
+                    new_dict[k], collected = collect_tensors_with_paths(
+                        v, path + [k], collected
+                    )
+                return new_dict, collected
+
+            elif isinstance(data, list):
+                new_list = []
+                for i, item in enumerate(data):
+                    new_item, collected = collect_tensors_with_paths(
+                        item, path + [i], collected
+                    )
+                    new_list.append(new_item)
+                return new_list, collected
+
+            elif isinstance(data, th.Tensor):
+                # Store the path and tensor
+                collected.append((path, data))
+                # Return a placeholder (will be replaced later)
+                return None, collected
+
+            else:
+                # Non-tensor data, return as-is
+                return data, collected
+
+        def reconstruct_data(structure, tensor_paths, new_values):
+            """
+            Inserts the converted tensors (new_values) back into the structure
+            at the positions described by tensor_paths.
+            """
+            for path, val in zip(tensor_paths, new_values):
+                if not path:  # Empty path means the root is a tensor
+                    return val
+
+                target = structure
+                # Navigate to the parent of the target location
+                for p in path[:-1]:
+                    target = target[p]
+
+                # Set the final value
+                final_key = path[-1]
+                if isinstance(target, (list | pd.Series | dict)):
+                    target[final_key] = val
+
+            return structure
+
+        # Handle the case where data itself is a tensor
+        if isinstance(data, th.Tensor):
+            return data.cpu().tolist()
+
+        # 1. Collect tensors with their paths
+        structure, tensor_info = collect_tensors_with_paths(data)
+
+        if not tensor_info:
+            # No tensors found, return original data
+            return data
+
+        tensor_paths, tensors = zip(*tensor_info)
+
+        # 2. Process batch from GPU to CPU and convert to list
+        converted = convert_tensor_batch(list(tensors))
+
+        # 3. Reconstruct initial data structure
+        final_data = reconstruct_data(structure, tensor_paths, converted)
+
+        return final_data
+
+    except ImportError:
+        # If torch is not installed, return the data unchanged
+        return data
+
+
+# Function to parse the duration string
+def parse_duration(duration_str):
+    if duration_str.endswith("d"):
+        days = float(duration_str[:-1])
+        return timedelta(days=days)
+    elif duration_str.endswith("h"):
+        hours = float(duration_str[:-1])
+        return timedelta(hours=hours)
+    elif duration_str.endswith("m"):
+        minutes = float(duration_str[:-1])
+        return timedelta(minutes=minutes)
+    elif duration_str.endswith("s"):
+        seconds = float(duration_str[:-1])
+        return timedelta(seconds=seconds)
+    else:
+        raise ValueError(f"Unsupported duration format: {duration_str}")
+
+
+def calculate_content_size(content: list | dict) -> int:
+    """
+    Calculate the size of a content in bytes.
+    """
+    if isinstance(content, dict):  # For dictionaries
+        return sys.getsizeof(content) + sum(
+            sys.getsizeof(value) for value in content.values()
+        )
+    elif isinstance(content, list):  # For lists, including lists of dicts
+        return sys.getsizeof(content) + sum(
+            calculate_content_size(item) for item in content
+        )
+    return sys.getsizeof(content)
+
+
+def min_max_scale(
+    val: np.ndarray | float,  # or th.Tensor
+    in_min: float,
+    in_max: float,
+    out_min: float = 0.0,
+    out_max: float = 1.0,
+) -> np.ndarray | float:  # or th.Tensor
+    """
+    Linearly scale value from [in_min, in_max] to [out_min, out_max] (default: [0.0, 1.0]).
+
+    Args:
+        val: value(s) to scale
+        in_min: minimum value of the input range
+        in_max: maximum value of the input range
+        out_min: minimum value of the output range
+        out_max: maximum value of the output range
+    """
+    # Catch values outside the input range
+    if np.any(val < in_min) or np.any(val > in_max):
+        raise ValueError(
+            f"Value {val} is outside the input range [{in_min}, {in_max}]."
+        )
+    out_mean = (out_min + out_max) / 2
+    # Avoid division by zero
+    if in_min == in_max:
+        if isinstance(val, FastSeries):
+            return val.ones_like() * out_mean
+        else:
+            return np.ones_like(val) * out_mean
+    else:
+        return out_min + (val - in_min) / (in_max - in_min) * (out_max - out_min)
+
+
+def str_to_bool(val):
+    """Convert a string representation of truth to True or False.
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1';
+    false values are 'n', 'no', 'f', 'false', 'off', and '0'.
+    Raises ValueError if 'val' is anything else.
+    """
+    val = val.lower()
+    if val in {"y", "yes", "t", "true", "on", "1"}:
+        return True
+    elif val in {"n", "no", "f", "false", "off", "0"}:
+        return False
+    else:
+        raise ValueError(f"Invalid truth value: {val!r}")
+
+
+def get_supported_solver_pyomo(default_solver: str | None = None):
+    """
+    Get an available solver for Pyomo optimization.
+
+    Filters the list of supported solvers to find which ones are installed,
+    then returns the default solver if available, otherwise falls back to the first available solver.
+    Note: 'highs' is automatically converted to 'appsi_highs' for Pyomo compatibility.
+
+    Args:
+        default_solver (str | None, optional): Preferred solver name. If not available,
+            falls back to the first available solver. Defaults to None.
+
+    Returns:
+        str: Name of the selected solver.
+
+    Raises:
+        RuntimeError: If none of the supported solvers (appsi_highs, gurobi, glpk, cbc, cplex) are available.
+
+    Warning:
+        Logs a warning if the default_solver is not available and a fallback is used.
+    """
+
+    pyomo_solvers = [
+        PYOMO_SOLVER_ALIASES.get(solver, solver) for solver in SUPPORTED_SOLVERS
+    ]
+
+    # Check if the solver is available
+    solvers = check_available_solvers(*pyomo_solvers)
+    if not solvers:
+        raise RuntimeError(f"None of {pyomo_solvers} are available")
+
+    default_solver = PYOMO_SOLVER_ALIASES.get(default_solver, default_solver)
+
+    solver = default_solver or solvers[0]
+
+    if solver not in solvers:
+        logger.warning("Solver %s not available, using %s", solver, solvers[0])
+        solver = solvers[0]
+
+    return solver
+
+
+def interactive_input(prompt: str, default: str = "") -> str:
+    if os.getenv("NON_INTERACTIVE"):
+        return default
+    else:
+        return input(prompt)
+
+
+def confirm_learning_save_path(save_path: str, continue_learning: bool) -> None:
+    """
+    Check save_path and ask user how to proceed if it exists.
+    Raises AssumeException if user declines to proceed.
+    """
+    if not Path(save_path).is_dir():
+        return
+
+    if continue_learning:
+        logger.warning(
+            f"Save path '{save_path}' exists.\n"
+            "You are in continue learning mode. New strategies may overwrite previous ones.\n"
+            "It is recommended to use a different save path to avoid unintended overwrites.\n"
+            "You can set 'trained_policies_save_path' in the config."
+        )
+        proceed = interactive_input(
+            "Do you still want to proceed with the existing save path? (y/N) ",
+            default="y",
+        )
+        if not proceed.lower().startswith("y"):
+            raise AssumeException(
+                "Simulation aborted by user to avoid overwriting previous learned strategies. "
+                "Consider setting a new 'simulation_id' or 'trained_policies_save_path' in the config."
+            )
+    else:
+        logger.warning(
+            f"Save path '{save_path}' exists. Previous training data will be deleted to start fresh."
+        )
+        accept = interactive_input(
+            "Do you want to overwrite and start fresh? (y/N) ", default="y"
+        )
+
+        if accept.lower().startswith("y"):
+            shutil.rmtree(save_path, ignore_errors=True)
+            logger.info(
+                f"Previous strategies at '{save_path}' deleted. Starting fresh training."
+            )
+        else:
+            raise AssumeException(
+                "Simulation aborted by user not to overwrite existing learned strategies. "
+                "You can set a different 'simulation_id' or 'trained_policies_save_path' in the config."
+            )
+
+
+def set_random_seed(
+    seed: int | None,
+    torch_deterministic: bool = True,
+    learning_mode: bool = False,
+):
+    """
+    Args:
+        seed (int | None): Integer seed for random number generators or None to disable seeding.
+        torch_deterministic (bool): If True, enforces PyTorch deterministic algorithms. May reduce performance. Default is True.
+        learning_mode (bool): If True, PyTorch seeding is enabled. Default is False and PyTorch seeding is skipped.
+
+    Notes:
+         - Completely reproducible results are not guaranteed across different PyTorch versions, hardware, or CUDA configurations.
+         - See https://docs.pytorch.org/docs/stable/notes/randomness.html
+    """
+    if seed is None:
+        return
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if not learning_mode:
+        return
+
+    try:
+        import torch as th
+
+        th.manual_seed(seed)
+
+        if torch_deterministic:
+            if "CUBLAS_WORKSPACE_CONFIG" not in os.environ:
+                os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
+            th.backends.cudnn.deterministic = True
+            th.backends.cudnn.benchmark = False
+
+            th.use_deterministic_algorithms(True)
+
+            logger.warning(
+                "PyTorch set to use deterministic algorithms. This may impact performance but ensures reproducibility. For better performance, consider setting 'deterministic' to False when set_random_seed() is called."
+            )
+    except ImportError:
+        pass
+
+
+def load_index_file(file_name: Path, index: pd.DatetimeIndex):
+    if not file_name.is_file():
+        return None
+    df = pd.read_csv(
+        file_name,
+        index_col=0,
+        encoding="utf-8",
+        na_values=["n.a.", "None", "-", "none", "nan"],
+        parse_dates=True,
+    )
+
+    if len(df.index) == 1:
+        return df
+
+    if len(df.index) != len(index) and not isinstance(df.index, pd.DatetimeIndex):
+        logger.warning(
+            f"{file_name}: simulation time line does not match length of dataframe and index is not a datetimeindex. Returning None."
+        )
+        return None
+
+    df.index.freq = df.index.inferred_freq
+
+    if len(df.index) < len(index) and df.index.freq == index.freq:
+        logger.warning(
+            f"{file_name}: simulation time line is longer than length of the dataframe. Returning None."
+        )
+        return None
+
+    if df.index.freq < index.freq:
+        logger.warning(
+            f"Resolution of {file_name} ({df.index.freq}) is higher than the simulation ({index.freq}). "
+            "Resampling using mean(). Make sure this is what you want."
+        )
+        df = df.resample(index.freq).mean()
+        logger.info(f"Downsampling {file_name} successful.")
+
+    elif df.index.freq > index.freq or len(df.index) < len(index):
+        logger.warning("Upsampling not implemented yet. Returning None.")
+        return None
+
+    return df.loc[index]

@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: ASSUME Developers
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+from datetime import datetime
+
+import numpy as np
+
+from assume.common.base import SupportsMinMax
+from assume.common.exceptions import ValidationError
+from assume.common.fast_pandas import FastSeries
+from assume.common.forecaster import DemandForecaster
+
+
+class Demand(SupportsMinMax):
+    """
+    A demand unit.
+
+    Attributes:
+        id (str): The unique identifier of the unit.
+        unit_operator (str): The operator of the unit.
+        technology (str): The technology of the unit.
+        bidding_strategies (dict): The bidding strategies of the unit.
+        index (pandas.DatetimeIndex): The index of the unit.
+        max_power (float): The maximum power input (negative) capacity of the power plant in MW.
+        min_power (float, optional): The minimum power input (negative) capacity of the power plant in MW. Defaults to 0.0 MW.
+        node (str, optional): The node of the unit. Defaults to "node0".
+        price (float): The bidding price of the unit.
+        location (tuple[float, float]): Geographical location.
+        elasticity, elasticity_model, max_price, num_bids: Optional parameters for elastic demand modeling.
+    """
+
+    def __init__(
+        self,
+        id: str,
+        unit_operator: str,
+        technology: str,
+        bidding_strategies: dict,
+        max_power: float,
+        min_power: float,
+        forecaster: DemandForecaster,
+        node: str = "node0",
+        price: float = 3000.0,
+        location: tuple[float, float] = (0.0, 0.0),
+        **kwargs,
+    ):
+        super().__init__(
+            id=id,
+            unit_operator=unit_operator,
+            technology=technology,
+            bidding_strategies=bidding_strategies,
+            forecaster=forecaster,
+            node=node,
+            location=location,
+            **kwargs,
+        )
+
+        if not isinstance(forecaster, DemandForecaster):
+            raise ValueError(f"forecaster must be of type {DemandForecaster.__name__}")
+
+        if max_power > 0:
+            raise ValidationError(
+                message=f"max_power must be < 0 but is {max_power} for unit {self.id}",
+                id=self.id,
+                field="max_power",
+            )
+        if min_power > 0:
+            raise ValidationError(
+                f"min_power must be < 0 but is {min_power} for unit {self.id}",
+                id=self.id,
+                field="min_power",
+            )
+        if max_power > min_power:
+            raise ValidationError(
+                message=f"{max_power=} must be <= {min_power=} for unit {self.id}",
+                id=self.id,
+                field="max_power",
+            )
+
+        self.max_power = max_power
+        self.min_power = min_power
+
+        self.price = FastSeries(index=self.index, value=price)
+
+        # Elastic demand parameters
+        self.max_price = price
+        self.elasticity = kwargs.get("elasticity", 0)
+        self.elasticity_model = kwargs.get("elasticity_model", 0)
+        self.num_bids = int(kwargs.get("num_bids", 0))
+
+        # Validate elastic configuration if elasticity_model is provided
+        if self.elasticity_model != 0:
+            if self.elasticity_model not in ("linear", "isoelastic"):
+                raise ValueError(
+                    f"Invalid elasticity_model '{self.elasticity_model}' at unit {self.id}. Choose 'linear' or 'isoelastic'."
+                )
+            if self.num_bids is not None and self.num_bids <= 1:
+                raise ValueError(
+                    f"'num_bids' parameter must be >= 1 for elastic demand at unit {self.id}"
+                )
+            if self.elasticity_model == "isoelastic":
+                if self.elasticity >= 0.0:
+                    raise ValueError(
+                        f"'elasticity' parameter must be given and negative for isoelastic demand at unit {self.id}."
+                    )
+            if self.elasticity_model == "linear":
+                if (
+                    -(self.max_price / max(abs(self.min_power), abs(self.max_power)))
+                    >= 0.0
+                ):
+                    raise ValueError(
+                        f"Invalid slope of demand curve at unit {self.id}. Slope must be negative for linear demand. Set 'max_price' positive."
+                    )
+
+    def execute_current_dispatch(
+        self,
+        start: datetime,
+        end: datetime,
+    ) -> np.ndarray:
+        """
+        Execute the current dispatch of the unit.
+        Returns the volume of the unit within the given time range.
+
+        Args:
+            start (datetime.datetime): The start time of the dispatch.
+            end (datetime.datetime): The end time of the dispatch.
+
+        Returns:
+            np.ndarray: The volume of the unit for the given time range.
+        """
+
+        return self.outputs["energy"].loc[start:end]
+
+    def calculate_min_max_power(
+        self, start: datetime, end: datetime, product_type="energy"
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Calculates the minimum and maximum power output of the unit and returns the bid volume as both the minimum and maximum power output of the unit.
+
+        Args:
+            start (pandas.Timestamp): The start time of the dispatch.
+            end (pandas.Timestamp): The end time of the dispatch (exclusive).
+            product_type (str, optional): The product type. Defaults to "energy".
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: The bid volume as both the minimum and maximum power output of the unit.
+        """
+
+        # end includes the end of the last product, to get the last products' start time we deduct the frequency once
+        end_excl = end - self.index.freq
+        bid_volume = (
+            self.forecaster.demand.loc[start:end_excl]
+            - self.outputs[product_type].loc[start:end_excl]
+        )
+
+        return bid_volume, bid_volume
+
+    def calculate_marginal_cost(self, start: datetime, power: float) -> float:
+        """
+        Calculate the marginal cost of the unit returns the marginal cost of the unit based on the provided time and power.
+
+        Args:
+            start (pandas.Timestamp): The start time of the dispatch.
+            power (float): The power output of the unit.
+
+        Returns:
+            float: the marginal cost of the unit for the given power.
+        """
+        return self.price.at[start]
+
+    def as_dict(self) -> dict:
+        """
+        Returns the unit as a dictionary.
+
+        Returns:
+            dict: The unit as a dictionary.
+        """
+        unit_dict = super().as_dict()
+        unit_dict.update(
+            {
+                "max_power": self.max_power,
+                "min_power": self.min_power,
+                "unit_type": "demand",
+            }
+        )
+
+        return unit_dict

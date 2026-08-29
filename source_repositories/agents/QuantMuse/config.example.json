@@ -1,0 +1,124 @@
+{
+  "database": {
+    "type": "sqlite",
+    "path": "data/trading_system.db",
+    "postgresql": {
+      "host": "localhost",
+      "port": 5432,
+      "database": "trading_system",
+      "username": "your_username",
+      "password": "your_password"
+    }
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "",
+    "db": 0
+  },
+  "api_keys": {
+    "binance": {
+      "api_key": "your_binance_api_key",
+      "secret_key": "your_binance_secret_key",
+      "testnet": false
+    },
+    "openai": {
+      "api_key": "your_openai_api_key",
+      "model": "gpt-4",
+      "max_tokens": 1000
+    },
+    "alpha_vantage": {
+      "api_key": "your_alpha_vantage_api_key"
+    },
+    "yahoo": {
+      "api_key": "your_yahoo_api_key"
+    }
+  },
+  "trading": {
+    "default_commission": 0.001,
+    "default_slippage": 0.0005,
+    "max_position_size": 0.1,
+    "max_leverage": 2.0,
+    "max_drawdown": 0.2,
+    "daily_loss_limit": 0.05
+  },
+  "risk_management": {
+    "var_confidence": 0.95,
+    "max_concentration": 0.3,
+    "min_liquidity": 1000000,
+    "max_volatility": 0.5
+  },
+  "data": {
+    "default_lookback_days": 252,
+    "update_frequency": 60,
+    "cache_duration": 3600,
+    "max_data_points": 10000
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/trading_system.log",
+    "max_size": "10MB",
+    "backup_count": 5
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "debug": false,
+    "cors_origins": ["http://localhost:3000"]
+  },
+  "dashboard": {
+    "port": 8501,
+    "theme": "light",
+    "auto_refresh": true,
+    "refresh_interval": 30
+  },
+  "notifications": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "your_email@gmail.com",
+      "password": "your_app_password"
+    },
+    "slack": {
+      "enabled": false,
+      "webhook_url": "your_slack_webhook_url"
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "your_telegram_bot_token",
+      "chat_id": "your_chat_id"
+    }
+  },
+  "backtesting": {
+    "default_initial_capital": 100000,
+    "default_commission": 0.001,
+    "default_slippage": 0.0005,
+    "benchmark": "SPY"
+  },
+  "strategies": {
+    "momentum": {
+      "lookback_period": 20,
+      "momentum_threshold": 0.05,
+      "max_positions": 20
+    },
+    "value": {
+      "pe_ratio_max": 25,
+      "pb_ratio_max": 3,
+      "roe_min": 0.15
+    },
+    "mean_reversion": {
+      "lookback_period": 20,
+      "std_dev_threshold": 2.0,
+      "reversion_threshold": 0.02
+    }
+  },
+  "ai": {
+    "llm_provider": "openai",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    "enable_sentiment_analysis": true,
+    "enable_strategy_recommendation": true
+  }
+} 
