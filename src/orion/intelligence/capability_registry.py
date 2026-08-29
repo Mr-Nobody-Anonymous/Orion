@@ -778,7 +778,7 @@ def default_registry() -> CapabilityRegistry:
             kind=CapabilityKind.NLP,
             plane=Plane.INTELLIGENCE,
             integration=IntegrationMode.OPTIONAL,
-            source="source_repositories/intelligence/FinGPT",
+            source="source_repositories/llm/FinGPT",
             description=(
                 "FinGPT financial-domain LoRA-tuned LLM for sentiment and "
                 "news NLG. OPTIONAL — heavy GPU dependency; ORION does not "
@@ -788,7 +788,7 @@ def default_registry() -> CapabilityRegistry:
             outputs=(Field("sentiment", "Mapping[str, float]"),),
             permissions=frozenset({"network"}),
             risk=RiskLevel.LOW,
-            upstream_path="source_repositories/intelligence/FinGPT",
+            upstream_path="source_repositories/llm/FinGPT",
         ),
         Tool(
             name="upstream.ollama.local_inference",
@@ -805,7 +805,7 @@ def default_registry() -> CapabilityRegistry:
             outputs=(Field("completion", "str"),),
             permissions=frozenset({"network"}),
             risk=RiskLevel.LOW,
-            upstream_path="source_repositories/intelligence/ollama",
+            upstream_path="source_repositories/infrastructure/ollama",
         ),
         Tool(
             name="upstream.freqtrade.freqai",

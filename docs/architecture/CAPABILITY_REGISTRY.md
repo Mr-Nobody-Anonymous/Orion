@@ -31,21 +31,21 @@ This registry records the audit of preserved repositories and the executable ORI
 | `trading/Stock-Trading-Environment` | Python environment modules | Simple stock market RL environment | REFERENCE | `orion.simulation` | Python / MIT | Superseded by controlled ORION simulation baseline |
 | `mathematics/py_vollib` | `py_vollib`, `tests` | Implied volatility and options pricing | WORKER | future `workers/options_math` | SciPy stack / MIT | Candidate only after numerical validation |
 | `mathematics/QuantLib` | source tree | Quantitative finance pricing and risk analytics | WORKER | future `workers/quantlib` | C++ bindings / QuantLib license | Requires compiled binding and numeric regression suite |
-| `intelligence/FinGPT` | `fingpt`, `tests` | Financial language models and instruction workflows | WORKER | future `workers/fingpt` | model weights/GPU / MIT | Requires model card, weights and evaluation dataset |
-| `intelligence/AgenticTrading` | `orchestration`, `dashboard` | Agent orchestration patterns | REFERENCE | `orion.orchestration` | OpenMDW-1.0 | License review required before code reuse |
-| `intelligence/hermes-agent` | Python agent modules | Agent/tool-use infrastructure | REFERENCE | `orion.intelligence` | Python / MIT | Root duplicate retained as preservation checkout |
-| `intelligence/airllm` | Python modules | Local LLM inference support | WORKER | `orion.models.local` | model/GPU / Apache-2.0 | Hardware and compatible model required |
-| `intelligence/ollama` | upstream source | Local model serving | ADAPTER | `orion.models.local.ollama` | local service / MIT | ORION calls configured local service only |
-| `intelligence/QuantMuse` | Python modules | Finance-oriented agent patterns | REFERENCE | `orion.intelligence` | Python / MIT | Assess methods with reproducible tests first |
-| `intelligence/Vibe-Trading` | Python modules | Trading agents, prompts and experiments | REFERENCE | `orion.research` | Python / MIT | No production import |
-| `intelligence/intelligent-trading-bot` | Python modules | Trading bot examples | REFERENCE | `orion.trading` | Python / MIT | No production import |
-| `intelligence/kimi-k3-in-c` | C/Python files | Local inference experimentation | BLOCKED | `orion.models.local` | toolchain/model assets / license review | No verified runtime configuration |
+| `llm/FinGPT` | `fingpt`, `tests` | Financial language models and instruction workflows | WORKER | future `workers/fingpt` | model weights/GPU / MIT | Requires model card, weights and evaluation dataset |
+| `agents/AgenticTrading` | `orchestration`, `dashboard` | Agent orchestration patterns | REFERENCE | `orion.orchestration` | OpenMDW-1.0 | License review required before code reuse |
+| `agents/hermes-agent` | Python agent modules | Agent/tool-use infrastructure | REFERENCE | `orion.intelligence` | Python / MIT | Root duplicate retained as preservation checkout |
+| `infrastructure/airllm` | Python modules | Local LLM inference support | WORKER | `orion.models.local` | model/GPU / Apache-2.0 | Hardware and compatible model required |
+| `infrastructure/ollama` | upstream source | Local model serving | ADAPTER | `orion.models.local.ollama` | local service / MIT | ORION calls configured local service only |
+| `agents/QuantMuse` | Python modules | Finance-oriented agent patterns | REFERENCE | `orion.intelligence` | Python / MIT | Assess methods with reproducible tests first |
+| `agents/Vibe-Trading` | Python modules | Trading agents, prompts and experiments | REFERENCE | `orion.research` | Python / MIT | No production import |
+| `trading/intelligent-trading-bot` | Python modules | Trading bot examples | REFERENCE | `orion.trading` | Python / MIT | No production import |
+| `infrastructure/kimi-k3-in-c` | C/Python files | Local inference experimentation | BLOCKED | `orion.models.local` | toolchain/model assets / license review | No verified runtime configuration |
 | `markets/homerun` | source and tests | Market data / trading application concepts | REFERENCE | `orion.markets` | AGPL | Preserve only; code reuse requires AGPL decision |
 | `markets/polymarket-kalshi-weather-bot` | project files | Prediction-market automation patterns | BLOCKED | future `workers/prediction_markets` | credentials, no root license | Licensing and venue policy review required |
 | `markets/Prediction-Markets-Trading-Bot-Toolkits` | project files | Prediction-market toolkits | REFERENCE | `orion.markets` | MIT | No production execution without venue adapter controls |
-| `research_and_evolution/a-evolve` | `agent_evolve`, `tests` | Agent evolution and experiment artifacts | REFERENCE | `orion.evolution` | no root license | License clarification required before reuse |
-| `research_and_evolution/assume` | `assume`, `tests` | Energy-market simulation patterns | REFERENCE | `orion.simulation` | AGPL | Preserve only; isolated comparison possible |
-| `research_and_evolution/evolver` | project files | Evolution concepts | REFERENCE | `orion.evolution` | GPL | Native ORION implementation avoids coupling |
+| `agents/a-evolve` | `agent_evolve`, `tests` | Agent evolution and experiment artifacts | REFERENCE | `orion.evolution` | no root license | License clarification required before reuse |
+| `research/assume` | `assume`, `tests` | Energy-market simulation patterns | REFERENCE | `orion.simulation` | AGPL | Preserve only; isolated comparison possible |
+| `agents/evolver` | project files | Evolution concepts | REFERENCE | `orion.evolution` | GPL | Native ORION implementation avoids coupling |
 | `root_checkouts/*` | preserved checkout roots | Historical duplicate checkouts for provenance | REFERENCE | `source_repositories/root_checkouts` | inherited / mixed | Never imported by ORION |
 
 ## Technical blockers

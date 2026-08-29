@@ -23,34 +23,38 @@ SRC = ROOT / "source_repositories"
 MANIFEST = SRC / "MANIFEST.yaml"
 
 # Per the Architectural Audit (§5, §10) — order matters for stable output.
+# Categories mirror the 2026-08-29 resource reorganization:
+#   agents / llm / infrastructure / markets / mathematics /
+#   prediction / research / trading / experimental
 POLICY: dict[str, dict[str, str]] = {
-    # intelligence/
-    "AgenticTrading":          {"category": "intelligence", "purpose": "Tool-calling pattern, agent UX", "integration_mode": "reference", "status": "preserved"},
-    "airllm":                  {"category": "intelligence", "purpose": "Sequential-layer inference for huge models", "integration_mode": "reference", "status": "preserved"},
-    "FinGPT":                  {"category": "intelligence", "purpose": "Financial-domain LLM (LoRA) for sentiment/NLP", "integration_mode": "optional", "status": "preserved"},
-    "hermes-agent":            {"category": "intelligence", "purpose": "Skills, memory, MCP, episodic memory patterns", "integration_mode": "reference", "status": "preserved"},
-    "intelligent-trading-bot": {"category": "intelligence", "purpose": "Offline/online parity pattern, signal service", "integration_mode": "reference", "status": "preserved"},
-    "kimi-k3-in-c":            {"category": "intelligence", "purpose": "Reference C-inference; 1.56 TB checkpoint is impractical", "integration_mode": "excluded", "status": "preserved"},
-    "ollama":                  {"category": "intelligence", "purpose": "Primary local LLM runtime (consumed via HTTP API)", "integration_mode": "dependency", "status": "preserved"},
-    "QuantMuse":               {"category": "intelligence", "purpose": "Factor/risk ideas, LLM-assisted quant analysis", "integration_mode": "reference", "status": "preserved"},
-    "Vibe-Trading":            {"category": "intelligence", "purpose": "MCP-style tool UX, agent interactions", "integration_mode": "reference", "status": "preserved"},
-    # markets/
+    # agents/  (agent frameworks, MCP, memory, skills)
+    "AgenticTrading":          {"category": "agents", "purpose": "Tool-calling pattern, agent UX", "integration_mode": "reference", "status": "preserved"},
+    "Vibe-Trading":            {"category": "agents", "purpose": "MCP-style tool UX, agent interactions", "integration_mode": "reference", "status": "preserved"},
+    "hermes-agent":            {"category": "agents", "purpose": "Skills, memory, MCP, episodic memory patterns", "integration_mode": "reference", "status": "preserved"},
+    "QuantMuse":               {"category": "agents", "purpose": "Factor/risk ideas, LLM-assisted quant analysis", "integration_mode": "reference", "status": "preserved"},
+    "a-evolve":                {"category": "agents", "purpose": "Self-improving-agent infrastructure, benchmark-driven evolution", "integration_mode": "reference", "status": "preserved"},
+    "evolver":                 {"category": "agents", "purpose": "Skill-genome / agent self-evolution (Node.js conceptual)", "integration_mode": "conceptual", "status": "preserved"},
+    # llm/  (LLM finetuning and prompt tooling)
+    "FinGPT":                  {"category": "llm", "purpose": "Financial-domain LLM (LoRA) for sentiment/NLP", "integration_mode": "optional", "status": "preserved"},
+    # infrastructure/  (model runtimes and inference engines)
+    "ollama":                  {"category": "infrastructure", "purpose": "Primary local LLM runtime (consumed via HTTP API)", "integration_mode": "dependency", "status": "preserved"},
+    "airllm":                  {"category": "infrastructure", "purpose": "Sequential-layer inference for huge models", "integration_mode": "reference", "status": "preserved"},
+    "kimi-k3-in-c":            {"category": "infrastructure", "purpose": "Reference C-inference; 1.56 TB checkpoint is impractical", "integration_mode": "excluded", "status": "preserved"},
+    # markets/  (prediction markets)
     "homerun":                 {"category": "markets", "purpose": "Prediction-market OS, fill simulator, Postgres schema", "integration_mode": "reference", "status": "preserved"},
     "polymarket-kalshi-weather-bot":     {"category": "markets", "purpose": "Weather-driven PM arbitrage, vertical logic", "integration_mode": "reference", "status": "preserved"},
     "Prediction-Markets-Trading-Bot-Toolkits": {"category": "markets", "purpose": "Multi-PM toolkit (Polymarket/Kalshi) - Rust", "integration_mode": "reference", "status": "preserved"},
-    # mathematics/
+    # mathematics/  (pricing, options, fixed income)
     "py_vollib":               {"category": "mathematics", "purpose": "Options pricing, Greeks, implied volatility", "integration_mode": "dependency", "status": "preserved"},
     "QuantLib":                {"category": "mathematics", "purpose": "Derivatives, fixed income, pricing", "integration_mode": "dependency", "status": "preserved"},
-    # prediction/
+    # prediction/  (time-series forecasting)
     "Kronos":                  {"category": "prediction", "purpose": "K-line foundation model — primary forecasting candidate", "integration_mode": "adapter", "status": "preserved"},
     "neural_prophet":          {"category": "prediction", "purpose": "Interpretable TS forecasting", "integration_mode": "reference", "status": "preserved"},
     "qlib":                    {"category": "prediction", "purpose": "MSRA quant platform: data, factors, models", "integration_mode": "dependency", "status": "preserved"},
     "Time-Series-Library":     {"category": "prediction", "purpose": "THU SOTA TS forecasting models (Informer/Autoformer/...)", "integration_mode": "benchmark", "status": "preserved"},
-    # research_and_evolution/
-    "a-evolve":                {"category": "research_and_evolution", "purpose": "Benchmark-driven evolution, strategy evolution", "integration_mode": "reference", "status": "preserved"},
-    "assume":                  {"category": "research_and_evolution", "purpose": "Electricity-market agent simulation (out of scope)", "integration_mode": "isolated", "status": "preserved"},
-    "evolver":                 {"category": "research_and_evolution", "purpose": "Skill-genome / agent self-evolution (Node.js conceptual)", "integration_mode": "conceptual", "status": "preserved"},
-    # trading/
+    # research/  (domain-out-of-scope research)
+    "assume":                  {"category": "research", "purpose": "Electricity-market agent simulation (out of scope)", "integration_mode": "isolated", "status": "preserved"},
+    # trading/  (backtesters, RL trading, live bots, broker frameworks)
     "backtrader":              {"category": "trading", "purpose": "Event-driven backtest, live broker parity", "integration_mode": "fallback", "status": "preserved"},
     "FinRL":                   {"category": "trading", "purpose": "DRL trading agents (PPO/A2C/DDPG)", "integration_mode": "research", "status": "preserved"},
     "FinRL-Meta":              {"category": "trading", "purpose": "RL market environment generators", "integration_mode": "reference", "status": "preserved"},
@@ -58,8 +62,10 @@ POLICY: dict[str, dict[str, str]] = {
     "freqtrade":               {"category": "trading", "purpose": "Crypto bot, ML, hyperopt, live", "integration_mode": "reference", "status": "preserved"},
     "jesse":                   {"category": "trading", "purpose": "Crypto backtest framework", "integration_mode": "reference", "status": "preserved"},
     "Lean":                    {"category": "trading", "purpose": "Institutional backtest/live (C#) — isolated sidecar", "integration_mode": "sidecar", "status": "preserved"},
-    "Stock-Trading-Environment": {"category": "trading", "purpose": "Minimal Gym stock env (superseded by FinRL-Meta)", "integration_mode": "reference", "status": "preserved"},
+    "intelligent-trading-bot": {"category": "trading", "purpose": "Crypto ML signal service (offline/online parity pattern)", "integration_mode": "reference", "status": "preserved"},
     "vectorbt":                {"category": "trading", "purpose": "Vectorized backtesting (primary engine)", "integration_mode": "adapter", "status": "preserved"},
+    # experimental/  (deprecated, superseded, impractical, stubs)
+    "Stock-Trading-Environment": {"category": "experimental", "purpose": "5-file Gym stub; superseded by FinRL-Meta", "integration_mode": "deprecated", "status": "preserved"},
 }
 
 # Canonical upstream URLs (per audit + verified 2026-08-28 via
