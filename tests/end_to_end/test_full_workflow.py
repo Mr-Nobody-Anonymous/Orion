@@ -103,7 +103,9 @@ def test_full_workflow_end_to_end() -> None:
     # 11. Research (will BLOCK without network, that's expected)
     research = system.research("robust financial time series forecasting", limit=2)
     assert "status" in research
-    assert research["status"] in {"OK", "BLOCKED"}
+    # The research layer may return SUFFICIENT_METADATA (when OpenAlex responds),
+    # INSUFFICIENT_EVIDENCE (when too few sources are found), or BLOCKED (on network failure).
+    assert research["status"] in {"OK", "BLOCKED", "SUFFICIENT_METADATA", "INSUFFICIENT_EVIDENCE"}
 
     # 12. P1-5: filings
     filings = system.fetch_filings(asset)

@@ -14,14 +14,14 @@
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 849 passing](https://img.shields.io/badge/Tests-849%20passing-green.svg)](https://github.com/)
+[![Tests: 1054 passing](https://img.shields.io/badge/Tests-1054%20passing-green.svg)](https://github.com/)
 [![Mode: LOCAL](https://img.shields.io/badge/Inference-LOCAL-purple.svg)](https://ollama.com/)
 [![Execution: SIM + DEMO](https://img.shields.io/badge/Execution-SIM%20%2B%20DEMO-orange.svg)](https://github.com/)
 [![Safety: First](https://img.shields.io/badge/Safety-First-red.svg)](https://github.com/)
 [![Zero Fake Integrations](https://img.shields.io/badge/Zero%20Fake-Integrations-green.svg)](https://github.com/)
 [![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
 
-> **849 tests passing. No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
+> **1054 tests passing (all passing, 4 skipped). No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
 
 **New (this session):** multi-venue **demo trading** adapters (Alpaca, Binance,
 Kraken, Coinbase, OANDA, IBKR — testnet/paper endpoints by default, live
@@ -504,7 +504,7 @@ provenance/audit logs.
 
 | Capability | Status |
 |---|---|
-| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act) | **IMPLEMENTED** (849 tests) |
+| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act) | **IMPLEMENTED** (1054 tests) |
 | Demo broker adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR) + `BrokerRegistry` + kill switch | **IMPLEMENTED** — demo/testnet endpoints by default, discovered from `.env` |
 | Learning from mistakes (`MistakeAnalyzer`, `LessonStore`, replay feed, `OrionSystem.reflect_on_trade`) | **IMPLEMENTED** |
 | Peer-AI council (learn from OpenAI / Anthropic / Gemini / Azure via `.env` keys) + Gemini provider | **IMPLEMENTED** — opt-in; no key → honestly unavailable |
