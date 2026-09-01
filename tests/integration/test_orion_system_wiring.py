@@ -106,3 +106,68 @@ def test_system_doctor_reports_all_systems() -> None:
     assert checks["agents"] == "PASS"
     assert checks["compliance"] == "PASS"
     assert checks["distributed"] == "PASS"
+
+
+# --------------------------------------------------------------------------- P3-3
+# ``OrionSystem.run`` must wire filings + factor exposures into its payload so
+# the per-cycle decision context carries the audit-traceable external signals
+# (news, earnings, factor betas).  Failures in either source are demoted to
+# ``UNAVAILABLE`` so a broken provider cannot break the cycle.
+
+
+def test_run_includes_filings_and_factors_in_payload() -> None:
+    system = OrionSystem()
+    asset = Asset("AAPL", AssetClass.EQUITY)
+    prices = [100 + i * 0.1 for i in range(60)]
+    payload = system.run(asset, prices)
+    assert "decision" in payload
+    assert "filings" in payload
+    assert "factors" in payload
+    # Default providers are configured so the success path is the expected one.
+    assert payload["filings"]["status"] == "IMPLEMENTED"
+    assert payload["factors"]["status"] == "IMPLEMENTED"
+    assert "bundle" in payload["filings"]
+    assert "signals" in payload["factors"]
+
+
+def test_run_survives_filings_failure(monkeypatch) -> None:
+    """A broken filings source must not break the cycle."""
+    system = OrionSystem()
+
+    def _boom(asset, **kwargs):
+        raise RuntimeError("filings down")
+
+    monkeypatch.setattr(system, "fetch_filings", _boom)
+    asset = Asset("AAPL", AssetClass.EQUITY)
+    prices = [100 + i * 0.1 for i in range(60)]
+    payload = system.run(asset, prices)
+    assert payload["filings"]["status"] == "UNAVAILABLE"
+    assert "filings down" in payload["filings"]["reason"]
+    # The cycle itself still completed.
+    assert "decision" in payload
+
+
+def test_run_survives_factor_failure(monkeypatch) -> None:
+    """A broken factor source must not break the cycle."""
+    system = OrionSystem()
+
+    def _boom(prices, factors=()):
+        raise RuntimeError("factor engine exploded")
+
+    monkeypatch.setattr(system, "compute_factors", _boom)
+    asset = Asset("AAPL", AssetClass.EQUITY)
+    prices = [100 + i * 0.1 for i in range(60)]
+    payload = system.run(asset, prices)
+    assert payload["factors"]["status"] == "UNAVAILABLE"
+    assert "factor engine exploded" in payload["factors"]["reason"]
+    assert "decision" in payload
+
+
+def test_run_factor_signals_match_default_set() -> None:
+    """The wire-up must expose the same factor set ``compute_factors`` does."""
+    system = OrionSystem()
+    asset = Asset("AAPL", AssetClass.EQUITY)
+    prices = [100 + i * 0.1 for i in range(60)]
+    payload = system.run(asset, prices)
+    signal_names = {s["name"] for s in payload["factors"]["signals"]}
+    assert signal_names == set(system.factor_names)

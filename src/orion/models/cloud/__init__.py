@@ -26,9 +26,11 @@ from .base import (
     HttpCloudConfig,
     env_or_none,
 )
+from .cohere import CohereProvider
 from .factory import cloud_provider_status, create_cloud_providers_from_env
 from .gemini import GeminiProvider
 from .http import HttpProvider
+from .mistral import MistralProvider
 from .openai import OpenAIProvider
 from .provider import CloudProviderUnavailable, NullCloudProvider
 
@@ -39,9 +41,11 @@ __all__ = [
     "CloudProviderError",
     "CloudProviderStatus",
     "CloudProviderUnavailable",
+    "CohereProvider",
     "GeminiProvider",
     "HttpCloudConfig",
     "HttpProvider",
+    "MistralProvider",
     "NullCloudProvider",
     "OpenAIProvider",
     "cloud_provider_status",

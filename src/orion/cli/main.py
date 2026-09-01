@@ -249,6 +249,35 @@ def build_parser() -> argparse.ArgumentParser:
     cycle_parser.add_argument("--close", type=float, default=None, help="If given, reflect on this exit price.")
     cycle_parser.add_argument("--strategy", default=None, help="Strategy name to register with lineage.")
 
+    pipeline_parser = subparsers.add_parser(
+        "pipeline",
+        help="End-to-end pipeline: status + filings + factors + cycle (P4-5).",
+    )
+    pipeline_parser.add_argument("symbol", nargs="?", default="DEMO", help="Symbol to run the cycle on.")
+    pipeline_parser.add_argument("--prices", nargs="+", type=float, default=None, help="Price series (defaults to a synthetic 200-bar series).")
+    pipeline_parser.add_argument("--close", type=float, default=None, help="If given, reflect on this exit price.")
+    pipeline_parser.add_argument("--strategy", default=None, help="Strategy name to register with lineage.")
+    pipeline_parser.add_argument("--skip-cycle", action="store_true", help="Skip the cycle step (filings + factors + status only).")
+    pipeline_parser.add_argument("--skip-filings", action="store_true", help="Skip the filings step.")
+    pipeline_parser.add_argument("--skip-factors", action="store_true", help="Skip the factors step.")
+
+    frozen_parser = subparsers.add_parser(
+        "frozen-backtest",
+        help="Run ORION + canonical baselines on the frozen holdout (P3-2).",
+    )
+    frozen_parser.add_argument("--symbol", default="DEMO", help="Symbol to backtest on.")
+    frozen_parser.add_argument(
+        "--artifact-dir",
+        default="artifacts/frozen-holdout",
+        help="Where to write result.json / holdout.json / config.json.",
+    )
+    frozen_parser.add_argument(
+        "--cost-per-trade",
+        type=float,
+        default=0.001,
+        help="Transaction cost as a fraction of the trade (default: 10 bps).",
+    )
+
     return parser
 
 
@@ -922,6 +951,90 @@ def _run_cycle_cli(system, args) -> dict[str, object]:
     return {"status": "IMPLEMENTED", "cycle": result}
 
 
+def _run_frozen_backtest_cli(system, args) -> dict[str, object]:
+    """``orion frozen-backtest`` — run ORION vs the canonical baselines on the frozen holdout.
+
+    Persists ``result.json`` / ``holdout.json`` / ``config.json`` under
+    ``--artifact-dir`` (default ``artifacts/frozen-holdout``) so the
+    operator can diff two runs and prove reproducibility.
+    """
+    from ..data.contracts import Asset, AssetClass
+    from ..evaluation.frozen_holdout import (
+        run_frozen_backtest,
+        write_frozen_artifact,
+    )
+
+    asset = Asset(args.symbol, AssetClass.EQUITY)
+    result = run_frozen_backtest(
+        system,
+        asset,
+        cost_per_trade=float(args.cost_per_trade),
+    )
+    out = write_frozen_artifact(result, artifact_dir=args.artifact_dir)
+    return {
+        "command": "frozen-backtest",
+        "symbol": args.symbol,
+        "status": "IMPLEMENTED",
+        "artifact_dir": str(out),
+        "result": result.as_dict(),
+        "beats_factor_neutral": result.beats_factor_neutral(),
+    }
+
+
+def _run_pipeline_cli(system, args) -> dict[str, object]:
+    """``orion pipeline`` — run status + filings + factors + cycle as one entry point.
+
+    This is the audit's "single do-the-work" surface (P4-5). Each
+    step is opt-out via ``--skip-*`` flags so a CI job can verify the
+    whole chain cheaply. Failures in any one step are recorded in the
+    payload as ```` `` so the operator can see what stopped the chain
+    without losing the work that did succeed.
+    """
+    from ..data.contracts import Asset, AssetClass
+
+    prices = args.prices or _default_prices()
+    asset = Asset(args.symbol, AssetClass.EQUITY)
+    payload: dict[str, object] = {"command": "pipeline", "symbol": args.symbol}
+
+    # 1. Status (always)
+    payload["system_status"] = system.status()
+
+    # 2. Filings (skippable)
+    if not args.skip_filings:
+        try:
+            filings = system.fetch_filings(asset)
+        except Exception as exc:  # noqa: BLE001 - pipeline reports, never crashes
+            filings = {"status": "UNAVAILABLE", "reason": str(exc)}
+        payload["filings"] = filings
+    else:
+        payload["filings"] = {"status": "SKIPPED"}
+
+    # 3. Factors (skippable)
+    if not args.skip_factors:
+        try:
+            factors = system.compute_factors(prices)
+        except Exception as exc:  # noqa: BLE001
+            factors = {"status": "UNAVAILABLE", "reason": str(exc)}
+        payload["factors"] = factors
+    else:
+        payload["factors"] = {"status": "SKIPPED"}
+
+    # 4. Cycle (skippable). This is the decision step that fans out into
+    #    the simulated broker / kill switch / experiment + strategy registry.
+    if not args.skip_cycle:
+        cycle_result = system.evaluate(
+            args.symbol,
+            prices,
+            close_price=args.close,
+            strategy_name=args.strategy,
+            experiment_name=f"pipeline:{args.symbol}",
+        )
+        payload["cycle"] = cycle_result
+
+    payload["status"] = "IMPLEMENTED"
+    return payload
+
+
 def _run_optimizer_cli(args) -> dict[str, object]:
     """``orion optimize`` — exercise the portfolio optimiser."""
     from ..portfolio.optimizer import (
@@ -1039,6 +1152,10 @@ def main(argv: list[str] | None = None) -> None:
         payload = _run_lessons_analysis_cli(system, args)
     elif command == "cycle":
         payload = _run_cycle_cli(system, args)
+    elif command == "pipeline":
+        payload = _run_pipeline_cli(system, args)
+    elif command == "frozen-backtest":
+        payload = _run_frozen_backtest_cli(system, args)
     else:
         parser.error(f"unknown command: {command}")
         return

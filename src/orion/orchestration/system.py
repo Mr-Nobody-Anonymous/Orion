@@ -203,6 +203,19 @@ class OrionSystem:
         except ValueError:
             council_payload = {"status": "UNAVAILABLE", "reason": "insufficient-valid-prices"}
         thesis = self.reasoner.build_thesis(asset.symbol, prediction=prediction, signal=signal)
+        # P3-3: wire filings + factor exposures into the per-cycle payload so
+        # the orchestrator's decision context carries the audit-traceable
+        # external signals (news, earnings, factor betas) in addition to the
+        # in-process prediction. Failures are demoted to ``UNAVAILABLE`` so a
+        # broken filings provider cannot break the cycle.
+        try:
+            filings_payload = self.fetch_filings(asset)
+        except Exception as exc:  # noqa: BLE001 - filings must never break the cycle
+            filings_payload = {"status": "UNAVAILABLE", "reason": str(exc)}
+        try:
+            factors_payload = self.compute_factors(prices)
+        except Exception as exc:  # noqa: BLE001
+            factors_payload = {"status": "UNAVAILABLE", "reason": str(exc)}
         result = {
             "asset": asset.symbol,
             "prediction": asdict(prediction),
@@ -215,6 +228,8 @@ class OrionSystem:
             "state_confidence": self.world.market.regime.confidence,
             "model_council": council_payload,
             "thesis": thesis.as_dict(),
+            "filings": filings_payload,
+            "factors": factors_payload,
         }
         self.memory.append("decision", result)
         self.layered_memory.remember(MemoryLayer.WORKING, result, summary=f"{asset.symbol} {decision.value} in {self.world.market.regime.value}", tags={asset.symbol, decision.value.lower()}, importance=float(prediction.confidence))

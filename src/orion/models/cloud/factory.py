@@ -15,7 +15,9 @@ from ...infrastructure.env import load_env
 from .anthropic import AnthropicProvider
 from .azure_openai import AzureOpenAIProvider
 from .base import BaseHttpCloudProvider
+from .cohere import CohereProvider
 from .gemini import GeminiProvider
+from .mistral import MistralProvider
 from .openai import OpenAIProvider
 
 
@@ -42,6 +44,8 @@ def create_cloud_providers_from_env(*, load_dotenv: bool = True) -> list[BaseHtt
     _try("anthropic", AnthropicProvider)
     _try("gemini", GeminiProvider)
     _try("azure-openai", AzureOpenAIProvider)
+    _try("cohere", CohereProvider)
+    _try("mistral", MistralProvider)
     return providers
 
 

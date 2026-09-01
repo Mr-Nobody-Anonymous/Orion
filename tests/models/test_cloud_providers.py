@@ -25,7 +25,9 @@ from orion.models.cloud import (
     AnthropicProvider,
     AzureOpenAIProvider,
     CloudProviderError,
+    CohereProvider,
     HttpProvider,
+    MistralProvider,
     OpenAIProvider,
 )
 from orion.models.cloud.base import _redact
@@ -209,6 +211,135 @@ def test_azure_generate_success_via_local_stub() -> None:
     assert reply == "azure-reply"
     assert captured["api_key"] == "az"
     assert captured["path"].endswith("/chat/completions?api-version=2024-06-01")
+
+
+# --------------------------------------------------------------------------- cohere (P4-4)
+
+
+def test_cohere_refuses_without_key() -> None:
+    p = CohereProvider(api_key=None)
+    with pytest.raises(CloudProviderError, match="api_key is not configured"):
+        p.generate("hello")
+
+
+def test_cohere_status_reflects_credential_state() -> None:
+    p = CohereProvider(api_key="co-test-1234567890abcdef")
+    status = p.status()
+    assert status.available is True
+    assert status.name == "cohere"
+
+
+def test_cohere_generate_success_via_local_stub() -> None:
+    captured: dict[str, Any] = {}
+
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            length = int(self.headers.get("Content-Length", "0"))
+            body_raw = self.rfile.read(length) if length else b""
+            captured["body"] = json.loads(body_raw.decode("utf-8"))
+            captured["auth"] = self.headers.get("Authorization")
+            captured["path"] = self.path
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"text": "cohere-reply"}).encode("utf-8"))
+
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            return
+
+    with _start_server(_Handler) as (host, port):
+        endpoint = f"http://{host}:{port}/v1"
+        p = CohereProvider(api_key="co-stub", endpoint=endpoint, timeout_seconds=5.0)
+        reply = p.generate("hello", system="be terse")
+    assert reply == "cohere-reply"
+    assert captured["auth"] == "Bearer co-stub"
+    assert captured["path"].endswith("/chat")
+    assert any(msg.get("role") == "user" for msg in captured["body"].get("chat_history", []))
+    assert captured["body"]["preamble"] == "be terse"
+
+
+def test_cohere_handles_malformed_response() -> None:
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"unexpected": "shape"}')
+
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            return
+
+    with _start_server(_Handler) as (host, port):
+        p = CohereProvider(api_key="co-stub", endpoint=f"http://{host}:{port}/v1", timeout_seconds=5.0)
+        with pytest.raises(CloudProviderError, match="malformed response"):
+            p.generate("hi")
+
+
+# --------------------------------------------------------------------------- mistral (P4-4)
+
+
+def test_mistral_refuses_without_key() -> None:
+    p = MistralProvider(api_key=None)
+    with pytest.raises(CloudProviderError, match="api_key is not configured"):
+        p.generate("hello")
+
+
+def test_mistral_status_reflects_credential_state() -> None:
+    p = MistralProvider(api_key="m-test-1234567890abcdef")
+    status = p.status()
+    assert status.available is True
+    assert status.name == "mistral"
+
+
+def test_mistral_generate_success_via_local_stub() -> None:
+    captured: dict[str, Any] = {}
+
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            length = int(self.headers.get("Content-Length", "0"))
+            body_raw = self.rfile.read(length) if length else b""
+            captured["body"] = json.loads(body_raw.decode("utf-8"))
+            captured["auth"] = self.headers.get("Authorization")
+            captured["path"] = self.path
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps(
+                    {"choices": [{"message": {"role": "assistant", "content": "mistral-reply"}}]}
+                ).encode("utf-8")
+            )
+
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            return
+
+    with _start_server(_Handler) as (host, port):
+        endpoint = f"http://{host}:{port}/v1"
+        p = MistralProvider(api_key="m-stub", endpoint=endpoint, timeout_seconds=5.0)
+        reply = p.generate("hello", system="be terse")
+    assert reply == "mistral-reply"
+    assert captured["auth"] == "Bearer m-stub"
+    assert captured["path"].endswith("/chat/completions")
+    messages = captured["body"]["messages"]
+    assert messages[0]["role"] == "system"
+    assert messages[1]["content"] == "hello"
+
+
+def test_mistral_handles_malformed_response() -> None:
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"choices": []}')
+
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            return
+
+    with _start_server(_Handler) as (host, port):
+        p = MistralProvider(api_key="m-stub", endpoint=f"http://{host}:{port}/v1", timeout_seconds=5.0)
+        with pytest.raises(CloudProviderError, match="malformed response"):
+            p.generate("hi")
 
 
 # --------------------------------------------------------------------------- http (generic)

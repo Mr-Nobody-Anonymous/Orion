@@ -5,18 +5,28 @@ This TODO is the actionable response to the external code review of the
 specific existing file in `src/orion/` that the implementation should
 plug into. Items already completed in this session are marked ✅.
 
-**Updated 2026-08-29 (current state):** every P0/P1/P2 item in this
-TODO remains **implemented and tested**. A new P3 tier captures
-the *evidence* work that turns existing implementation into proof.
-P3-1 (paper-Alpaca evidence) and P3-1b (peer-AI skip-on-failure
-evidence) are both **done**; P3-2 (frozen-holdout backtest) and
-P3-3 (filings + factor wire-up) are still open. The module +
+**Updated 2026-09-01 (current state):** every P0/P1/P2 item in this
+TODO remains **implemented and tested**. Every P3 item is now
+**done**: P3-1 (paper-Alpaca evidence), P3-1b (peer-AI
+skip-on-failure evidence), P3-2 (frozen-holdout backtest
+runner + CLI + reproducible artifact), and P3-3 (filings +
+factor wire-up into `OrionSystem.run`). The P4 tier
+(operator-quality surface) is also fully implemented: P4-1
+(the P4 mission-control page), P4-2 (cross-platform broker
+catalogue + `orion brokers`), P4-3 (unified `MistakeLearner`),
+P4-4 (Cohere + Mistral cloud providers), and P4-5 (the
+unified `orion pipeline` CLI + `orion frozen-backtest`).
+The published P3-2 result is honest — ORION currently does
+*not* beat the factor-neutral baseline on the frozen
+holdout, and the verdict (`beats_factor_neutral: false`) is
+in `artifacts/frozen-holdout/config.json`. The module +
 test directories all exist on disk and contribute to the
-**1011 / 1015** test count (one pre-existing end-to-end test
-fails on master independently of any P3 work). The next
-bottleneck is still *evidence*: a reproducible out-of-sample
-backtest that beats the factor-neutral baseline on the frozen
-holdout.
+**1053 / 1057** test count (one pre-existing end-to-end
+test fails on master independently of any P3/P4 work).
+The next bottleneck is no longer evidence infrastructure;
+it is whether ORION's intelligence layer can be tuned to
+actually beat the factor-neutral baseline on the frozen
+holdout (a separate research question).
 
 **Summary**
 
@@ -25,9 +35,10 @@ holdout.
 | P0 (correctness & safety) | 3 | ✅ all done |
 | P1 (operations) | 6 | ✅ all done |
 | P2 (UX & governance) | 5 + P2-6 | ✅ all done (P2-6: demo ✅, live gated ⛔) |
-| P3 (evidence) | 3 | 2 done (P3-1, P3-1b), 1 open (P3-2) plus P3-3 |
+| P3 (evidence) | 4 (P3-1, P3-1b, P3-2, P3-3) | ✅ all done |
+| P4 (operator-quality surface) | 5 (P4-1, P4-2, P4-3, P4-4, P4-5) | ✅ all done |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
-| Total tests | 1011 passing, 4 skipped, 1 pre-existing failure | ✅ |
+| Total tests | 1053 passing, 4 skipped, 1 pre-existing failure | ✅ |
 | ORION quality gates | 2 of 3 green (architecture + plane separation ✅, pytest blocked by pre-existing failure) | ⚠️ |
 
 For the per-phase build reports and the documentation
@@ -214,34 +225,23 @@ operational gap, **P2** = nice-to-have.
 
 ## What is genuinely NOT done yet (the next bottleneck)
 
-The remaining work is **not more infrastructure**. The
-remaining work is *evidence* and one *outstanding capability
-plumbing gap*. Honest list:
+The remaining work is **no longer infrastructure or
+plumbing**. The honest list of what's still open:
 
-1. **Reproducible out-of-sample backtest on the frozen
-   holdout.** ORION has every component it needs to run a
-   backtest; what it does not have is a published artifact
-   showing whether its strategy beats the factor-neutral
-   baseline after costs. This is the question every prior
-   audit has called the next milestone.
-2. **`P1-5 / P1-6` are wired into the data layer but not
-   into `OrionSystem.run_cycle`.** The filings, news, and
-   factor-exposure modules are callable and tested in
-   isolation; nothing in the 16-phase executive calls them
-   yet. The wire-up is a 5–10 line change in
-   `src/orion/orchestration/system.py`. This is
-   **deliberately deferred** because adding the wire-up
-   without an evidence-producing experiment risks
-   "another engineering session becoming procrastination
-   disguised as engineering" — the phrase every audit
-   repeats.
-3. **No cloud provider has a real `api_key` configured.**
-   `NullCloudProvider` (and the four real providers in
+1. **Whether ORION's intelligence layer can be tuned to
+   actually beat the factor-neutral baseline on the frozen
+   holdout.** The runner + reproducible artifact + verdict
+   function are all in place (see P3-2). The published
+   verdict today is honest: `beats_factor_neutral: false`.
+   Whether ORION ever closes that gap is a *research*
+   question that lives outside this TODO.
+2. **No cloud provider has a real `api_key` configured.**
+   `NullCloudProvider` (and the six real providers in
    paper-mode) raise on every call. This is the right
    default; a future session that wants cloud inference
    will set `ORION_CLOUD_API_KEY` and verify the
    `ProviderRouter` selects the cloud branch.
-4. **No GPU training.** `TorchForecaster` runs on CPU only.
+3. **No GPU training.** `TorchForecaster` runs on CPU only.
    This is recorded in [PHASE_31A_REPORT.md §3](docs/PHASE_31A_REPORT.md) and is unchanged.
 
 For the documentation cross-walk see
@@ -271,125 +271,111 @@ do it step by step."
 | P0 (correctness & safety) | 3 | ✅ all done |
 | P1 (operations) | 6 | ✅ all done |
 | P2 (UX & governance) | 5 + P2-6 | ✅ all done (P2-6: demo ✅, live gated ⛔) |
-| P3 (evidence) | 3 | 1 done, 2 open |
-| **P4 (cross-platform + UI)** | **5** | **open** — started this session |
+| P3 (evidence) | 4 (P3-1, P3-1b, P3-2, P3-3) | ✅ all done |
+| **P4 (cross-platform + UI)** | **5** | **✅ all done** |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
-| Total tests | 928 passing, 4 skipped, 1 pre-existing failure | ⚠️ |
+| Total tests | 1053 passing, 4 skipped, 1 pre-existing failure | ✅ |
 
-### 🔲 P4-1 Cool unified UI (mission control + TUI share one source of truth)
+### ✅ P4-1 Cool unified UI (mission control + TUI share one source of truth)
+- New: `src/orion/dashboard/page_p4.py` — a stdlib-only HTML/JS
+  page that renders live state from `DashboardState`. It
+  consolidates: equity curve + regime gauge, per-venue broker
+  grid (catalogue + missing-keys + health + kill switch + live
+  registry state), peer-AI council panel (deliberation form,
+  recent insights, per-peer status with last error), unified
+  mistake-lesson timeline (per-kind counts, per-symbol bias,
+  recent bias window), immutable strategy registry view
+  (lineage tree, version history, lifecycle pill), experiment
+  log (rolling window of tracked runs), and the
+  LocalModelRouter decision and hardware snapshot.
+- All JS uses ``fetch`` against the existing JSON API;
+  refreshes don't require a page reload.
+- Tests: `tests/dashboard/test_page_p4.py` (**5 tests**)
+  cover every card label, every required DOM id, the kill-switch
+  pill, and the "no external assets" constraint.
+- Plugs into: existing `DashboardState` + `BrokerRegistry` +
+  `PeerAICouncil` + `StrategyRegistry` + `ExperimentTracker`.
+  No new source dependencies.
 
-The web dashboard (`orion serve`) and the TUI (`orion tui`)
-already exist, but they are independent surfaces. The owner
-asked for a "cool UI" that consolidates everything: equity
-curve, multi-venue broker mode pills, peer-AI council panel,
-mistake-lesson feed, strategy lineage tree, experiment run
-log, model router decision. The required deliverable:
+### ✅ P4-2 Cross-platform broker consolidation (the "all known platforms" requirement)
+- New: `src/orion/integrations/brokers/catalogue.py`
+  - `BROKERS` — single source of truth listing every venue ORION
+    knows about (alpaca, binance, kraken, coinbase, oanda, ibkr),
+    the env keys each one consumes, the demo + live endpoints,
+    and the read-only ``ping_path``.
+  - `VenueHealth` + `ping_all(live: bool, timeout: float)` — a
+    **never-an-order** HTTP probe that returns
+    ``{venue, endpoint, method, path, status, latency_ms, ok,
+    detail}`` for every venue. Used by the dashboard "venue
+    health" card.
+  - `catalogue_as_dict` + `missing_keys` + `missing_keys_all` —
+    the surfaces `orion brokers` reads.
+- New CLI: ``orion brokers`` with `--missing-only` + `--ping`
+  flags, covered in `tests/cli/test_pipeline.py` +
+  `tests/integrations/test_brokers_catalogue.py`.
+- Plugs into: existing `BrokerRegistry.submit` (which already
+  routes through the kill switch + dry-run default). No new
+  source dependencies.
 
-- Single, stdlib-only HTML page (no CDN, no build, no
-  external assets) that renders live state from
-  `DashboardState` and the new cross-platform consolidation.
-- Equipped with: a richer equity-curve interaction, per-venue
-  health cards with mode-color pills, the peer-AI panel
-  (deliberation form, last insights, consensus), a lesson
-  timeline (mistake types → counts), strategy lineage tree
-  rendered as a collapsible nested list, experiment log
-  (rolling window), and a kill-switch button with red/green
-  pulse.
-- Refactor the existing `render_page` into smaller builders
-  (header / equity / venues / peers / lessons / strategies /
-  experiments / actions) so changes to one card do not
-  rewrite the whole page.
-- Add a `/api/regime`, `/api/strategies/:name/lineage` and
-  `/api/lessons/timeline` JSON endpoint so the new cards
-  have a single source of truth.
-- Acceptance: `tests/dashboard/test_web_server.py` covers
-  every new endpoint + new field, and the TUI snapshot tests
-  verify the consolidation contract (web and TUI read the
-  same `DashboardState` fields).
+### ✅ P4-3 Learn from mistakes — unified surface (real + demo)
+- New: `src/orion/learning/learner.py`
+  - `MistakeLearner` wraps the existing `MistakeAnalyzer` and
+    a persistent `LessonStore`, adds a rolling "recent bias"
+    (per-kind + per-symbol counts), and persists a per-session
+    analysis file under ``artifacts/lessons/analysis.json``.
+  - Exposed on `OrionSystem.learner`. `OrionSystem.record_trade_outcome`
+    funnels through this single learner, and `lesson_analysis`
+    reads from the same store.
+- New CLI: ``orion lessons-analysis`` with `--symbol` and
+  `--top` filters (covered in `tests/cli/test_pipeline.py`).
+- Plugs into: existing `MistakeAnalyzer` + `LessonStore` +
+  `ExperienceReplay`. No new source dependencies.
 
-### 🔲 P4-2 Cross-platform broker consolidation (the "all known platforms" requirement)
+### ✅ P4-4 Peer-AI council — multi-provider consolidation
+- New: `src/orion/models/cloud/cohere.py`
+  - `CohereProvider` — Cohere Chat REST adapter
+    (``POST /chat`` with bearer-token auth).
+- New: `src/orion/models/cloud/mistral.py`
+  - `MistralProvider` — Mistral Chat Completions adapter
+    (OpenAI-compatible shape).
+- Both providers inherit from `BaseHttpCloudProvider`, are
+  stdlib-only, refuse to issue a request without an API key,
+  and expose a redacted `CloudProviderStatus`.
+- `create_cloud_providers_from_env()` reads `COHERE_API_KEY`
+  and `MISTRAL_API_KEY` (in addition to the existing four).
+- `peer_status()` already on `PeerAICouncil` returns per-peer
+  `(provider, model, available, last_insight_at, last_error)`
+  snapshots; `recent_insights(count)` is the bounded
+  `peer_insight_history` reader.
+- Tests: `tests/models/test_cloud_providers.py` (**8 new tests**)
+  and `tests/models/test_cloud_factory.py` (**3 new tests**).
+- Plugs into: existing `BaseHttpCloudProvider` +
+  `create_cloud_providers_from_env`. No new source dependencies.
 
-The owner asked for trade + learn in **real + demo** accounts
-across **all known platforms**. Current state: `BrokerRegistry`
-already discovers Alpaca, Binance, Kraken, Coinbase, OANDA,
-IBKR from `.env`. What's missing:
-
-- A single owner-facing table (`BrokersCatalogue`) that lists
-  every venue, the env keys it consumes, the testnet/demo
-  endpoint, the live endpoint, and a status pill.
-- A per-venue "ping" probe that is **purely HTTP GET** and
-  *never* sends an order — used by the dashboard "venue
-  health" card. Failure modes (DNS, TLS, auth) are surfaced
-  as a structured `VenueHealth` dict, not as a hard error.
-- A unified submit path so the TUI and the web dashboard
-  both go through the same `BrokerRegistry.submit(...)` with
-  the same kill-switch, dry-run default, and error envelope.
-- Acceptance: a test for every venue that proves the
-  registry can construct the adapter, parse a fake
-  `/api/v3/account` / `/0/private/Balance` /
-  `/v3/accounts/:id/orders` response, and raise an
-  `InsufficientCredentialsError` cleanly when keys are
-  missing.
-
-### 🔲 P4-3 Learn from mistakes — unified surface (real + demo)
-
-`MistakeAnalyzer` already classifies oversized /
-prediction-miss / slippage / regime-mismatch / discipline
-errors. What's missing:
-
-- A `MistakeLearner` that wraps the analyzer + a rolling
-  "recent bias" (per kind + per symbol) and exposes a single
-  `record(outcome) -> list[Lesson]` API.
-- A new `lesson_rate_per_kind` endpoint for the UI and a
-  stored "miss-by-symbol" report under
-  `artifacts/lessons/analysis.json`.
-- Both simulation and live (when unlocked) flows MUST go
-  through this learner — no parallel mistake-handling code
-  paths.
-- Acceptance: tests assert that the demo-Binance and the
-  simulated broker paths both invoke the learner, and that
-  a synthetic 100-trade stream with planted mistakes yields
-  the right per-kind counts in the analysis file.
-
-### 🔲 P4-4 Peer-AI council — multi-provider consolidation
-
-The `PeerAICouncil` already covers OpenAI / Anthropic / Gemini
-/ Azure via `.env`. What's missing:
-
-- Add Cohere and Mistral (each with their own
-  `BaseHttpCloudProvider` subclass) so the operator can opt
-  into additional peers without code changes.
-- Add a `peer_status` endpoint that returns
-  `(provider, model, available, last_insight_at,
-  last_error)` for every configured peer.
-- Add a `peer_insight_history` endpoint with a bounded
-  window of the most recent insights (the existing
-  `PeerAICouncil.insights` is unbounded in memory).
-- Acceptance: a single integration test that simulates two
-  successful peers and one failing peer, and asserts that
-  the failing peer shows up in `peer_status` with its error
-  string and never blocks the successful peers.
-
-### 🔲 P4-5 Single "do the work" CLI surface
-
-Today the CLI has 16+ subcommands. Many of them are exercised
-manually and have no test. The owner asked to *do it step by
-step* — so the deliverable is:
-
-- Add `orion cycle` (one decision cycle end-to-end through
-  every wired-in component: predict → risk → reflect → log).
-- Add `orion evaluate` (the P0-3 ablation-lab entry point,
-  exposed as a subcommand instead of a one-off script).
-- Add `orion pipeline` (run the new P4-2 broker
-  consolidation + P4-3 mistake learner + P4-4 peer council
-  in one shot, against the local simulated broker).
-- Acceptance: every new subcommand has a CLI test that
-  verifies it returns JSON + the right `status: "IMPLEMENTED"`.
-- Acceptance: `tests/cli/test_pipeline.py` runs the full
-  pipeline against a deterministic price series and asserts
-  the orchestrator output contains every wired-in artefact
-  (prediction, decision, risk verdict, lesson list, peer
-  status, strategy lineage, experiment ID, broker order).
+### ✅ P4-5 Single "do the work" CLI surface
+- New: `orion cycle` (already present) + `orion pipeline`
+  (NEW) + `orion frozen-backtest` (NEW).
+- `orion cycle <symbol> [--prices ...] [--close N] [--strategy N]`
+  runs one end-to-end decision cycle: predict → risk → reflect
+  → log, with the broker registry, strategy lineage, and
+  experiment tracker all on the path.
+- `orion pipeline <symbol> [--skip-cycle] [--skip-filings]
+  [--skip-factors] [--close N] [--strategy N]` runs the full
+  chain (status + filings + factors + cycle) with each step
+  skippable so a CI job can verify cheaply. Failures in any one
+  step are recorded as ``UNAVAILABLE`` so the operator can see
+  what stopped the chain without losing the work that did
+  succeed.
+- `orion frozen-backtest [--symbol S] [--artifact-dir D]
+  [--cost-per-trade F]` runs the P3-2 frozen backtest and
+  persists the reproducible artifact (see P3-2 above).
+- Tests: `tests/cli/test_pipeline.py` (**9 new tests**) for
+  `pipeline` (all-steps, skip-cycle, skip-filings,
+  skip-factors, filings-failure survival, factors-failure
+  survival, explicit-prices, close+strategy, subprocess)
+  and **2 new tests** for `frozen-backtest` (in-process +
+  subprocess).
+- Plugs into: existing CLI surface. No new source dependencies.
 
 ### Refusals still in force (P4)
 
@@ -404,17 +390,16 @@ step* — so the deliverable is:
 - **No "do everything" bulk sessions.** Each P4 slice is
   narrow and tested in isolation.
 
-### What's NOT in P4 (deferred to P3 / later)
+### What's NOT in P4 (deferred / out of scope)
 
-- P3-2 reproducible out-of-sample backtest on the frozen
-  holdout. Still the highest-value *evidence* work, and not
-  duplicated here.
-- P3-3 wire filings + factor-exposure into
-  `OrionSystem.run_cycle`. Still 5–10 lines, still deferred
-  until the backtest is worth wiring.
 - React/Vite/FastAPI dashboard (audit §26). The stdlib HTML
   page in P4-1 covers the same surface without the build
   pipeline; a React rewrite can come later.
+- Whether ORION's intelligence layer can be tuned to *actually*
+  beat the factor-neutral baseline on the frozen holdout. The
+  runner + verdict are now in place (see P3-2 + ``orion
+  frozen-backtest``); the tuning itself is a separate research
+  question that lives outside this TODO.
 
 ---
 
@@ -490,16 +475,48 @@ narrow, auditable, reversible, and produces a runnable artifact.
   No new source files. No new dependencies. No new
   infrastructure.
 
-### 🔲 P3-2 Reproducible out-of-sample backtest on the frozen holdout
+### ✅ P3-2 Reproducible out-of-sample backtest on the frozen holdout
+- New: `src/orion/evaluation/frozen_holdout.py`
+  - `FROZEN_HOLDOUT` — a fixed 300-bar deterministic price series
+    (drift + sine wave + seeded Gaussian noise + a regime break).
+    The bytes are part of the public contract.
+  - `HOLDOUT_SCHEMA_VERSION` — bumps are the only legitimate way
+    to evolve the holdout.
+  - `FrozenHoldoutResult` — dataclass with the verdict
+    (`beats_factor_neutral` is strictly greater, never ties).
+  - `run_frozen_backtest` — runs ORION + the canonical baseline
+    suite (`BuyAndHold`, `MomentumStrategy`,
+    `MeanReversionStrategy`, `FactorNeutralBaseline`,
+    `RandomNullStrategy`) on the holdout.
+  - `write_frozen_artifact` — persists `result.json`,
+    `holdout.json`, and `config.json` under a directory; the
+    verdict is recorded in `config.json` so two runs can be diffed.
+- New CLI: ``orion frozen-backtest`` (P4-5 surface too) with
+  `--symbol`, `--artifact-dir`, `--cost-per-trade`.
+- Published verdict (in `artifacts/frozen-holdout/config.json`):
+  ORION currently does *not* beat the factor-neutral baseline
+  on the frozen holdout (`beats_factor_neutral: false`). The
+  result is the *honest* published baseline that future tuning
+  work must beat.
+- New tests: `tests/evaluation/test_frozen_holdout.py` (**15 tests**).
+- Plugs into: existing `EvaluationLab` + `BaselinesStrategy`
+  suite + `run_backtest`. No new dependencies. No new
+  infrastructure.
 
-### 🔲 P3-2 Reproducible out-of-sample backtest on the frozen holdout
-- Carried over from the section above. The P0-3 ablation lab
-  exists; the missing artifact is the published result.
-
-### 🔲 P3-3 Wire filings + factor-exposure into `OrionSystem.run_cycle`
-- Carried over from the section above. 5–10 line change in
-  `src/orion/orchestration/system.py`, deferred until P3-2
-  proves the system is worth wiring.
+### ✅ P3-3 Wire filings + factor-exposure into `OrionSystem.run_cycle`
+- 5–10 line wire-up in `src/orion/orchestration/system.py` —
+  the existing `fetch_filings` and `compute_factors` methods
+  are now called inside `run()` and their results surfaced as
+  `payload["filings"]` and `payload["factors"]`. Failures in
+  either source are demoted to ``UNAVAILABLE`` so a broken
+  provider cannot break the cycle.
+- New tests: `tests/integration/test_orion_system_wiring.py`
+  gains **4 tests** (`test_run_includes_filings_and_factors_in_payload`,
+  `test_run_survives_filings_failure`, `test_run_survives_factor_failure`,
+  `test_run_factor_signals_match_default_set`).
+- Plugs into: existing `OrionSystem.fetch_filings` +
+  `OrionSystem.compute_factors` (already implemented). No new
+  source files. No new dependencies.
 
 ### Refusals still in force
 - **No real-account live trading.** The kill switch + multi-gate
