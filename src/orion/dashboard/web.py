@@ -152,6 +152,11 @@ class DashboardState:
             "tiers": {key: dict(value) for key, value in DEFAULT_TIERS.items()},
         }
 
+    def api_source_repositories(self) -> dict[str, Any]:
+        from ..infrastructure.source_repositories import source_repository_inventory
+
+        return source_repository_inventory()
+
     def api_market(self, prices: list[float] | None = None) -> dict[str, Any]:
         from dataclasses import asdict
 
@@ -306,6 +311,8 @@ class _DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json(state.api_experiments())
             elif self.path == "/api/hardware":
                 self._send_json(state.api_hardware())
+            elif self.path == "/api/source-repositories":
+                self._send_json(state.api_source_repositories())
             elif self.path == "/api/brokers":
                 self._send_json(state.api_brokers())
             elif self.path == "/api/market":

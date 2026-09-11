@@ -21,7 +21,7 @@ The published P3-2 result is honest — ORION currently does
 holdout, and the verdict (`beats_factor_neutral: false`) is
 in `artifacts/frozen-holdout/config.json`. The module +
 test directories all exist on disk and contribute to the
-**1054 / 1058** test count (all passing, 4 intentionally
+**1164 / 1168** test count (all passing, 4 intentionally
 skipped).
 The next bottleneck is no longer evidence infrastructure;
 it is whether ORION's intelligence layer can be tuned to
@@ -38,7 +38,7 @@ holdout (a separate research question).
 | P3 (evidence) | 4 (P3-1, P3-1b, P3-2, P3-3) | ✅ all done |
 | P4 (operator-quality surface) | 5 (P4-1, P4-2, P4-3, P4-4, P4-5) | ✅ all done |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
-| Total tests | 1054 passing, 4 skipped, 0 failing | ✅ |
+| Total tests | 1164 passing, 4 skipped, 0 failing | ✅ |
 | ORION quality gates | 3 of 3 green (architecture + plane separation + pytest ✅) | ✅ |
 
 For the per-phase build reports and the documentation

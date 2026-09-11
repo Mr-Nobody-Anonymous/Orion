@@ -84,6 +84,14 @@ class TestWebServer:
         assert len(payload["prices"]) >= 3
         assert "prediction" in payload
 
+    def test_source_repository_inventory_endpoint(self, server) -> None:
+        base, _ = server
+        payload = get(base, "/api/source-repositories")
+        assert payload["total"] == 30
+        assert payload["present"] == 30
+        assert payload["direct_runtime_imports"] == 0
+        assert any(repo["name"] == "ollama" for repo in payload["repositories"])
+
     def test_unknown_path_404(self, server) -> None:
         base, _ = server
         with pytest.raises(urllib.error.HTTPError) as excinfo:

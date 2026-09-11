@@ -159,6 +159,16 @@ canvas { width: 100%; height: 180px; display: block; }
             background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); }
 .gauge .v { font-size: 20px; font-weight: 700; }
 .gauge .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.repo {
+  padding: 8px 10px; border-radius: 10px; margin-bottom: 6px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border);
+  display: flex; justify-content: space-between; gap: 10px; align-items: center;
+}
+.repo .name { font-weight: 600; }
+.repo .meta { color: var(--muted); font-size: 10px; margin-top: 3px; }
+.repo .state { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.repo .state.ok { color: var(--good); }
+.repo .state.ref { color: var(--warn); }
 """
 
 _PAGE_BODY = """<!DOCTYPE html>
@@ -256,6 +266,12 @@ _PAGE_BODY = """<!DOCTYPE html>
   <section class="card span4">
     <h2>Activity log</h2>
     <div class="log" id="log"><div>booting…</div></div>
+  </section>
+
+  <section class="card span12">
+    <h2>Source-repository provenance</h2>
+    <div class="statusline" id="repo-summary">loading manifest…</div>
+    <div id="source-repos"></div>
   </section>
 </main>
 <script>__JS__</script>
@@ -378,6 +394,22 @@ function refreshLessons() {
   }).catch((e) => logLine('lessons: ' + e.message));
 }
 
+function refreshSourceRepositories() {
+  api('/api/source-repositories').then((s) => {
+    $('repo-summary').textContent =
+      s.present + '/' + s.total + ' checkouts present · ' +
+      s.direct_runtime_imports + ' upstream repositories directly imported · ' +
+      'reference material remains isolated by design';
+    $('source-repos').innerHTML = (s.repositories || []).map((r) =>
+      '<div class="repo"><div><div class="name">' + esc(r.name) + '</div>' +
+      '<div class="meta">' + esc(r.category) + ' · ' + esc(r.integration_mode) +
+      ' · ' + esc(r.purpose) + '</div></div><div class="state ' +
+      (r.path_exists ? (r.directly_imported ? 'ok' : 'ref') : '') + '">' +
+      esc(r.path_exists ? (r.directly_imported ? 'runtime' : 'isolated/reference') : 'missing') +
+      '</div></div>').join('');
+  }).catch((e) => { $('repo-summary').textContent = 'error: ' + e.message; });
+}
+
 $('btn-engage').onclick = () => {
   api('/api/killswitch', {engaged: true, reason: 'operator (web)'}).then(() => {
     logLine('kill switch ENGAGED'); refreshBrokers();
@@ -422,11 +454,12 @@ $('btn-reflect').onclick = () => {
   }).catch((e) => logLine('reflect: ' + e.message));
 };
 
-refreshStatus(); refreshBrokers(); refreshPeers(); refreshLessons();
+refreshStatus(); refreshBrokers(); refreshPeers(); refreshLessons(); refreshSourceRepositories();
 setInterval(refreshStatus, 3000);
 setInterval(refreshBrokers, 8000);
 setInterval(refreshPeers, 10000);
 setInterval(refreshLessons, 8000);
+setInterval(refreshSourceRepositories, 30000);
 """
 
 

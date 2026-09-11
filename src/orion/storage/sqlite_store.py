@@ -87,6 +87,39 @@ _DEFAULT_SCHEMA: tuple[str, ...] = (
         created_at  TEXT NOT NULL
     )
     """,
+    # -- mission layer (Phase 1 ORION 2.0; additive, same shape) ----------
+    """
+    CREATE TABLE IF NOT EXISTS missions (
+        id          TEXT PRIMARY KEY,
+        version_id  TEXT NOT NULL,
+        payload     TEXT NOT NULL,
+        created_at  TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS mission_events (
+        id          TEXT PRIMARY KEY,
+        version_id  TEXT NOT NULL,
+        payload     TEXT NOT NULL,
+        created_at  TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS outcome_records (
+        id          TEXT PRIMARY KEY,
+        version_id  TEXT NOT NULL,
+        payload     TEXT NOT NULL,
+        created_at  TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS mission_runs (
+        id          TEXT PRIMARY KEY,
+        version_id  TEXT NOT NULL,
+        payload     TEXT NOT NULL,
+        created_at  TEXT NOT NULL
+    )
+    """,
 )
 
 
@@ -174,6 +207,62 @@ class SqliteStore:
             self._conn.commit()
         return record_id
 
+    def insert_if_absent(
+        self,
+        table: str,
+        data: Mapping[str, Any],
+        *,
+        version_id: str | None = None,
+        id: str | None = None,
+    ) -> bool:
+        """Insert one row only if its id is absent; returns True when
+        inserted. This is the primitive behind append-only/idempotent
+        writes (events, outcome records, first mission snapshots).
+        """
+        if not _is_valid_table(table):
+            raise ValueError(f"unknown table: {table!r}")
+        record_id = id or uuid.uuid4().hex
+        version = version_id or uuid.uuid4().hex
+        now = datetime.now(timezone.utc).isoformat()
+        payload = json.dumps(dict(data), default=str, sort_keys=True)
+        sql = (
+            f"INSERT OR IGNORE INTO {table} (id, version_id, payload, created_at) "
+            f"VALUES (?, ?, ?, ?)"
+        )
+        with self._lock:
+            cur = self._conn.execute(sql, (record_id, version, payload, now))
+            self._conn.commit()
+        return cur.rowcount > 0
+
+    def compare_and_swap(
+        self,
+        table: str,
+        record_id: str,
+        expected_version_id: str,
+        data: Mapping[str, Any],
+        *,
+        version_id: str | None = None,
+    ) -> bool:
+        """Replace the payload of ``record_id`` only if its current
+        ``version_id`` matches ``expected_version_id``; returns True on
+        success. This is the primitive behind optimistic-concurrency
+        mission updates (atomic state transitions).
+        """
+        if not _is_valid_table(table):
+            raise ValueError(f"unknown table: {table!r}")
+        version = version_id or uuid.uuid4().hex
+        payload = json.dumps(dict(data), default=str, sort_keys=True)
+        sql = (
+            f"UPDATE {table} SET version_id = ?, payload = ? "
+            f"WHERE id = ? AND version_id = ?"
+        )
+        with self._lock:
+            cur = self._conn.execute(
+                sql, (version, payload, record_id, str(expected_version_id))
+            )
+            self._conn.commit()
+        return cur.rowcount > 0
+
     # ---- reads --------------------------------------------------------
 
     def query(
@@ -248,6 +337,10 @@ _VALID_TABLES: frozenset[str] = frozenset(
         "fills",
         "model_versions",
         "audit_events",
+        "missions",
+        "mission_events",
+        "outcome_records",
+        "mission_runs",
     }
 )
 

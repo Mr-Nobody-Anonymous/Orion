@@ -5,7 +5,7 @@ architecture, and the controlled self-improvement loops. It is accurate to the
 running implementation: statuses below are asserted by tests, and `BLOCKED`
 marks deliberately disabled capabilities.
 
-**Current state (2026-09-01):** 1054 tests passing (4 skipped,
+**Current state (2026-09-01):** 1164 tests passing (4 skipped,
 0 failing), all three ORION quality gates green
 (architecture-validation ✅, plane-separation ✅, pytest ✅). The
 canonical application package is `src/orion/`. The

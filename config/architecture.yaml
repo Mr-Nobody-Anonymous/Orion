@@ -202,6 +202,21 @@ components:
       - orion.agent.InvocationRecord
     policy: smallest possible closed loop; default policy is a no-op; honesty about unimplemented tools; immutable audit trail for every capability call; persistent loop that terminates only on goal / deadline / budget / blocked / no-source
 
+  mission:
+    description: Mission layer (objectives with measurable metrics, goal trees via the canonical GoalManager, budgeted runs through the existing agent kernel, append-only outcome ledger, SQLite persistence with optimistic concurrency)
+    path: src/orion/mission
+    depends_on: [agent_kernel, storage, infrastructure]
+    entrypoints:
+      - orion.mission.MissionEngine
+      - orion.mission.Mission
+      - orion.mission.MissionObjective
+      - orion.mission.MissionPlanner
+      - orion.mission.OutcomeLedger
+      - orion.mission.MissionStore
+      - orion.mission.KernelMissionAdapter
+      - orion.mission.SafeCapabilityAdapter
+    policy: missions never embed the cognitive loop and never touch live broker execution; every capability call flows through the existing CapabilityExecutor (permission + risk gates intact); every persisted row mutation bumps version (optimistic concurrency); costs are reserved before execution and recorded after; Phase 1 registers only LOW-risk deterministic test capabilities
+
   coding:
     description: Sandboxed code generation, verification, debugging, patching
     path: src/orion/coding

@@ -344,6 +344,35 @@ class CapabilityExecutor:
                                   "traceback": traceback.format_exc()},
             )
         elapsed = time.monotonic() - start
+        # If the implementation chose to return a fully-formed
+        # :class:`CapabilityResult`, honour its fields (success,
+        # error, cost_units, provenance) instead of overwriting
+        # them with a fresh success envelope.
+        if isinstance(output, CapabilityResult):
+            self._memory.record_capability_outcome(tool.name, success=output.success)
+            if not constraints.allow_side_effects:
+                side_effects.append("side_effects_disallowed_by_caller")
+            return CapabilityResult(
+                capability=tool.name,
+                success=output.success,
+                output=output.output,
+                error=output.error,
+                execution_time_seconds=elapsed,
+                cost_units=output.cost_units,
+                confidence=output.confidence,
+                side_effects=tuple(side_effects) + tuple(output.side_effects),
+                artifacts=output.artifacts,
+                provenance={**output.provenance, "tool_kind": tool.kind.value,
+                             "tool_plane": tool.plane.value,
+                             "impl_module": getattr(impl, "__module__", "unknown"),
+                             "impl_qualname": getattr(impl, "__qualname__", repr(impl))},
+                reproducibility={
+                    "input": dict(input),
+                    "context_caller": context.caller,
+                    "context_goal_id": context.goal_id,
+                },
+                called_at=output.called_at,
+            )
         # Heuristic: if the implementation returned a dict
         # with a "confidence" key, surface it; otherwise
         # default to 1.0.
