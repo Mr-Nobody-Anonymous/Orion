@@ -1,0 +1,3 @@
+# Launcher scripts must keep deterministic line endings on every OS.
+start.sh  text eol=lf
+start.cmd text eol=crlf
