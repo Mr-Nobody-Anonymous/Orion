@@ -1,0 +1,40 @@
+# ORION Integration Architecture Specification
+# Defines the three integration tiers:
+# Level 1: Dependency (PyPortfolioOpt, skfolio, arch, yfinance)
+# Level 2: Vendored source / read-only mirror (third_party/qlib, finrl, vectorbt)
+# Level 3: Adapter / Service (adapters/lean, ccxt, alpaca, openbb)
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+
+tiers:
+  level_1_dependency:
+    description: "Installed through Python standard packaging; clean mathematical or data utilities."
+    repositories:
+      - "pyportfolioopt"
+      - "skfolio"
+      - "arch"
+      - "yfinance"
+    boundary: "in_process_import"
+
+  level_2_vendored_mirror:
+    description: "Exact pinned source commit mirrored in third_party/ for reproducibility and custom patching."
+    repositories:
+      - "qlib"
+      - "finrl"
+      - "finrl_meta"
+      - "finrl_trading"
+      - "finrobot"
+      - "fingpt"
+      - "vectorbt"
+    boundary: "third_party_pinned_tree"
+
+  level_3_adapter_service:
+    description: "Self-contained subsystem communicating exclusively through standardized adapters."
+    repositories:
+      - "lean"
+      - "openbb"
+      - "ccxt"
+      - "alpaca_py"
+      - "backtrader"
+    boundary: "adapter_service_rpc"

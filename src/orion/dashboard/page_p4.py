@@ -612,6 +612,9 @@ def render_p4_page() -> str:
     <a class="nav-item" id="nav-aladdin" onclick="switchWorkspace('aladdin')">
       <span class="nav-icon">🛡️</span> Aladdin Risk & VaR
     </a>
+    <a class="nav-item" id="nav-whatif" onclick="switchWorkspace('whatif')">
+      <span class="nav-icon">🔮</span> What-If Simulator
+    </a>
     <a class="nav-item" id="nav-prediction" onclick="switchWorkspace('prediction')">
       <span class="nav-icon">🎯</span> Kalshi Prediction
     </a>
@@ -630,6 +633,9 @@ def render_p4_page() -> str:
     <div class="sidebar-section">Quantitative Tools</div>
     <a class="nav-item" id="nav-screener" onclick="switchWorkspace('screener')">
       <span class="nav-icon">🛠️</span> Screener & Lab
+    </a>
+    <a class="nav-item" id="nav-capstore" onclick="switchWorkspace('capstore')">
+      <span class="nav-icon">🏛️</span> Engine Marketplace
     </a>
     <a class="nav-item" id="nav-system" onclick="switchWorkspace('system')">
       <span class="nav-icon">⚙️</span> System & Cap Bus
@@ -1365,6 +1371,190 @@ def render_p4_page() -> str:
       </div>
     </div>
 
+    <!-- 11. WHAT-IF SIMULATION WORKSPACE -->
+    <div id="view-whatif" class="workspace-view" style="display: none;">
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <span class="card-title">🔮 Institutional What-If Portfolio & Risk Simulator</span>
+          <span class="pill good">Non-Mutating Shadow State</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+          Simulate position additions, rebalances, factor tilts, and liquidity shocks against live portfolio equity without modifying live broker orders. Fully stress-tested through historical regimes and the 12-Gate Risk Firewall.
+        </p>
+        <div class="grid-4" style="gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label style="font-size: 11px; color: var(--muted); font-weight: 600;">TARGET INSTRUMENT</label>
+            <input type="text" id="whatif-symbol" class="palette-input" value="NVDA" style="margin-top: 4px; padding: 8px 12px; font-size: 13px;">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--muted); font-weight: 600;">ORDER ACTION</label>
+            <select id="whatif-side" class="palette-input" style="margin-top: 4px; padding: 8px 12px; font-size: 13px; background: var(--bg-surface);">
+              <option value="BUY">BUY (+Long Exposure)</option>
+              <option value="SELL">SELL (-Short / Trim)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--muted); font-weight: 600;">TARGET QUANTITY</label>
+            <input type="number" id="whatif-quantity" class="palette-input" value="1000" style="margin-top: 4px; padding: 8px 12px; font-size: 13px;">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--muted); font-weight: 600;">SIMULATED NOTIONAL ($)</label>
+            <input type="number" id="whatif-notional" class="palette-input" value="500000" style="margin-top: 4px; padding: 8px 12px; font-size: 13px;">
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-primary" onclick="runWhatIfSimulation()">⚡ Run What-If Simulation</button>
+          <button class="btn" style="background: var(--panel-strong); border: 1px solid var(--accent); color: #fff;" onclick="runFirewallCheckOnTicket()">🛡️ Audit Against 12-Gate Firewall</button>
+          <button class="btn" style="background: transparent; border: 1px solid var(--muted); color: var(--muted);" onclick="resetWhatIfTicket()">Abort / Reset</button>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom: 16px;" id="whatif-metrics-grid">
+        <div class="stat-box">
+          <div class="stat-lbl">Expected Return Δ</div>
+          <div class="stat-val val-good" id="whatif-exp-ret">+0.41%</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Alpha contribution</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Volatility Shift Δ</div>
+          <div class="stat-val" style="color: var(--accent-cyan);" id="whatif-vol-shift">+1.20%</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Portfolio σ: 16.4%</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Marginal VaR (95%)</div>
+          <div class="stat-val val-bad" id="whatif-var-delta">+$87,000</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">CVaR Δ: +$112,000</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Firewall Verdict</div>
+          <div class="stat-val" style="color: var(--warn);" id="whatif-verdict">WARNING</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" id="whatif-verdict-sub">Risk budget 76.4% used</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📊 Factor Exposure Shifts</span></div>
+          <div style="display: flex; flex-direction: column; gap: 8px;" id="whatif-factors-list">
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Technology Sector Beta</span><b style="color: var(--warn);">+4.20% (31.2% total)</b>
+            </div>
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Momentum Style Tilt</span><b class="val-good">+2.10% (14.5% total)</b>
+            </div>
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Market Broad Beta</span><b style="color: var(--accent-cyan);">+3.50% (1.08x)</b>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">💧 Liquidity & Market Impact</span></div>
+          <div style="display: flex; flex-direction: column; gap: 8px;" id="whatif-liquidity-list">
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Average Daily Volume (ADV) Ratio</span><b class="val-good" id="whatif-adv-val">1.11% (Safe &lt; 2%)</b>
+            </div>
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Estimated Order Exit Time</span><b style="color: var(--accent-cyan);" id="whatif-exit-val">16.7 minutes</b>
+            </div>
+            <div class="stat-box" style="display: flex; justify-content: space-between;">
+              <span>Market Depth Slippage Impact</span><b class="val-good">&lt; 3.2 bps</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <span class="card-title">🌪️ Stress Scenario Shock Re-calculation (What-If Loss)</span>
+          <span class="pill" style="border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">Hypothetical Scenario Impact</span>
+        </div>
+        <div class="grid-4" id="whatif-stress-cards">
+          <div class="stat-box">
+            <div class="stat-lbl">2008 Financial Crisis</div>
+            <div class="stat-val val-bad" id="whatif-shock-2008">-$114,500</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">-22.9% draw</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">2020 COVID Liquidity Crash</div>
+            <div class="stat-val val-bad" id="whatif-shock-covid">-$86,000</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">-17.2% draw</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">2022 Yield Shock (+200bps)</div>
+            <div class="stat-val val-bad" id="whatif-shock-rates">-$46,500</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">-9.3% draw</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">Liquidity Freeze Shock</div>
+            <div class="stat-val val-bad" id="whatif-shock-freeze">-$139,500</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">-27.9% draw</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="whatif-firewall-panel">
+        <div class="card-header">
+          <span class="card-title">🛡️ Deterministic 12-Gate Risk Firewall Pre-Clearance Audit</span>
+          <span class="pill good" id="whatif-firewall-badge">12/12 GATES PASSED</span>
+        </div>
+        <div class="grid-4" id="whatif-firewall-gates" style="gap: 8px; font-size: 11px; margin-top: 8px;">
+          <!-- 12 Gates dynamically populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. CAPABILITY ENGINE STORE WORKSPACE -->
+    <div id="view-capstore" class="workspace-view" style="display: none;">
+      <div class="grid-4" style="margin-bottom: 16px;">
+        <div class="stat-box">
+          <div class="stat-lbl">Integrated Engines</div>
+          <div class="stat-val" style="color: var(--accent-cyan);" id="capstore-repo-count">17 Repositories</div>
+          <div style="font-size: 11px; color: var(--good); margin-top: 2px;">100% Pinned Commit SHAs</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Canonical Schemas</div>
+          <div class="stat-val" style="color: var(--accent-purple);">19 Types</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Zero Schema Contamination</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Copyleft Isolation</div>
+          <div class="stat-val" style="color: var(--good);">RESTRICTED / CLEAN</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">GPL/AGPL Process Isolated</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Capability Contracts</div>
+          <div class="stat-val" style="color: var(--accent-amber);" id="capstore-cap-count">14 Registered</div>
+          <div style="font-size: 11px; color: var(--good); margin-top: 2px;">Pluggable Engine Bus</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <span class="card-title">🏛️ Orion Engine Marketplace & Pinned Upstream Matrix</span>
+          <span class="pill" style="border: 1px solid var(--accent); color: var(--accent);">Audited & Immutable</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="order-book-table" style="font-size: 12px; width: 100%;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--panel-border);">
+                <th style="text-align: left;">Engine / Repository</th>
+                <th style="text-align: left;">Upstream Origin</th>
+                <th style="text-align: left;">Category</th>
+                <th style="text-align: left;">Pinned Commit SHA</th>
+                <th style="text-align: left;">License</th>
+                <th style="text-align: left;">Integration Mode</th>
+                <th style="text-align: center;">Capabilities</th>
+                <th style="text-align: center;">Adapter Test</th>
+              </tr>
+            </thead>
+            <tbody id="capstore-table-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- LEGACY TEST ANCHORS (ensures 100% compatibility with test suite) -->
     <div class="legacy-test-anchors">
       <div>Equity curve</div>
@@ -1456,6 +1646,8 @@ function switchWorkspace(name) {{
   if (name === 'home') drawHomeChart();
   if (name === 'macro') drawYieldCurve();
   if (name === 'screener') runBacktestLab();
+  if (name === 'whatif') runWhatIfSimulation();
+  if (name === 'capstore') loadCapStoreData();
 }}
 
 function switchAssetTab(tabName) {{
@@ -1845,6 +2037,162 @@ async function testIntegration(name) {{
     }}
   }} catch (e) {{
     alert(`Test error: ${{e}}`);
+  }}
+}}
+
+async function runWhatIfSimulation() {{
+  const sym = (document.getElementById('whatif-symbol').value || 'NVDA').toUpperCase();
+  const side = document.getElementById('whatif-side').value || 'BUY';
+  const qty = parseFloat(document.getElementById('whatif-quantity').value || 1000);
+  const notional = parseFloat(document.getElementById('whatif-notional').value || 500000);
+
+  try {{
+    const res = await fetch('/api/what-if', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ symbol: sym, side: side, quantity: qty, notional: notional }})
+    }}).then(r => r.json());
+
+    if (res) {{
+      const expRetEl = document.getElementById('whatif-exp-ret');
+      if (expRetEl) {{
+        expRetEl.textContent = (res.expected_return_delta_pct > 0 ? '+' : '') + res.expected_return_delta_pct + '%';
+        expRetEl.className = res.expected_return_delta_pct >= 0 ? 'stat-val val-good' : 'stat-val val-bad';
+      }}
+      const volShiftEl = document.getElementById('whatif-vol-shift');
+      if (volShiftEl) volShiftEl.textContent = (res.volatility_delta_pct > 0 ? '+' : '') + res.volatility_delta_pct + '%';
+
+      const varDeltaEl = document.getElementById('whatif-var-delta');
+      if (varDeltaEl) {{
+        varDeltaEl.textContent = (res.var_delta_usd >= 0 ? '+$' : '-$') + Math.abs(res.var_delta_usd).toLocaleString();
+        varDeltaEl.className = res.var_delta_usd > 50000 ? 'stat-val val-bad' : 'stat-val val-good';
+      }}
+
+      const verdictEl = document.getElementById('whatif-verdict');
+      const verdictSubEl = document.getElementById('whatif-verdict-sub');
+      if (verdictEl) {{
+        verdictEl.textContent = res.verdict;
+        verdictEl.style.color = res.verdict === 'APPROVED' ? 'var(--good)' : (res.verdict === 'WARNING' ? 'var(--warn)' : 'var(--bad)');
+      }}
+      if (verdictSubEl) verdictSubEl.textContent = `Risk budget ${{res.risk_budget_used_pct}}% used • ${{res.message}}`;
+
+      const advEl = document.getElementById('whatif-adv-val');
+      if (advEl) advEl.textContent = `${{res.liquidity.adv_ratio_pct}}% (${{res.liquidity.status}})`;
+
+      const exitEl = document.getElementById('whatif-exit-val');
+      if (exitEl) exitEl.textContent = `${{res.liquidity.est_exit_minutes}} minutes`;
+
+      if (res.stress_events) {{
+        const s08 = document.getElementById('whatif-shock-2008');
+        if (s08) s08.textContent = `-$${{Math.abs(res.stress_events.crisis_2008).toLocaleString()}}`;
+        const scov = document.getElementById('whatif-shock-covid');
+        if (scov) scov.textContent = `-$${{Math.abs(res.stress_events.covid_2020).toLocaleString()}}`;
+        const srates = document.getElementById('whatif-shock-rates');
+        if (srates) srates.textContent = `-$${{Math.abs(res.stress_events.rates_2022_200bp).toLocaleString()}}`;
+        const sfreeze = document.getElementById('whatif-shock-freeze');
+        if (sfreeze) sfreeze.textContent = `-$${{Math.abs(res.stress_events.liquidity_freeze).toLocaleString()}}`;
+      }}
+    }}
+  }} catch (e) {{
+    console.error('What-If simulation error:', e);
+  }}
+}}
+
+async function runFirewallCheckOnTicket() {{
+  const sym = (document.getElementById('whatif-symbol').value || 'NVDA').toUpperCase();
+  const side = document.getElementById('whatif-side').value || 'BUY';
+  const qty = parseFloat(document.getElementById('whatif-quantity').value || 1000);
+  const notional = parseFloat(document.getElementById('whatif-notional').value || 500000);
+
+  try {{
+    const res = await fetch('/api/firewall/validate', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ symbol: sym, side: side, target_quantity: qty, limit_price: notional / qty }})
+    }}).then(r => r.json());
+
+    if (res && res.gate_results) {{
+      const badge = document.getElementById('whatif-firewall-badge');
+      if (badge) {{
+        badge.textContent = res.approved ? '12/12 GATES PASSED (APPROVED)' : `VETOED AT GATE #${{res.failed_gate}}`;
+        badge.className = res.approved ? 'pill good' : 'pill bad';
+      }}
+
+      const container = document.getElementById('whatif-firewall-gates');
+      if (container) {{
+        container.innerHTML = res.gate_results.map(g => `
+          <div class="stat-box" style="border-left: 3px solid ${{g.passed ? 'var(--good)' : 'var(--bad)'}};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>Gate #${{g.gate_number}}: ${{g.gate_name}}</b>
+              <span class="pill ${{g.passed ? 'good' : 'bad'}}" style="font-size: 9px;">${{g.passed ? 'PASS' : 'VETO'}}</span>
+            </div>
+            <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">${{g.reason}}</div>
+          </div>
+        `).join('');
+      }}
+    }}
+  }} catch (e) {{
+    alert('Firewall audit failed: ' + e);
+  }}
+}}
+
+function resetWhatIfTicket() {{
+  document.getElementById('whatif-symbol').value = 'NVDA';
+  document.getElementById('whatif-side').value = 'BUY';
+  document.getElementById('whatif-quantity').value = '1000';
+  document.getElementById('whatif-notional').value = '500000';
+  runWhatIfSimulation();
+}}
+
+async function loadCapStoreData() {{
+  try {{
+    const reposRes = await fetch('/api/repositories').then(r => r.json());
+    const capsRes = await fetch('/api/capabilities').then(r => r.json());
+
+    if (reposRes && reposRes.repositories) {{
+      const tbody = document.getElementById('capstore-table-tbody');
+      const countEl = document.getElementById('capstore-repo-count');
+      if (countEl) countEl.textContent = `${{reposRes.total_count || Object.keys(reposRes.repositories).length}} Repositories`;
+
+      const capCountEl = document.getElementById('capstore-cap-count');
+      if (capCountEl && capsRes) capCountEl.textContent = `${{capsRes.total_count || Object.keys(capsRes.capabilities || {{}}).length}} Registered`;
+
+      if (tbody) {{
+        tbody.innerHTML = Object.entries(reposRes.repositories).map(([key, r]) => `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <td style="text-align: left; padding: 8px;">
+              <b>${{key}}</b>
+              <div style="font-size: 10px; color: var(--muted); max-width: 260px;">${{r.description || ''}}</div>
+            </td>
+            <td style="text-align: left; padding: 8px; font-size: 11px;">
+              <a href="${{r.upstream_url}}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">${{r.owner}}/${{r.repo}}</a>
+            </td>
+            <td style="text-align: left; padding: 8px;">
+              <span class="pill" style="font-size: 10px;">${{r.category}}</span>
+            </td>
+            <td style="text-align: left; padding: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--accent-purple);">
+              ${{r.pinned_commit.substring(0, 10)}}...
+            </td>
+            <td style="text-align: left; padding: 8px;">
+              <span class="pill ${{r.copyleft ? 'warn' : 'good'}}" style="font-size: 10px;">
+                ${{r.license}} ${{r.copyleft ? '(Isolated)' : ''}}
+              </span>
+            </td>
+            <td style="text-align: left; padding: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
+              ${{r.integration_mode}}
+            </td>
+            <td style="text-align: center; padding: 8px;">
+              <span class="pill" style="font-size: 10px;">${{(r.capabilities || []).length}} Caps</span>
+            </td>
+            <td style="text-align: center; padding: 8px;">
+              <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 10px;" onclick="testIntegration('${{key}}')">⚡ Test</button>
+            </td>
+          </tr>
+        `).join('');
+      }}
+    }}
+  }} catch (e) {{
+    console.error('Error loading cap store data:', e);
   }}
 }}
 

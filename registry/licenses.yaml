@@ -1,0 +1,44 @@
+# ORION License & IP Boundary Policy
+# Automated license compatibility matrix protecting Orion core from copyleft or commercial contamination.
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+
+license_categories:
+  permissive:
+    description: "Freely usable in proprietary and commercial software with minimal notice requirements."
+    licenses:
+      - "MIT"
+      - "Apache-2.0"
+      - "BSD-2-Clause"
+      - "BSD-3-Clause"
+      - "NCSA"
+    allowed_integration_modes:
+      - "direct_dependency"
+      - "vendored_source"
+      - "in_process_adapter"
+
+  restricted_commercial:
+    description: "Permissive core with commercial use or SaaS redistribution restrictions."
+    licenses:
+      - "Apache-2.0 with Commons Clause"
+      - "Commercial / Academic"
+    allowed_integration_modes:
+      - "internal_research_only"
+      - "clean_room_reimplementation"
+      - "out_of_tree_tool"
+    rules:
+      vectorbt: "Permitted for internal proprietary backtesting; SaaS redistribution of raw vectorbt binaries blocked."
+      mlfinlab: "Academic edition used for formula reference; clean-room implementation of triple-barrier labeling used in production."
+
+  copyleft_isolated:
+    description: "Viral copyleft licenses (GPL/AGPL). Direct linking prohibited; strict isolation required."
+    licenses:
+      - "GPL-3.0"
+      - "AGPL-3.0"
+    allowed_integration_modes:
+      - "isolated_subprocess_service"
+      - "http_json_api_boundary"
+    rules:
+      backtrader: "Strictly isolated behind independent CLI/subprocess boundary to prevent GPL-3.0 viral linkage."
+      openbb: "Isolated via independent REST/RPC service; no direct Python static import into Orion core decision engine."

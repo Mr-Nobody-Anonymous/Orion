@@ -1,0 +1,333 @@
+{
+  "capabilities": {
+    "volatility.garch": {
+      "provider": "arch",
+      "category": "econometrics",
+      "description": "Generalized Autoregressive Conditional Heteroskedasticity (GARCH) volatility forecasting.",
+      "input": [
+        "return_series: tuple[float, ...]",
+        "p: int",
+        "q: int"
+      ],
+      "output": [
+        "conditional_volatility: tuple[float, ...]",
+        "forecast_variance: float"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.7
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "portfolio.black_litterman": {
+      "provider": "pyportfolioopt",
+      "category": "portfolio",
+      "description": "Bayesian Black-Litterman asset allocation combining market equilibrium with investor views.",
+      "input": [
+        "prior_expected_returns: Mapping[str, float]",
+        "covariance_matrix: tuple[tuple[float, ...], ...]",
+        "investor_views: Mapping[str, float]",
+        "view_confidences: tuple[float, ...]"
+      ],
+      "output": [
+        "posterior_returns: Mapping[str, float]",
+        "optimal_weights: Mapping[str, float]"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.75
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    },
+    "portfolio.risk_parity": {
+      "provider": "skfolio",
+      "category": "portfolio",
+      "description": "Equal Risk Contribution / Hierarchical Risk Parity allocation.",
+      "input": [
+        "asset_returns: Mapping[str, tuple[float, ...]]",
+        "covariance_matrix: tuple[tuple[float, ...], ...]"
+      ],
+      "output": [
+        "risk_contributions: Mapping[str, float]",
+        "weights: Mapping[str, float]"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.8
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": false
+    },
+    "portfolio.cvar_optimization": {
+      "provider": "skfolio",
+      "category": "portfolio",
+      "description": "Conditional Value at Risk (Expected Shortfall) portfolio tail-loss minimization.",
+      "input": [
+        "scenario_returns: tuple[tuple[float, ...], ...]",
+        "alpha_confidence: float"
+      ],
+      "output": [
+        "cvar_weights: Mapping[str, float]",
+        "portfolio_cvar_99: float"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.85
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    },
+    "backtest.vectorized": {
+      "provider": "vectorbt",
+      "category": "backtesting",
+      "description": "Ultrafast vectorized multi-asset backtest and walk-forward parameter sweep.",
+      "input": [
+        "price_matrix: tuple[tuple[float, ...], ...]",
+        "signals_matrix: tuple[tuple[int, ...], ...]",
+        "slippage_bps: float",
+        "fee_rate_bps: float"
+      ],
+      "output": [
+        "equity_curves: tuple[tuple[float, ...], ...]",
+        "sharpe_ratio: float",
+        "sortino_ratio: float",
+        "max_drawdown_pct: float",
+        "win_rate_pct: float"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.7
+      },
+      "live_execution": {
+        "allowed": false
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "backtest.event_driven": {
+      "provider": "lean",
+      "category": "backtesting",
+      "description": "Institutional tick-level event-driven backtesting with slippage and order-book queue simulation.",
+      "input": [
+        "order_intents: tuple[OrderIntent, ...]",
+        "market_ticks: tuple[Tick, ...]",
+        "execution_model: str"
+      ],
+      "output": [
+        "fills: tuple[ExecutionReport, ...]",
+        "slippage_distribution: tuple[float, ...]",
+        "audit_trail: tuple[DecisionTrace, ...]"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.85
+      },
+      "live_execution": {
+        "allowed": false
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    },
+    "crypto.order_execution": {
+      "provider": "ccxt",
+      "category": "execution",
+      "description": "Unified cryptographic exchange order routing across Binance, Kraken, Coinbase.",
+      "input": [
+        "order_intent: OrderIntent",
+        "exchange_id: str"
+      ],
+      "output": [
+        "execution_report: ExecutionReport"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.9
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    },
+    "broker.alpaca_execution": {
+      "provider": "alpaca_py",
+      "category": "execution",
+      "description": "Direct market execution on US Equities via Alpaca paper or live DMA endpoints.",
+      "input": [
+        "order_intent: OrderIntent"
+      ],
+      "output": [
+        "execution_report: ExecutionReport"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.9
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    },
+    "data.aggregation": {
+      "provider": "openbb",
+      "category": "data",
+      "description": "Multi-vendor financial data normalization and corporate filings ingestion.",
+      "input": [
+        "symbol: str",
+        "dataset_kind: str"
+      ],
+      "output": [
+        "market_bars: tuple[MarketBar, ...]",
+        "provenance_metadata: Mapping[str, Any]"
+      ],
+      "confidence": {
+        "required": false
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "fundamental.sec_parsing": {
+      "provider": "finrobot",
+      "category": "research",
+      "description": "Parsing SEC 10-Q/10-K filings and computing Piotroski 9-point F-Score.",
+      "input": [
+        "ticker: str",
+        "filing_text: str"
+      ],
+      "output": [
+        "piotroski_f_score: int",
+        "financial_health_rating: str",
+        "balance_sheet_accruals_valid: bool"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.8
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "sentiment.wire_analysis": {
+      "provider": "fingpt",
+      "category": "intelligence",
+      "description": "Financial NLP analysis of Bloomberg/Reuters wires and central bank statements.",
+      "input": [
+        "headline: str",
+        "body: str"
+      ],
+      "output": [
+        "sentiment_score: float",
+        "market_impact_urgency: str"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.75
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "mathematics.black_scholes_greeks": {
+      "provider": "py_vollib",
+      "category": "options",
+      "description": "Exact analytical options pricing and 1st/2nd order Greeks calculation.",
+      "input": [
+        "underlying_price: float",
+        "strike_price: float",
+        "time_to_expiry_years: float",
+        "risk_free_rate: float",
+        "volatility: float",
+        "is_call: bool"
+      ],
+      "output": [
+        "option_price: float",
+        "delta: float",
+        "gamma: float",
+        "vega: float",
+        "theta: float",
+        "rho: float"
+      ],
+      "confidence": {
+        "required": false
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "fixed_income.bond_pricing": {
+      "provider": "quantlib",
+      "category": "fixed_income",
+      "description": "Treasury bond duration, convexity, dirty price, and DV01 sensitivity modeling.",
+      "input": [
+        "face_value: float",
+        "coupon_rate_pct: float",
+        "yield_to_maturity_pct: float",
+        "years_to_maturity: float",
+        "frequency: int"
+      ],
+      "output": [
+        "clean_price: float",
+        "dirty_price: float",
+        "modified_duration: float",
+        "convexity: float",
+        "dv01: float"
+      ],
+      "confidence": {
+        "required": false
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": false,
+      "requires_compliance_gate": false
+    },
+    "prediction_markets.arbitrage": {
+      "provider": "kalshi_engine",
+      "category": "prediction_markets",
+      "description": "Statistical edge calculation on Kalshi and Polymarket binary contracts.",
+      "input": [
+        "market_probability: float",
+        "orion_causal_probability: float",
+        "slippage_buffer_pct: float"
+      ],
+      "output": [
+        "statistical_edge_pct: float",
+        "kelly_fraction: float",
+        "recommendation: str"
+      ],
+      "confidence": {
+        "required": true,
+        "min_threshold": 0.7
+      },
+      "live_execution": {
+        "allowed": true
+      },
+      "requires_risk_gate": true,
+      "requires_compliance_gate": true
+    }
+  }
+}

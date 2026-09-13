@@ -1,0 +1,131 @@
+# ORION Strategy Lifecycle Registry
+# Governs progression through strictly isolated quantitative evaluation gates:
+# IDEA -> PROTOTYPE -> BACKTEST -> ROBUSTNESS -> OUT_OF_SAMPLE -> PAPER -> SMALL_LIVE -> PRODUCTION -> DEGRADED -> RETIRED
+# No strategy advances without reproducible out-of-sample evidence.
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+
+strategy_lifecycle_stages:
+  - "IDEA"
+  - "PROTOTYPE"
+  - "BACKTEST"
+  - "ROBUSTNESS"
+  - "OUT_OF_SAMPLE"
+  - "PAPER"
+  - "SMALL_LIVE"
+  - "PRODUCTION"
+  - "DEGRADED"
+  - "RETIRED"
+
+strategies:
+  momentum_regime_v4:
+    name: "Momentum + Quality + Macro Regime"
+    universe: ["S&P 500", "US Liquid Tech"]
+    status: "PRODUCTION"
+    target_asset_classes: ["equity", "etf"]
+    train_period: "2005-2016"
+    validation_period: "2017-2020"
+    test_period: "2021-2023"
+    live_hold_period: "2024-2026"
+    cagr_pct: 14.7
+    sharpe_ratio: 1.42
+    sortino_ratio: 2.01
+    max_drawdown_pct: -10.4
+    calmar_ratio: 1.41
+    turnover_annual: 3.2
+    profit_factor: 1.71
+    win_rate_pct: 63.2
+    capacity_millions: 150.0
+    risk_budget_pct: 35.0
+    models_used:
+      - "xgboost_factor_momentum_v4"
+      - "transformer_cross_sectional_v2"
+    engines:
+      backtest: "vectorbt"
+      execution: "lean"
+
+  stat_arb_pairs_v2:
+    name: "Statistical Arbitrage Cointegrated Equities"
+    universe: ["Large Cap Energy", "Large Cap Tech"]
+    status: "SMALL_LIVE"
+    target_asset_classes: ["equity"]
+    train_period: "2015-2020"
+    validation_period: "2021-2023"
+    test_period: "2024"
+    live_hold_period: "2025-2026"
+    cagr_pct: 9.8
+    sharpe_ratio: 1.65
+    sortino_ratio: 2.34
+    max_drawdown_pct: -4.8
+    calmar_ratio: 2.04
+    turnover_annual: 8.5
+    profit_factor: 1.88
+    win_rate_pct: 58.4
+    capacity_millions: 40.0
+    risk_budget_pct: 15.0
+    models_used:
+      - "fama_french_5factor_carhart"
+    engines:
+      backtest: "vectorbt"
+      econometrics: "arch"
+
+  prediction_market_edge_v1:
+    name: "Kalshi Macro Discrepancy Harvester"
+    universe: ["Kalshi Fed Rates", "Polymarket CPI"]
+    status: "PRODUCTION"
+    target_asset_classes: ["prediction_market"]
+    train_period: "2023-2024"
+    validation_period: "2025"
+    test_period: "2026"
+    live_hold_period: "2026-Present"
+    cagr_pct: 28.4
+    sharpe_ratio: 2.14
+    sortino_ratio: 3.12
+    max_drawdown_pct: -6.2
+    calmar_ratio: 4.58
+    turnover_annual: 14.2
+    profit_factor: 2.45
+    win_rate_pct: 72.1
+    capacity_millions: 15.0
+    risk_budget_pct: 10.0
+    models_used:
+      - "causal_macro_regime"
+    engines:
+      execution: "kalshi_engine"
+
+  crypto_funding_arb_v3:
+    name: "Perpetual Funding Rate Arbitrage"
+    universe: ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+    status: "PAPER"
+    target_asset_classes: ["crypto"]
+    train_period: "2022-2024"
+    validation_period: "2025"
+    test_period: "2026"
+    cagr_pct: 12.1
+    sharpe_ratio: 2.40
+    sortino_ratio: 3.80
+    max_drawdown_pct: -2.1
+    calmar_ratio: 5.76
+    turnover_annual: 24.0
+    profit_factor: 2.90
+    win_rate_pct: 84.0
+    capacity_millions: 25.0
+    risk_budget_pct: 10.0
+    models_used:
+      - "lightgbm_orderbook_flow_v3"
+    engines:
+      execution: "ccxt"
+
+  mean_reversion_14_legacy:
+    name: "Mean Reversion 14-Session"
+    universe: ["S&P 500"]
+    status: "DEGRADED"
+    target_asset_classes: ["equity"]
+    cagr_pct: 2.1
+    sharpe_ratio: 0.38
+    sortino_ratio: 0.45
+    max_drawdown_pct: -18.4
+    win_rate_pct: 46.2
+    risk_budget_pct: 0.0
+    retirement_reason: "Failed out-of-sample stability in post-2024 volatility regime."

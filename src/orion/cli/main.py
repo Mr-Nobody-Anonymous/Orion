@@ -288,6 +288,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Transaction cost as a fraction of the trade (default: 10 bps).",
     )
 
+    repo_parser = subparsers.add_parser("repo", help="Repository Intelligence Manager (list, audit, test, pin).")
+    repo_sub = repo_parser.add_subparsers(dest="repo_action")
+    repo_sub.add_parser("list", help="List registered external repositories and their pinned commits.")
+    repo_sub.add_parser("audit", help="Run license compatibility and copyleft risk audit.")
+    repo_test = repo_sub.add_parser("test", help="Test clean adapter contract for an engine.")
+    repo_test.add_argument("name", help="Repository/adapter name.")
+    repo_pin = repo_sub.add_parser("pin", help="Pin a repository to an exact commit SHA.")
+    repo_pin.add_argument("name", help="Repository name.")
+    repo_pin.add_argument("commit", help="Commit SHA.")
+
     return parser
 
 
@@ -1189,6 +1199,21 @@ def main(argv: list[str] | None = None) -> None:
         payload = _run_pipeline_cli(system, args)
     elif command == "frozen-backtest":
         payload = _run_frozen_backtest_cli(system, args)
+    elif command == "repo":
+        from tools.repo_manager import RepoManager
+
+        action = getattr(args, "repo_action", "list") or "list"
+        if action == "list":
+            payload = {"command": "repo", "action": "list", "repositories": RepoManager.list_repos()}
+        elif action == "audit":
+            payload = {"command": "repo", "action": "audit", "report": RepoManager.audit()}
+        elif action == "test":
+            payload = {"command": "repo", "action": "test", "result": RepoManager.test_adapter(args.name)}
+        elif action == "pin":
+            success = RepoManager.pin_commit(args.name, args.commit)
+            payload = {"command": "repo", "action": "pin", "name": args.name, "commit": args.commit, "success": success}
+        else:
+            payload = {"command": "repo", "action": action, "repositories": RepoManager.list_repos()}
     else:
         parser.error(f"unknown command: {command}")
         return

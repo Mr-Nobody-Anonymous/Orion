@@ -1,0 +1,129 @@
+# ORION Model Arena & Lifecycle Registry
+# Tracks every quantitative and machine learning model from discovery to production.
+# Implements automatic demotion on performance degradation or feature drift.
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+
+model_lifecycle_stages:
+  - "DISCOVERED"
+  - "TRAINING"
+  - "VALIDATED"
+  - "HOLDOUT"
+  - "PAPER"
+  - "PRODUCTION"
+  - "DEGRADED"
+  - "RETIRED"
+
+models:
+  transformer_cross_sectional_v2:
+    name: "Transformer Cross-Sectional Alpha"
+    family: "Transformer"
+    engine: "qlib"
+    status: "PRODUCTION"
+    accuracy: 0.582
+    sharpe_ratio: 1.31
+    stability_score: 82
+    drift_score: 0.04
+    validation_period: "2017-2020"
+    holdout_period: "2021-2023"
+    live_since: "2024-01-15"
+    last_recalibrated: "2026-08-01"
+    allocation_weight_pct: 25.0
+    degradation_threshold_sharpe: 0.80
+
+  xgboost_factor_momentum_v4:
+    name: "XGBoost Multi-Factor Ranker"
+    family: "GradientBoostedTrees"
+    engine: "qlib"
+    status: "PRODUCTION"
+    accuracy: 0.568
+    sharpe_ratio: 1.42
+    stability_score: 91
+    drift_score: 0.02
+    validation_period: "2017-2020"
+    holdout_period: "2021-2023"
+    live_since: "2024-03-01"
+    last_recalibrated: "2026-08-15"
+    allocation_weight_pct: 35.0
+    degradation_threshold_sharpe: 0.90
+
+  lightgbm_orderbook_flow_v3:
+    name: "LightGBM Microstructure Imbalance"
+    family: "LightGBM"
+    engine: "qlib"
+    status: "PRODUCTION"
+    accuracy: 0.574
+    sharpe_ratio: 1.37
+    stability_score: 89
+    drift_score: 0.03
+    validation_period: "2017-2020"
+    holdout_period: "2021-2023"
+    live_since: "2024-06-01"
+    last_recalibrated: "2026-09-01"
+    allocation_weight_pct: 20.0
+    degradation_threshold_sharpe: 0.85
+
+  drl_ppo_regime_allocator_v1:
+    name: "Deep RL PPO Multi-Asset Allocator"
+    family: "ReinforcementLearning"
+    engine: "finrl"
+    status: "PAPER"
+    accuracy: 0.551
+    sharpe_ratio: 1.27
+    stability_score: 71
+    drift_score: 0.08
+    validation_period: "2018-2021"
+    holdout_period: "2022-2024"
+    live_since: null
+    last_recalibrated: "2026-07-20"
+    allocation_weight_pct: 0.0
+    degradation_threshold_sharpe: 0.70
+
+  random_forest_baseline:
+    name: "Random Forest Baseline Alpha"
+    family: "RandomForest"
+    engine: "scikit-learn"
+    status: "VALIDATED"
+    accuracy: 0.549
+    sharpe_ratio: 1.19
+    stability_score: 87
+    drift_score: 0.05
+    validation_period: "2017-2020"
+    holdout_period: "2021-2023"
+    live_since: null
+    last_recalibrated: "2026-06-10"
+    allocation_weight_pct: 0.0
+    degradation_threshold_sharpe: 0.70
+
+  fama_french_5factor_carhart:
+    name: "Fama-French 5-Factor Baseline"
+    family: "EconometricFactorModel"
+    engine: "arch"
+    status: "PRODUCTION"
+    accuracy: 0.532
+    sharpe_ratio: 1.08
+    stability_score: 95
+    drift_score: 0.01
+    validation_period: "2005-2020"
+    holdout_period: "2021-2025"
+    live_since: "2023-01-01"
+    last_recalibrated: "2026-01-01"
+    allocation_weight_pct: 20.0
+    degradation_threshold_sharpe: 0.60
+
+  momentum_v27_legacy:
+    name: "Univariate Momentum Model v27"
+    family: "Time-Series"
+    engine: "internal"
+    status: "DEGRADED"
+    accuracy: 0.492
+    sharpe_ratio: 0.41
+    stability_score: 42
+    drift_score: 0.24
+    validation_period: "2015-2018"
+    holdout_period: "2019-2021"
+    live_since: "2022-01-01"
+    last_recalibrated: "2025-01-10"
+    allocation_weight_pct: 0.0
+    retirement_reason: "Feature drift and Sharpe degradation below 0.50 threshold."

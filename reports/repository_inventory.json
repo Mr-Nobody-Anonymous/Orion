@@ -1,0 +1,358 @@
+{
+  "repositories": {
+    "qlib": {
+      "owner": "microsoft",
+      "repo": "qlib",
+      "category": "quantitative_research",
+      "description": "AI-oriented quantitative investment platform for alpha discovery and factor modeling.",
+      "upstream_url": "https://github.com/microsoft/qlib.git",
+      "pinned_commit": "8cb92b4a11f26e5e8e3d321528641473138b1821",
+      "version": "0.9.3.99",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [
+        "adapters/qlib/qlib_interface.patch"
+      ],
+      "status": "active",
+      "capabilities": [
+        "alpha_discovery",
+        "cross_sectional_factors",
+        "lightgbm_forecast"
+      ]
+    },
+    "lean": {
+      "owner": "QuantConnect",
+      "repo": "Lean",
+      "category": "execution_backtesting",
+      "description": "Institutional event-driven algorithmic trading engine across equities, forex, futures, options, and crypto.",
+      "upstream_url": "https://github.com/QuantConnect/Lean.git",
+      "pinned_commit": "c4b192e85a73e6b1293a61dfb6088e89571fa08d",
+      "version": "2.5.0.0",
+      "import_date": "2026-09-13",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "service",
+      "local_patches": [
+        "adapters/lean/lean_broker_bridge.patch"
+      ],
+      "status": "active",
+      "capabilities": [
+        "event_driven_backtest",
+        "slice_data_stream",
+        "slippage_modeling"
+      ]
+    },
+    "vectorbt": {
+      "owner": "polakowo",
+      "repo": "vectorbt",
+      "category": "backtesting_parameter_sweeps",
+      "description": "High-performance vectorized backtesting engine for hyperparameter optimization and walk-forward analysis.",
+      "upstream_url": "https://github.com/polakowo/vectorbt.git",
+      "pinned_commit": "a8d5e12f6942c153835e23652f1e290f912c9bf1",
+      "version": "0.26.1",
+      "import_date": "2026-09-13",
+      "license": "Apache-2.0 with Commons Clause",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "vectorized_backtest",
+        "parameter_grid_search",
+        "walk_forward_lab"
+      ]
+    },
+    "openbb": {
+      "owner": "OpenBB-finance",
+      "repo": "OpenBB",
+      "category": "financial_data_aggregation",
+      "description": "Comprehensive financial data aggregator connecting public, fundamental, and macroeconomic feeds.",
+      "upstream_url": "https://github.com/OpenBB-finance/OpenBB.git",
+      "pinned_commit": "7f3a91b2c451da782e4a6019bca81014e7a83d1c",
+      "version": "4.3.0",
+      "import_date": "2026-09-13",
+      "license": "AGPL-3.0",
+      "copyleft": true,
+      "commercial_allowed": true,
+      "integration_mode": "adapter_service",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "data_aggregation",
+        "sec_filings_search",
+        "macro_indicators"
+      ]
+    },
+    "finrl": {
+      "owner": "AI4Finance-Foundation",
+      "repo": "FinRL",
+      "category": "reinforcement_learning",
+      "description": "Deep reinforcement learning framework for automated quantitative finance research.",
+      "upstream_url": "https://github.com/AI4Finance-Foundation/FinRL.git",
+      "pinned_commit": "b91f42a6c8e3104597dd81f0ea3e7c841a12e589",
+      "version": "0.3.6",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "rl_agent_training",
+        "drl_ensemble_allocation"
+      ]
+    },
+    "finrl_meta": {
+      "owner": "AI4Finance-Foundation",
+      "repo": "FinRL-Meta",
+      "category": "rl_environments_datasets",
+      "description": "Market environments and standardized benchmarks for financial reinforcement learning.",
+      "upstream_url": "https://github.com/AI4Finance-Foundation/FinRL-Meta.git",
+      "pinned_commit": "e14c55d9134a6e8b7c2094b8e5c1a7428f89e211",
+      "version": "0.3.0",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "gym_market_env",
+        "data_processor_layer"
+      ]
+    },
+    "finrl_trading": {
+      "owner": "AI4Finance-Foundation",
+      "repo": "FinRL-Trading",
+      "category": "production_ai_trading",
+      "description": "Production-oriented AI trading agent execution system.",
+      "upstream_url": "https://github.com/AI4Finance-Foundation/FinRL-Trading.git",
+      "pinned_commit": "f62e91a0c48e718d4512b914a87c12563ea1198c",
+      "version": "0.1.2",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "trading_agent_execution"
+      ]
+    },
+    "finrobot": {
+      "owner": "AI4Finance-Foundation",
+      "repo": "FinRobot",
+      "category": "financial_agent_ai",
+      "description": "Open-source AI Agent platform for financial analysis, forecasting, and SEC filing synthesis.",
+      "upstream_url": "https://github.com/AI4Finance-Foundation/FinRobot.git",
+      "pinned_commit": "3e8b11c47a952136e84d8521d98a72c159814522",
+      "version": "0.1.5",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "sec_10q_synthesis",
+        "piotroski_f_scoring",
+        "equity_research_brief"
+      ]
+    },
+    "fingpt": {
+      "owner": "AI4Finance-Foundation",
+      "repo": "FinGPT",
+      "category": "financial_llm",
+      "description": "Open-source financial large language models for sentiment scoring and market impact analysis.",
+      "upstream_url": "https://github.com/AI4Finance-Foundation/FinGPT.git",
+      "pinned_commit": "2b9a71e843f550912c9842a1789c56431980a312",
+      "version": "v3.2",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "wire_news_sentiment",
+        "central_bank_speech_parser"
+      ]
+    },
+    "pyportfolioopt": {
+      "owner": "PyPortfolio",
+      "repo": "PyPortfolioOpt",
+      "category": "portfolio_optimization",
+      "description": "Financial portfolio optimization including Mean-Variance, Black-Litterman, and Hierarchical Risk Parity.",
+      "upstream_url": "https://github.com/PyPortfolio/PyPortfolioOpt.git",
+      "pinned_commit": "5d1c82b13e9a718c54129b015e47c69281a4b633",
+      "version": "1.5.5",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "black_litterman",
+        "hrp_allocation",
+        "efficient_frontier"
+      ]
+    },
+    "skfolio": {
+      "owner": "skfolio",
+      "repo": "skfolio",
+      "category": "portfolio_optimization_risk",
+      "description": "Scikit-learn compliant portfolio optimization, CVaR minimization, and stress testing.",
+      "upstream_url": "https://github.com/skfolio/skfolio.git",
+      "pinned_commit": "9e4f21a8c51e298d741b016e3952a148c2b7194a",
+      "version": "0.2.1",
+      "import_date": "2026-09-13",
+      "license": "BSD-3-Clause",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "cvar_optimization",
+        "risk_budgeting",
+        "combinatorial_purged_cv"
+      ]
+    },
+    "mlfinlab": {
+      "owner": "hudson-and-thames",
+      "repo": "mlfinlab",
+      "category": "financial_machine_learning",
+      "description": "Advanced financial ML techniques based on Marcos Lopez de Prado's research.",
+      "upstream_url": "https://github.com/hudson-and-thames/mlfinlab.git",
+      "pinned_commit": "6a2c71f9814a6012c418a93e8715c61298a4d715",
+      "version": "1.6.0",
+      "import_date": "2026-09-13",
+      "license": "Commercial / Academic",
+      "copyleft": false,
+      "commercial_allowed": false,
+      "integration_mode": "adapter_clean_room",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "triple_barrier_labeling",
+        "structural_break_tests",
+        "bet_sizing"
+      ]
+    },
+    "arch": {
+      "owner": "bashtage",
+      "repo": "arch",
+      "category": "econometrics_volatility_garch",
+      "description": "Autoregressive Conditional Heteroskedasticity (ARCH/GARCH) and unit root econometrics.",
+      "upstream_url": "https://github.com/bashtage/arch.git",
+      "pinned_commit": "1c8e33f5481a792c8194b6187d25e6129185a421",
+      "version": "6.3.0",
+      "import_date": "2026-09-13",
+      "license": "NCSA",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "garch_volatility",
+        "cointegration_test",
+        "unit_root_test"
+      ]
+    },
+    "ccxt": {
+      "owner": "ccxt",
+      "repo": "ccxt",
+      "category": "crypto_exchange_connectivity",
+      "description": "Cross-exchange cryptocurrency trading API connecting spot, margin, futures, and prediction markets.",
+      "upstream_url": "https://github.com/ccxt/ccxt.git",
+      "pinned_commit": "4e9d22a761e89104c8317a2b9148d56129a7c314",
+      "version": "4.3.50",
+      "import_date": "2026-09-13",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "crypto_order_routing",
+        "order_book_depth",
+        "funding_rate_arbitrage"
+      ]
+    },
+    "alpaca_py": {
+      "owner": "alpacahq",
+      "repo": "alpaca-py",
+      "category": "broker_market_data",
+      "description": "Official Python SDK for Alpaca brokerage execution and market data streaming.",
+      "upstream_url": "https://github.com/alpacahq/alpaca-py.git",
+      "pinned_commit": "d71b44e1892c51094a817b26c914e61285a9d218",
+      "version": "0.22.0",
+      "import_date": "2026-09-13",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "equity_order_routing",
+        "paper_trading_venue",
+        "historical_bars_stream"
+      ]
+    },
+    "yfinance": {
+      "owner": "ranaroussi",
+      "repo": "yfinance",
+      "category": "public_market_data",
+      "description": "Free public market data scraper for equities, ETFs, indices, and currency rates.",
+      "upstream_url": "https://github.com/ranaroussi/yfinance.git",
+      "pinned_commit": "e52a81b9241c7810a914b628d915c71284a1e941",
+      "version": "0.2.40",
+      "import_date": "2026-09-13",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "live_quote",
+        "historical_series"
+      ]
+    },
+    "backtrader": {
+      "owner": "mementum",
+      "repo": "backtrader",
+      "category": "event_driven_backtesting",
+      "description": "Legacy Python backtesting and trading library.",
+      "upstream_url": "https://github.com/mementum/backtrader.git",
+      "pinned_commit": "8a7d11b2914c8109a618d715b914c81295a7e129",
+      "version": "1.9.78.123",
+      "import_date": "2026-09-13",
+      "license": "GPL-3.0",
+      "copyleft": true,
+      "commercial_allowed": true,
+      "integration_mode": "isolated_process_service",
+      "local_patches": [],
+      "status": "active",
+      "capabilities": [
+        "indicator_library",
+        "strategy_backtesting"
+      ]
+    }
+  }
+}

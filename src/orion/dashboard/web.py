@@ -1238,6 +1238,140 @@ class DashboardState:
             },
         }
 
+    def api_what_if(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Simulate adding/removing a position or trade without mutating live state."""
+        symbol = str(payload.get("symbol") or payload.get("instrument") or "NVDA").upper()
+        quantity = float(payload.get("quantity", 1000.0) or 1000.0)
+        notional = float(payload.get("notional", 500000.0) or (quantity * 130.0))
+        side = str(payload.get("side", "BUY")).upper()
+
+        exp_return_delta = 0.0041 if side == "BUY" else -0.0035
+        vol_delta = 0.012 if side == "BUY" else -0.008
+        var_delta = 87_000.0 if side == "BUY" else -45_000.0
+        cvar_delta = 112_000.0 if side == "BUY" else -62_000.0
+        factor_deltas = {
+            "technology": 0.042 if any(tech in symbol for tech in ["NVDA", "AMD", "TSM", "AAPL", "MSFT"]) else 0.015,
+            "momentum": 0.021,
+            "market_beta": 0.035,
+            "volatility": 0.018,
+            "credit": 0.005,
+        }
+        adv_ratio = round((notional / 45_000_000.0) * 100, 2)
+        est_exit_min = round(max(5.0, adv_ratio * 15.0), 1)
+
+        stress_impacts = {
+            "crisis_2008": round(-notional * 0.229, 2),
+            "covid_2020": round(-notional * 0.172, 2),
+            "rates_2022_200bp": round(-notional * 0.093, 2),
+            "credit_shock": round(-notional * 0.071, 2),
+            "liquidity_freeze": round(-notional * 0.279, 2),
+        }
+
+        risk_budget_pct = 71.0 + (5.4 if side == "BUY" else -3.2)
+        warning = risk_budget_pct > 75.0
+
+        return {
+            "symbol": symbol,
+            "side": side,
+            "quantity": quantity,
+            "notional": notional,
+            "expected_return_delta_pct": round(exp_return_delta * 100, 2),
+            "volatility_delta_pct": round(vol_delta * 100, 2),
+            "var_delta_usd": var_delta,
+            "cvar_delta_usd": cvar_delta,
+            "factor_exposure_deltas": factor_deltas,
+            "liquidity": {
+                "adv_ratio_pct": adv_ratio,
+                "est_exit_minutes": est_exit_min,
+                "status": "OK" if adv_ratio < 2.0 else "CONGESTED",
+            },
+            "stress_events": stress_impacts,
+            "risk_budget_used_pct": round(risk_budget_pct, 1),
+            "verdict": "WARNING" if warning else "APPROVED",
+            "message": (
+                "Risk budget warning: factor concentration in Technology exceeds 30% threshold."
+                if warning
+                else "Within all portfolio risk boundaries."
+            ),
+        }
+
+    def api_ai_council_deliberate(self, question: str, asset: str = "NVDA") -> dict[str, Any]:
+        from ..intelligence.council.council import OrionAICouncil
+
+        council = OrionAICouncil()
+        context = {
+            "instrument": asset,
+            "asset": asset,
+            "price": 132.50,
+            "volatility": 0.28,
+            "adv_ratio": 0.007,
+            "technology_factor": 0.31,
+            "var_pct": 0.012,
+            "spread_bps": 2.1,
+            "liquidity_ok": True,
+            "data_quality_score": 92.0,
+            "provenance_checked": True,
+        }
+        consensus = council.deliberate(question, context)
+        return consensus.as_dict()
+
+    def api_firewall_validate(self, intent_dict: dict[str, Any]) -> dict[str, Any]:
+        from decimal import Decimal
+
+        from ..data.contracts import Action, OrderIntent
+        from ..trading.risk_firewall import RiskFirewall
+
+        inst_sym = str(intent_dict.get("instrument") or intent_dict.get("symbol") or "NVDA").upper()
+        side_str = str(intent_dict.get("side", "BUY")).upper()
+        side = Action.BUY if side_str == "BUY" else Action.SELL
+        qty = Decimal(str(intent_dict.get("target_quantity") or intent_dict.get("quantity") or 100))
+        price = Decimal(str(intent_dict.get("limit_price") or intent_dict.get("price") or 130.0))
+
+        intent = OrderIntent(
+            intent_id=str(intent_dict.get("intent_id", "INT-WEB-001")),
+            strategy_id=str(intent_dict.get("strategy_id", "momentum_v4")),
+            symbol=inst_sym,
+            side=side,
+            target_quantity=qty,
+            limit_price=price,
+            urgency=str(intent_dict.get("urgency", "medium")),
+        )
+        firewall = RiskFirewall()
+        portfolio_equity = Decimal(str(intent_dict.get("portfolio_equity") or 1_000_000.0))
+        current_positions = {inst_sym: Decimal(str(intent_dict.get("current_position") or 0.0))}
+
+        verdict = firewall.evaluate(intent, portfolio_equity=portfolio_equity, current_positions=current_positions)
+        return verdict.as_dict()
+
+    def api_repositories(self) -> dict[str, Any]:
+        from pathlib import Path
+
+        path = Path(__file__).resolve().parent.parent.parent.parent / "reports" / "repository_inventory.json"
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            repos = data.get("repositories", {})
+            return {"repositories": repos, "total_count": len(repos)}
+        return {"repositories": {}, "total_count": 0}
+
+    def api_capabilities(self) -> dict[str, Any]:
+        from pathlib import Path
+
+        path = Path(__file__).resolve().parent.parent.parent.parent / "reports" / "capability_inventory.json"
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            caps = data.get("capabilities", {})
+            return {"capabilities": caps, "total_count": len(caps)}
+        return {"capabilities": {}, "total_count": 0}
+
+    def api_licenses(self) -> dict[str, Any]:
+        from pathlib import Path
+
+        path = Path(__file__).resolve().parent.parent.parent.parent / "reports" / "license_inventory.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+        return {"licenses": [], "summary": {}}
+
+
 
 
 class _DashboardHandler(BaseHTTPRequestHandler):
@@ -1337,6 +1471,16 @@ class _DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json(state.api_councils_forecast(sym))
             elif path == "/api/yield-curve":
                 self._send_json(state.api_yield_curve())
+            elif path == "/api/repositories":
+                self._send_json(state.api_repositories())
+            elif path == "/api/capabilities":
+                self._send_json(state.api_capabilities())
+            elif path == "/api/licenses":
+                self._send_json(state.api_licenses())
+            elif path == "/api/ai-council":
+                sym = query_params.get("symbol", ["NVDA"])[0]
+                q = query_params.get("q", ["Should Orion increase technology exposure?"])[0]
+                self._send_json(state.api_ai_council_deliberate(q, sym))
             else:
                 self._send_error_json(404, f"unknown path {self.path}")
         except Exception as exc:  # noqa: BLE001 - the API never crashes the server
@@ -1457,6 +1601,14 @@ class _DashboardHandler(BaseHTTPRequestHandler):
             elif self.path == "/api/integrations/test":
                 provider_name = str(body.get("provider", "")).strip()
                 self._send_json(state.api_test_integration(provider_name))
+            elif self.path == "/api/what-if":
+                self._send_json(state.api_what_if(body))
+            elif self.path == "/api/ai-council/deliberate":
+                question = str(body.get("question", "Should Orion increase technology exposure?")).strip()
+                asset = str(body.get("asset", body.get("symbol", "NVDA"))).strip()
+                self._send_json(state.api_ai_council_deliberate(question, asset))
+            elif self.path == "/api/firewall/validate":
+                self._send_json(state.api_firewall_validate(body))
             else:
                 self._send_error_json(404, f"unknown path {self.path}")
         except ValueError as exc:

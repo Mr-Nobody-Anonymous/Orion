@@ -504,3 +504,164 @@ class Account:
 
 OrderRequest = Order
 RiskDecision = RiskAssessment
+MarketBar = OHLCV
+Forecast = Prediction
+ModelPrediction = Prediction
+
+
+@dataclass(frozen=True, slots=True)
+class MarketSnapshot:
+    """Canonical point-in-time cross-asset market snapshot."""
+
+    timestamp: datetime
+    quotes: Mapping[str, MarketQuote] = field(default_factory=dict)
+    bars: Mapping[str, MarketBar] = field(default_factory=dict)
+    order_books: Mapping[str, OrderBook] = field(default_factory=dict)
+    regime: str = "unknown"
+    data_quality_score: Decimal = Decimal("1.0")
+
+
+@dataclass(frozen=True, slots=True)
+class PortfolioSnapshot:
+    """Canonical whole-portfolio snapshot across all asset classes."""
+
+    timestamp: datetime
+    cash: Decimal
+    equity: Decimal
+    gross_exposure: Decimal
+    net_exposure: Decimal
+    leverage: Decimal
+    positions: tuple[Position, ...] = ()
+    currency: str = "USD"
+    unrealized_pnl: Decimal = Decimal("0")
+    realized_pnl: Decimal = Decimal("0")
+
+
+@dataclass(frozen=True, slots=True)
+class RiskMeasurement:
+    """Canonical multi-factor risk and tail-loss measurement."""
+
+    timestamp: datetime
+    portfolio_id: str
+    var_95_pct: Decimal
+    cvar_99_pct: Decimal
+    volatility_ann_pct: Decimal
+    beta: Decimal
+    sharpe_ratio: Decimal
+    max_drawdown_pct: Decimal
+    factor_exposures: Mapping[str, Decimal] = field(default_factory=dict)
+    liquidity_days_to_liquidate: Decimal = Decimal("1.0")
+    stress_losses: Mapping[str, Decimal] = field(default_factory=dict)
+    risk_score: int = 50
+    breached_limits: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Scenario:
+    """Historical or synthetic macroeconomic crisis scenario."""
+
+    scenario_id: str
+    name: str
+    description: str
+    shocks: Mapping[str, Decimal]  # asset/factor -> percentage shock (e.g. {"equity": -0.30})
+    category: str = "historical"  # historical, synthetic, regulatory
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioResult:
+    """Calculated portfolio stress loss under a scenario."""
+
+    scenario_id: str
+    portfolio_loss_pct: Decimal
+    portfolio_loss_amount: Decimal
+    worst_hit_assets: tuple[str, ...] = ()
+    liquidity_impact_pct: Decimal = Decimal("0")
+    margin_breach: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class OrderIntent:
+    """Pre-trade intention before passing through the 12-Gate Risk Firewall."""
+
+    intent_id: str
+    strategy_id: str
+    symbol: str
+    side: Action
+    target_quantity: Decimal
+    urgency: str = "medium"  # low, medium, high
+    max_slippage_bps: Decimal = Decimal("15")
+    limit_price: Decimal | None = None
+    venue: str | None = None
+    order_type: str = "market"
+    rationale: str = ""
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionPlan:
+    """Algorithmic execution schedule chosen by the Smart Order Router."""
+
+    plan_id: str
+    order_intent_id: str
+    algorithm: str  # TWAP, VWAP, POV, ICEBERG, DIRECT
+    venue: str
+    child_slices: int = 1
+    slice_interval_seconds: int = 60
+    participation_rate: Decimal = Decimal("0.05")
+    approved_by_risk_firewall: bool = False
+    firewall_trace_id: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class BacktestResult:
+    """Deterministic, out-of-sample backtest report."""
+
+    strategy_id: str
+    start_date: str
+    end_date: str
+    cagr_pct: Decimal
+    sharpe_ratio: Decimal
+    sortino_ratio: Decimal
+    max_drawdown_pct: Decimal
+    win_rate_pct: Decimal
+    profit_factor: Decimal
+    total_trades: int
+    turnover: Decimal
+    slippage_cost_total: Decimal = Decimal("0")
+    walk_forward_verified: bool = False
+    equity_curve: tuple[float, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Experiment:
+    """Scientific research experiment for alphas, signals, or models."""
+
+    experiment_id: str
+    name: str
+    hypothesis: str
+    model_family: str
+    dataset_version: str
+    status: str = "COMPLETED"  # RUNNING, COMPLETED, FAILED, PROMOTED
+    metrics: Mapping[str, float] = field(default_factory=dict)
+    parameters: Mapping[str, Any] = field(default_factory=dict)
+    promoted_to_validation: bool = False
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionTrace:
+    """Immutable audit trail for every autonomous decision."""
+
+    decision_id: str
+    timestamp: datetime
+    strategy_id: str
+    model_id: str
+    model_version: str
+    data_snapshot_id: str
+    inputs: Mapping[str, Any]
+    outputs: Mapping[str, Any]
+    confidence: Decimal
+    risk_checks_passed: bool
+    compliance_checks_passed: bool
+    portfolio_state_summary: Mapping[str, Any] = field(default_factory=dict)
+    evidence_citations: tuple[str, ...] = ()
