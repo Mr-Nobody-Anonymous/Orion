@@ -19,15 +19,18 @@ falls back to a deterministic recursive bisection.
 
 from __future__ import annotations
 
-from .mean_variance import mean_variance, mvp_weights, mvo_weights
-from .risk_parity import risk_parity
-from .hierarchical_risk_parity import hierarchical_risk_parity
-from .volatility_targeting import volatility_targeting
+from .black_litterman import BlackLittermanEngine, BlackLittermanResult
 from .drawdown_aware import drawdown_aware_weights
+from .hierarchical_risk_parity import hierarchical_risk_parity
+from .mean_variance import mean_variance, mvo_weights, mvp_weights
+from .risk_parity import risk_parity
 from .tax_aware import tax_aware_rebalance
+from .volatility_targeting import volatility_targeting
 from .weights import Weights, normalise_weights
 
 __all__ = [
+    "BlackLittermanEngine",
+    "BlackLittermanResult",
     "Weights",
     "normalise_weights",
     "mean_variance",

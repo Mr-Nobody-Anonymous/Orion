@@ -240,8 +240,18 @@ def build_parser() -> argparse.ArgumentParser:
     brokers_parser.add_argument("--missing-only", action="store_true", help="Only show venues with missing env keys.")
 
     lessons_parser = subparsers.add_parser("lessons-analysis", help="Show the unified mistake analysis (P4-3).")
+    lessons_parser.add_argument("--limit", type=int, default=10, help="Max lessons to show.")
     lessons_parser.add_argument("--symbol", default=None, help="Filter to one symbol.")
     lessons_parser.add_argument("--top", type=int, default=5, help="Top-N symbols.")
+
+    # --- Cloud AI peers (P4-4) -----------------------------------------
+    peers_parser = subparsers.add_parser(
+        "peers", help="List configured cloud AI peers (keys are redacted)."
+    )
+    deliberate_parser = subparsers.add_parser(
+        "deliberate", help="Ask the configured cloud AI peers one question."
+    )
+    deliberate_parser.add_argument("question", help="The question to ask every peer.")
 
     cycle_parser = subparsers.add_parser("cycle", help="One end-to-end decision cycle.")
     cycle_parser.add_argument("symbol", nargs="?", default="DEMO")
@@ -938,6 +948,25 @@ def _run_lessons_analysis_cli(system, args) -> dict[str, object]:
     return {"status": "IMPLEMENTED", **analysis}
 
 
+def _run_peers_cli(args) -> dict[str, object]:
+    """``orion peers`` — which cloud AIs are configured (keys redacted)."""
+    from ..models.cloud.factory import cloud_provider_status
+
+    statuses = cloud_provider_status()
+    return {
+        "command": "peers",
+        "status": "IMPLEMENTED" if statuses else "UNAVAILABLE",
+        "hint": "set keys in .env (see .env.example) to activate cloud AI peers",
+        "peers": statuses,
+    }
+
+
+def _run_deliberate_cli(system, args) -> dict[str, object]:
+    """``orion deliberate`` — ask every configured cloud AI peer a question."""
+    payload = system.deliberate_with_peers(args.question)
+    return {"command": "deliberate", "question": args.question, **payload}
+
+
 def _run_cycle_cli(system, args) -> dict[str, object]:
     """``orion cycle`` — one end-to-end decision cycle (P4-5)."""
     prices = args.prices or [100, 101, 100.5, 102, 103, 104, 105]
@@ -1150,6 +1179,10 @@ def main(argv: list[str] | None = None) -> None:
         payload = _run_brokers_cli(args)
     elif command == "lessons-analysis":
         payload = _run_lessons_analysis_cli(system, args)
+    elif command == "peers":
+        payload = _run_peers_cli(args)
+    elif command == "deliberate":
+        payload = _run_deliberate_cli(system, args)
     elif command == "cycle":
         payload = _run_cycle_cli(system, args)
     elif command == "pipeline":

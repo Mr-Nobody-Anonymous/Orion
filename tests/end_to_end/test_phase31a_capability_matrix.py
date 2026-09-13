@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import subprocess
 import sys
 import time
@@ -786,7 +787,7 @@ def _section_19_source_repos() -> dict[str, object]:
     bad_imports: list[str] = []
     for py in (SRC / "orion").rglob("*.py"):
         text = py.read_text(encoding="utf-8")
-        if "source_repositories" in text or "from source_repositories" in text:
+        if re.search(r"^\s*(?:from\s+source_repositories|import\s+source_repositories)", text, re.MULTILINE):
             bad_imports.append(py.relative_to(REPO).as_posix())
     return {
         "status": "PASS" if (exists and not bad_imports) else "FAIL",

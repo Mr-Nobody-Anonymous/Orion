@@ -13,8 +13,12 @@ uses ``urllib`` so the core ORION install remains stdlib-only.
 Environment variables recognised
 --------------------------------
 
-``OPENAI_API_KEY`` — used as the bearer token if no ``api_key`` is
+``OPENAI_API_KEY``   — used as the bearer token if no ``api_key`` is
 passed to :class:`OpenAIProvider`.
+``OPENAI_MODEL``    — default chat model (constructor arg wins).
+``OPENAI_BASE_URL`` — override the endpoint (constructor arg wins). Set
+this to route the provider through any OpenAI-compatible gateway
+(e.g. OpenRouter, Token Harbor, a local vLLM server).
 
 The provider never logs the key. Diagnostic surfaces use a redacted
 form only.
@@ -49,9 +53,9 @@ class OpenAIProvider(BaseHttpCloudProvider):
     ) -> None:
         key = api_key or env_or_none("OPENAI_API_KEY")
         cfg = HttpCloudConfig(
-            endpoint=endpoint or self.DEFAULT_ENDPOINT,
+            endpoint=endpoint or env_or_none("OPENAI_BASE_URL") or self.DEFAULT_ENDPOINT,
             api_key=key,
-            model=model or self.DEFAULT_CHAT_MODEL,
+            model=model or env_or_none("OPENAI_MODEL") or self.DEFAULT_CHAT_MODEL,
             timeout_seconds=timeout_seconds,
             extra_headers={"Authorization": f"Bearer {key}"} if key else {},
         )

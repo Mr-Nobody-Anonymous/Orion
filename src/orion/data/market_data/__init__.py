@@ -9,7 +9,19 @@ This subpackage contains:
   * :mod:`.provider`         — :class:`MarketDataProvider` protocol + in-memory ref impl
 """
 
-from .lineage import LineageRecord, hash_records, now_utc
+from .corporate_actions import (
+    AdjustedOHLCV,
+    CorporateActionAdjustmentEngine,
+    CorporateActionType,
+)
+from .lineage import (
+    DataEntitlement,
+    DataLicenseType,
+    EntitlementEnforcer,
+    LineageRecord,
+    hash_records,
+    now_utc,
+)
 from .normalization import (
     BadTickConfig,
     BadTickResult,
@@ -28,13 +40,28 @@ from .provider import (
     NewsItem,
     OHLCVRow,
 )
+from .streaming import (
+    BarAggregator,
+    BarTimeframe,
+    DataQualityGuard,
+    OrderBookTracker,
+)
 from .versioning import DataVersion, LocalMarketDataStore, make_version
 
 __all__ = [
+    "AdjustedOHLCV",
     "BadTickConfig",
     "BadTickResult",
+    "BarAggregator",
+    "BarTimeframe",
     "CorporateAction",
+    "CorporateActionAdjustmentEngine",
+    "CorporateActionType",
+    "DataEntitlement",
+    "DataLicenseType",
     "DataVersion",
+    "DataQualityGuard",
+    "EntitlementEnforcer",
     "FundamentalRow",
     "InMemoryMarketDataProvider",
     "LineageRecord",
@@ -43,6 +70,7 @@ __all__ = [
     "MissingDataPolicy",
     "NewsItem",
     "OHLCVRow",
+    "OrderBookTracker",
     "PITBundle",
     "PITRecord",
     "fill_gaps",

@@ -6,6 +6,9 @@ from ...data.contracts import Asset, AssetClass
 from ..specialist import SpecialistConfig
 
 
+from .pricing import BondMetrics, CDSSpreadMetrics, FixedIncomeEngine
+
+
 def fixed_income_specialist(asset: Asset) -> SpecialistConfig:
     return SpecialistConfig(
         asset_class=AssetClass.BOND,
@@ -16,4 +19,9 @@ def fixed_income_specialist(asset: Asset) -> SpecialistConfig:
     )
 
 
-__all__ = ["fixed_income_specialist"]
+__all__ = [
+    "BondMetrics",
+    "CDSSpreadMetrics",
+    "FixedIncomeEngine",
+    "fixed_income_specialist",
+]

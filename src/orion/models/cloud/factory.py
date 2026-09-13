@@ -16,9 +16,12 @@ from .anthropic import AnthropicProvider
 from .azure_openai import AzureOpenAIProvider
 from .base import BaseHttpCloudProvider
 from .cohere import CohereProvider
+from .deepseek import DeepSeekProvider
 from .gemini import GeminiProvider
 from .mistral import MistralProvider
+from .ollama_client import OllamaHttpCloudProvider
 from .openai import OpenAIProvider
+from .openrouter import OpenRouterProvider
 
 
 def create_cloud_providers_from_env(*, load_dotenv: bool = True) -> list[BaseHttpCloudProvider]:
@@ -40,12 +43,17 @@ def create_cloud_providers_from_env(*, load_dotenv: bool = True) -> list[BaseHtt
         except Exception:  # noqa: BLE001 - a broken optional provider must never break startup
             return
 
+    _try("openrouter", OpenRouterProvider)
     _try("openai", OpenAIProvider)
     _try("anthropic", AnthropicProvider)
+    _try("deepseek", DeepSeekProvider)
     _try("gemini", GeminiProvider)
     _try("azure-openai", AzureOpenAIProvider)
     _try("cohere", CohereProvider)
     _try("mistral", MistralProvider)
+    from .base import env_or_none
+    if env_or_none("OLLAMA_BASE_URL") or env_or_none("OLLAMA_MODEL"):
+        _try("ollama", OllamaHttpCloudProvider)
     return providers
 
 

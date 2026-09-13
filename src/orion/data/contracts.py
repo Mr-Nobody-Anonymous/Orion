@@ -301,5 +301,206 @@ class Event:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+@dataclass(frozen=True, slots=True)
+class Instrument:
+    symbol: str
+    asset_class: AssetClass
+    venue: str
+    tick_size: Decimal = Decimal("0.01")
+    lot_size: Decimal = Decimal("1")
+    contract_multiplier: Decimal = Decimal("1")
+    currency: str = "USD"
+    expiry: datetime | None = None
+    strike: Decimal | None = None
+    underlying_symbol: str | None = None
+    is_active: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class Venue:
+    venue_id: str
+    name: str
+    mic_code: str = ""
+    timezone: str = "UTC"
+    maker_fee_bps: Decimal = Decimal("10")
+    taker_fee_bps: Decimal = Decimal("20")
+    is_active: bool = True
+    supports_websockets: bool = True
+    supports_fix: bool = False
+
+
+class MarketStatus(str, Enum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+    HALTED = "HALTED"
+    AUCTION = "AUCTION"
+    PRE_MARKET = "PRE_MARKET"
+    POST_MARKET = "POST_MARKET"
+
+
+@dataclass(frozen=True, slots=True)
+class Market:
+    market_id: str
+    asset: Asset
+    venue: str
+    status: MarketStatus = MarketStatus.OPEN
+    last_price: Decimal = Decimal("0")
+    bid: Decimal = Decimal("0")
+    ask: Decimal = Decimal("0")
+    volume_24h: Decimal = Decimal("0")
+    circuit_breaker_active: bool = False
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True, slots=True)
+class Company:
+    symbol: str
+    name: str
+    cik: str = ""
+    lei: str = ""
+    sector: str = "General"
+    industry: str = "General"
+    country: str = "US"
+    currency: str = "USD"
+    fiscal_year_end_month: int = 12
+    description: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class Security:
+    symbol: str
+    name: str
+    asset_class: AssetClass
+    isin: str = ""
+    cusip: str = ""
+    sedol: str = ""
+    figi: str = ""
+    primary_exchange: str = ""
+    currency: str = "USD"
+
+
+@dataclass(frozen=True, slots=True)
+class PredictionMarketContract:
+    contract_id: str
+    ticker: str
+    title: str
+    outcome: str
+    settlement_source: str
+    settlement_time: datetime | None = None
+    status: str = "ACTIVE"
+    last_price: Decimal = Decimal("0.50")
+    bid: Decimal = Decimal("0.49")
+    ask: Decimal = Decimal("0.51")
+
+
+@dataclass(frozen=True, slots=True)
+class PredictionMarket:
+    market_id: str
+    title: str
+    category: str
+    contracts: tuple[PredictionMarketContract, ...] = ()
+    expiration: datetime | None = None
+    status: str = "ACTIVE"
+    rules: str = ""
+    source: str = "kalshi"
+
+
+@dataclass(frozen=True, slots=True)
+class YieldCurvePoint:
+    tenor: str
+    maturity_years: Decimal
+    rate: Decimal
+    discount_factor: Decimal = Decimal("1")
+
+
+@dataclass(frozen=True, slots=True)
+class YieldCurve:
+    name: str
+    currency: str
+    timestamp: datetime
+    points: tuple[YieldCurvePoint, ...] = ()
+    interpolation: str = "cubic_spline"
+
+
+@dataclass(frozen=True, slots=True)
+class FactorExposure:
+    factor_name: str
+    beta: Decimal
+    t_stat: Decimal = Decimal("0")
+    p_value: Decimal = Decimal("0")
+    specific_risk: Decimal = Decimal("0")
+
+
+@dataclass(frozen=True, slots=True)
+class LedgerEntry:
+    entry_id: str
+    transaction_id: str
+    timestamp: datetime
+    account_id: str
+    debit_account: str
+    credit_account: str
+    amount: Decimal
+    currency: str = "USD"
+    description: str = ""
+    hash: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class TaxLot:
+    lot_id: str
+    asset: Asset
+    open_timestamp: datetime
+    quantity: Decimal
+    cost_basis: Decimal
+    remaining_quantity: Decimal
+    closed_quantity: Decimal = Decimal("0")
+    realized_gain: Decimal = Decimal("0")
+    is_short: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchDocument:
+    doc_id: str
+    title: str
+    author: str
+    symbol: str
+    thesis: str
+    price_target: Decimal | None = None
+    bull_case: str = ""
+    bear_case: str = ""
+    confidence: Decimal = Decimal("0.5")
+    sources: tuple[str, ...] = ()
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AlertSeverity(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
+
+@dataclass(frozen=True, slots=True)
+class AlertNotification:
+    alert_id: str
+    title: str
+    message: str
+    severity: AlertSeverity = AlertSeverity.INFO
+    category: str = "system"
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True, slots=True)
+class Account:
+    account_id: str
+    venue: str
+    currency: str = "USD"
+    cash: Decimal = Decimal("0")
+    buying_power: Decimal = Decimal("0")
+    equity: Decimal = Decimal("0")
+    margin_type: str = "standard"
+    status: str = "ACTIVE"
+
+
 OrderRequest = Order
 RiskDecision = RiskAssessment

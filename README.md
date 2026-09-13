@@ -322,6 +322,32 @@ configs/  integrations/            # Reserved deployment / integration surface
 
 ## 🎮 Quick Start
 
+### ⚡ One Command — Any Machine (Windows · Windows Server · Linux · macOS)
+
+| Where you are | Command |
+|---|---|
+| **Windows / Windows Server** | `start.cmd` (any shell — or double-click it) |
+| **Linux / macOS** | `chmod +x start.sh` once, then `./start.sh` — or simply `sh start.sh` |
+| **Any OS with Python ≥ 3.10** | `python start.py` |
+
+That single command starts the whole platform, in order:
+
+1. `orion doctor` — health + safety gate (refuses to start a half-broken stack)
+2. `orion status` — capability report
+3. `orion run DEMO` — one full 16-phase executive cycle (smoke test)
+4. `orion serve` — the **Mission Control** web dashboard in the foreground at `http://127.0.0.1:8787` (**Ctrl+C** stops everything cleanly)
+
+The launcher is **stdlib-only and offline-safe** — no pip, no venv, no database, no broker account, no GPU. If no Python ≥ 3.10 is found it prints per-OS install instructions and exits.
+
+| Option | Meaning |
+|---|---|
+| `--check` | doctor + status only; exit code `0` iff healthy (CI / monitoring) |
+| `--force` | continue even if the health gate is not `HEALTHY` |
+| `--no-cycle` / `--symbol SPY` | skip / retarget the demo executive cycle |
+| `--host 0.0.0.0` / `--port 8787` | dashboard bind address (default `127.0.0.1:8787`) |
+| `--no-browser` | don't open a browser tab (automatic on headless machines) |
+| `--tui` | terminal mission control instead of the web dashboard |
+
 Everything runs from the repository root — no database, no broker account, no GPU required.
 
 ```powershell
@@ -349,6 +375,12 @@ python -m orion evaluate --no-walk-forward --prices 100 101 100.5 102 103 104 10
 # Autonomous research against the public OpenAlex metadata API
 python -m orion research "market regime forecasting"
 python -m orion discover-papers "financial time series forecasting"
+
+# Cloud AI peers (OpenRouter / DeepSeek / OpenAI / Anthropic / Gemini / ...)
+# Put keys in .env (see .env.example for every provider + free-model recipes),
+# then verify the wiring and consult the council:
+python -m orion peers
+python -m orion deliberate "What macro regimes favor short-vol carry strategies?"
 ```
 
 Or use the library directly:

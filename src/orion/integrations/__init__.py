@@ -1,16 +1,11 @@
-"""External system integrations.
+"""External system integrations and capability ecosystem.
 
-This package contains adapters to real third-party systems that
-ORION may consume — primarily broker APIs and (in the future)
-external data providers, notification channels, and similar
-side-effect-bearing surfaces.
+This package contains adapters to external engines, sidecars, and libraries
+that ORION may consume — including the 30 external capability repositories,
+broker APIs, inference providers, forecasting models, and quantitative engines.
 
-Every integration is opt-in and credential-gated. Adapters in
-this package refuse to construct themselves in live mode
-without explicit operator consent, and they never make a
-network call without explicit credentials. The simulated
-broker in :mod:`orion.simulation.exchange` remains the
-canonical execution engine for development and CI.
+Every external integration is opt-in, non-destructive, and backed by a resilient
+Orion-native fallback guaranteeing zero crashes when third-party packages are absent.
 """
 
 from __future__ import annotations
@@ -24,6 +19,14 @@ from .brokers import (
     LiveBrokerAlertKind,
     LiveTradingDisabledError,
 )
+from .health import IntegrationDiagnostic, IntegrationHealthMonitor
+from .loader import is_package_available, safe_import_module
+from .provenance import RepositoryProvenance, load_provenance_manifest
+from .registry import (
+    MasterIntegrationRegistry,
+    get_capability_router,
+    get_master_registry,
+)
 
 __all__ = [
     "AlpacaAdapter",
@@ -33,4 +36,13 @@ __all__ = [
     "LiveBrokerAlertKind",
     "LiveBrokerAlerts",
     "LiveTradingDisabledError",
+    "MasterIntegrationRegistry",
+    "get_master_registry",
+    "get_capability_router",
+    "RepositoryProvenance",
+    "load_provenance_manifest",
+    "safe_import_module",
+    "is_package_available",
+    "IntegrationDiagnostic",
+    "IntegrationHealthMonitor",
 ]

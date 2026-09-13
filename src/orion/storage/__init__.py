@@ -20,10 +20,13 @@ ORION can reason about provenance without needing a separate
 versioning system.
 """
 
+from .lake import HistoricalDataLake, LakePartition
 from .parquet_store import ParquetStore, TimeSeriesFrame, new_version_id
 from .sqlite_store import SqliteStore
 
 __all__ = [
+    "HistoricalDataLake",
+    "LakePartition",
     "ParquetStore",
     "SqliteStore",
     "TimeSeriesFrame",

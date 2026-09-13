@@ -161,3 +161,63 @@ class TestWebServer:
         payload = get(base, "/api/experiments")
         assert payload["summary"]["experiments"] == 1
         assert payload["recent"][0]["tags"]["ui"] == "web"
+
+    def test_institutional_endpoints(self, server) -> None:
+        base, state = server
+        
+        # 1. Omni search
+        search_res = get(base, "/api/omni-search?q=NVDA")
+        assert "stocks" in search_res["results"]
+        assert any(s["symbol"] == "NVDA" for s in search_res["results"]["stocks"])
+
+        # 2. Asset intelligence
+        asset_res = get(base, "/api/asset?symbol=NVDA")
+        assert asset_res["symbol"] == "NVDA"
+        assert asset_res["f_score"]["score"] == 9
+        assert "order_book" in asset_res
+        assert "options" in asset_res
+        assert "financials" in asset_res
+
+        # 3. Prediction markets
+        pred_res = get(base, "/api/prediction-markets")
+        assert pred_res["total_contracts"] >= 1
+        assert any("FED-RATE-DEC" in c["id"] for c in pred_res["contracts"])
+
+        # 4. Macro economy
+        macro_res = get(base, "/api/macro-economy")
+        assert "central_banks" in macro_res
+        assert "fed" in macro_res["central_banks"]
+
+        # 5. Aladdin risk
+        aladdin_res = get(base, "/api/risk-aladdin")
+        assert aladdin_res["portfolio"]["total_value"] > 0
+        assert len(aladdin_res["stress_tests"]) >= 3
+        assert len(aladdin_res["factors"]) >= 5
+
+        # 6. News feed & brief
+        news_res = get(base, "/api/news")
+        assert "daily_brief" in news_res
+        assert len(news_res["news_feed"]) >= 1
+
+        # 7. 10 AI Agents center
+        agents_res = get(base, "/api/agents-center")
+        assert agents_res["total_agents"] == 10
+        assert len(agents_res["pending_approvals"]) >= 1
+
+        # 8. Context Engine Copilot
+        copilot_res = post(base, "/api/copilot", {"query": "Why is BTC falling?", "asset": "BTC"})
+        assert "response" in copilot_res
+        assert copilot_res["confidence"] > 0
+
+        # 9. Screener
+        screen_res = post(base, "/api/screen", {"criteria": {"min_f_score": 8}})
+        assert screen_res["total_matches"] >= 1
+
+        # 10. Strategy backtest
+        bt_res = post(base, "/api/backtest-strategy", {"strategy_name": "Test-Strat"})
+        assert bt_res["strategy"] == "Test-Strat"
+        assert len(bt_res["equity_curve"]) > 10
+
+        # 11. Governance approval
+        app_res = post(base, "/api/approve-action", {"action_id": "action-app-104", "decision": "APPROVE"})
+        assert app_res["status"] == "EXECUTED"

@@ -27,11 +27,14 @@ from .base import (
     env_or_none,
 )
 from .cohere import CohereProvider
+from .deepseek import DeepSeekProvider
 from .factory import cloud_provider_status, create_cloud_providers_from_env
 from .gemini import GeminiProvider
 from .http import HttpProvider
 from .mistral import MistralProvider
+from .ollama_client import OllamaHttpCloudProvider
 from .openai import OpenAIProvider
+from .openrouter import OpenRouterProvider
 from .provider import CloudProviderUnavailable, NullCloudProvider
 
 __all__ = [
@@ -42,12 +45,15 @@ __all__ = [
     "CloudProviderStatus",
     "CloudProviderUnavailable",
     "CohereProvider",
+    "DeepSeekProvider",
     "GeminiProvider",
     "HttpCloudConfig",
     "HttpProvider",
     "MistralProvider",
     "NullCloudProvider",
+    "OllamaHttpCloudProvider",
     "OpenAIProvider",
+    "OpenRouterProvider",
     "cloud_provider_status",
     "create_cloud_providers_from_env",
     "env_or_none",
