@@ -17,9 +17,12 @@ class AssetClass(str, Enum):
     FOREX = "forex"
     CRYPTO = "crypto"
     OPTION = "option"
+    INDEX = "index"
+    SWAP = "swap"
     VOLATILITY = "volatility"
     PREDICTION_MARKET = "prediction_market"
     ALTERNATIVE = "alternative"
+    ALTERNATIVE_INVESTMENT = "alternative_investment"
 
 
 class Action(str, Enum):
@@ -303,6 +306,14 @@ class Event:
 
 @dataclass(frozen=True, slots=True)
 class Instrument:
+    """Canonical multi-asset instrument definition.
+
+    Every tradeable or observable instrument in Orion is represented
+    through this schema. Enriched per institutional requirements to
+    support cross-asset portfolio construction, risk factor decomposition,
+    and regulatory compliance.
+    """
+
     symbol: str
     asset_class: AssetClass
     venue: str
@@ -314,6 +325,20 @@ class Instrument:
     strike: Decimal | None = None
     underlying_symbol: str | None = None
     is_active: bool = True
+    # ── Institutional enrichment fields ──
+    instrument_id: str = ""  # unique canonical identifier
+    exchange: str = ""  # primary exchange (e.g. NYSE, NASDAQ, CME)
+    country: str = ""  # ISO 3166-1 alpha-2 country code
+    sector: str = ""  # GICS sector or equivalent
+    industry: str = ""  # GICS industry or equivalent
+    spread_bps: Decimal = Decimal("0")  # typical bid-ask spread in basis points
+    avg_daily_volume: Decimal = Decimal("0")  # ADV for liquidity assessment
+    contract_size: Decimal = Decimal("1")  # notional per contract (futures/options)
+    margin_requirement: Decimal = Decimal("0")  # initial margin as fraction
+    settlement_type: str = "T+2"  # settlement cycle
+    corporate_actions_pending: bool = False  # dividend, split, merger flags
+    isin: str = ""  # International Securities Identification Number
+    figi: str = ""  # Bloomberg Financial Instrument Global Identifier
 
 
 @dataclass(frozen=True, slots=True)
@@ -665,3 +690,68 @@ class DecisionTrace:
     compliance_checks_passed: bool
     portfolio_state_summary: Mapping[str, Any] = field(default_factory=dict)
     evidence_citations: tuple[str, ...] = ()
+
+
+class StrategyLifecycleStatus(str, Enum):
+    """Strategy lifecycle states per institutional promotion gates."""
+
+    IDEA = "IDEA"
+    PROTOTYPE = "PROTOTYPE"
+    BACKTEST = "BACKTEST"
+    ROBUSTNESS = "ROBUSTNESS"
+    OUT_OF_SAMPLE = "OUT_OF_SAMPLE"
+    PAPER = "PAPER"
+    SMALL_LIVE = "SMALL_LIVE"
+    PRODUCTION = "PRODUCTION"
+    DEGRADED = "DEGRADED"
+    RETIRED = "RETIRED"
+
+
+class ModelLifecycleStatus(str, Enum):
+    """Model lifecycle states with drift detection and automatic demotion."""
+
+    DISCOVERED = "DISCOVERED"
+    TRAINING = "TRAINING"
+    VALIDATED = "VALIDATED"
+    HOLDOUT = "HOLDOUT"
+    PAPER = "PAPER"
+    PRODUCTION = "PRODUCTION"
+    DEGRADED = "DEGRADED"
+    RETIRED = "RETIRED"
+
+
+class RiskGateVerdict(str, Enum):
+    """Result from a single gate in the 12-Gate Risk Firewall."""
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    WARN = "WARN"
+    SKIP = "SKIP"  # gate not applicable to this instrument/order
+
+
+@dataclass(frozen=True, slots=True)
+class RiskGateResult:
+    """Audit record for a single gate check in the Risk Firewall."""
+
+    gate_name: str
+    gate_index: int  # 1-12
+    verdict: RiskGateVerdict
+    reason: str = ""
+    metric_value: Decimal | None = None
+    limit_value: Decimal | None = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True, slots=True)
+class FirewallDecision:
+    """Complete audit trail from the 12-Gate Risk Firewall."""
+
+    approved: bool
+    gate_results: tuple[RiskGateResult, ...]
+    order_intent_id: str = ""
+    total_gates: int = 12
+    gates_passed: int = 0
+    gates_failed: int = 0
+    gates_warned: int = 0
+    blocking_gate: str | None = None  # first gate that failed
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

@@ -122,6 +122,7 @@ class TestWebServer:
 
     def test_trade_dry_run(self, server) -> None:
         base, state = server
+        state.registry._venues = {}  # ensure no venues
         with pytest.raises(urllib.error.HTTPError):
             # No venues configured in the test env: dry-run still needs a route.
             post(base, "/api/trade", {"symbol": "AAPL", "side": "BUY", "quantity": 1, "dry_run": True})

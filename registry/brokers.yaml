@@ -1,0 +1,198 @@
+# ORION Broker Registry
+# Tracks all broker/exchange venues with credential isolation and capability metadata.
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+governance_policy: "credential_isolation"
+
+brokers:
+  alpaca:
+    name: "Alpaca Markets"
+    provider: "alpaca_py"
+    venue_type: "broker"
+    asset_classes:
+      - "equity"
+      - "etf"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_order"
+      - "paper_trading"
+      - "historical_bars"
+      - "real_time_quotes"
+      - "fractional_shares"
+    endpoints:
+      paper: "https://paper-api.alpaca.markets"
+      live: "https://api.alpaca.markets"
+    default_mode: "paper"
+    credential_env_vars:
+      api_key: "ALPACA_API_KEY"
+      api_secret: "ALPACA_API_SECRET"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 200
+    supports_websocket: true
+    status: "active"
+
+  binance:
+    name: "Binance"
+    provider: "ccxt"
+    venue_type: "exchange"
+    asset_classes:
+      - "crypto"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_limit"
+      - "spot"
+      - "margin"
+      - "futures"
+      - "order_book"
+      - "websocket_stream"
+    endpoints:
+      testnet: "https://testnet.binance.vision"
+      live: "https://api.binance.com"
+    default_mode: "testnet"
+    credential_env_vars:
+      api_key: "BINANCE_API_KEY"
+      api_secret: "BINANCE_API_SECRET"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 10
+    supports_websocket: true
+    status: "active"
+
+  kraken:
+    name: "Kraken"
+    provider: "ccxt"
+    venue_type: "exchange"
+    asset_classes:
+      - "crypto"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_loss"
+      - "spot"
+      - "margin"
+      - "futures"
+      - "staking"
+    endpoints:
+      live: "https://api.kraken.com"
+    default_mode: "paper"
+    credential_env_vars:
+      api_key: "KRAKEN_API_KEY"
+      api_secret: "KRAKEN_API_SECRET"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 15
+    supports_websocket: true
+    status: "active"
+
+  coinbase:
+    name: "Coinbase Advanced"
+    provider: "ccxt"
+    venue_type: "exchange"
+    asset_classes:
+      - "crypto"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_limit"
+      - "spot"
+    endpoints:
+      sandbox: "https://api-public.sandbox.exchange.coinbase.com"
+      live: "https://api.exchange.coinbase.com"
+    default_mode: "sandbox"
+    credential_env_vars:
+      api_key: "COINBASE_API_KEY"
+      api_secret: "COINBASE_API_SECRET"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 10
+    supports_websocket: true
+    status: "active"
+
+  oanda:
+    name: "OANDA"
+    provider: "custom"
+    venue_type: "broker"
+    asset_classes:
+      - "forex"
+      - "commodity"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_loss"
+      - "take_profit"
+      - "practice_account"
+    endpoints:
+      practice: "https://api-fxpractice.oanda.com"
+      live: "https://api-fxtrade.oanda.com"
+    default_mode: "practice"
+    credential_env_vars:
+      api_key: "OANDA_API_KEY"
+      account_id: "OANDA_ACCOUNT_ID"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 30
+    supports_websocket: true
+    status: "active"
+
+  ibkr:
+    name: "Interactive Brokers"
+    provider: "custom"
+    venue_type: "broker"
+    asset_classes:
+      - "equity"
+      - "etf"
+      - "option"
+      - "future"
+      - "bond"
+      - "forex"
+      - "commodity"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_order"
+      - "adaptive_algo"
+      - "twap"
+      - "vwap"
+      - "paper_trading"
+      - "combo_order"
+      - "options_chain"
+    endpoints:
+      paper: "localhost:7497"
+      live: "localhost:7496"
+    default_mode: "paper"
+    credential_env_vars:
+      gateway_port: "IBKR_GATEWAY_PORT"
+      client_id: "IBKR_CLIENT_ID"
+    kill_switch_enabled: true
+    max_order_rate_per_second: 50
+    supports_websocket: false
+    status: "active"
+
+  simulated:
+    name: "Orion Simulated Exchange"
+    provider: "internal"
+    venue_type: "simulator"
+    asset_classes:
+      - "equity"
+      - "etf"
+      - "crypto"
+      - "forex"
+      - "future"
+      - "option"
+      - "commodity"
+    capabilities:
+      - "market_order"
+      - "limit_order"
+      - "stop_order"
+      - "stop_limit"
+      - "order_book_simulation"
+      - "latency_modeling"
+      - "market_impact"
+      - "unlimited"
+    endpoints:
+      default: "internal://simulated-exchange"
+    default_mode: "simulation"
+    credential_env_vars: {}
+    kill_switch_enabled: true
+    max_order_rate_per_second: 10000
+    supports_websocket: false
+    status: "active"

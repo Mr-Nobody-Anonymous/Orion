@@ -215,6 +215,12 @@ _PAGE_BODY = """<!DOCTYPE html>
     <div id="venues" class="row">loading…</div>
   </section>
 
+  <section class="card span12">
+    <h2>Risk Cockpit & Stress Testing (Aladdin)</h2>
+    <div id="aladdin-metrics" class="row">loading…</div>
+    <div id="stress-tests" class="row" style="margin-top: 10px;"></div>
+  </section>
+
   <section class="card">
     <h2>Trade ticket</h2>
     <div class="row" style="gap:8px">
@@ -410,6 +416,21 @@ function refreshSourceRepositories() {
   }).catch((e) => { $('repo-summary').textContent = 'error: ' + e.message; });
 }
 
+function refreshRiskCockpit() {
+  api('/api/risk-aladdin').then((s) => {
+    const p = s.portfolio || {};
+    $('aladdin-metrics').innerHTML =
+      '<div class="gauge"><div class="g"><div class="v" style="color:var(--good)">$' + (p.today_pnl || 0).toLocaleString() + '</div><div class="k">Daily PNL</div></div>' +
+      '<div class="g"><div class="v">' + (p.sharpe_ratio || 0).toFixed(2) + '</div><div class="k">Sharpe Ratio</div></div>' +
+      '<div class="g"><div class="v" style="color:var(--bad)">-$' + ((p.var_95_daily || 0)/1000).toFixed(1) + 'k</div><div class="k">95% Daily VaR</div></div>' +
+      '<div class="g"><div class="v" style="color:var(--warn)">' + (p.portfolio_beta || 0).toFixed(2) + '</div><div class="k">Portfolio Beta</div></div></div>';
+    
+    $('stress-tests').innerHTML = (s.stress_tests || []).map((t) =>
+      '<div class="insight"><div class="meta">' + esc(t.scenario) + ' · Impact: <span style="color:var(--bad)">' + esc(t.portfolio_drawdown_pct) + '%</span></div>' +
+      esc(t.resilience_factor) + '</div>').join('');
+  }).catch((e) => logLine('aladdin: ' + e.message));
+}
+
 $('btn-engage').onclick = () => {
   api('/api/killswitch', {engaged: true, reason: 'operator (web)'}).then(() => {
     logLine('kill switch ENGAGED'); refreshBrokers();
@@ -454,12 +475,13 @@ $('btn-reflect').onclick = () => {
   }).catch((e) => logLine('reflect: ' + e.message));
 };
 
-refreshStatus(); refreshBrokers(); refreshPeers(); refreshLessons(); refreshSourceRepositories();
+refreshStatus(); refreshBrokers(); refreshPeers(); refreshLessons(); refreshSourceRepositories(); refreshRiskCockpit();
 setInterval(refreshStatus, 3000);
 setInterval(refreshBrokers, 8000);
 setInterval(refreshPeers, 10000);
 setInterval(refreshLessons, 8000);
 setInterval(refreshSourceRepositories, 30000);
+setInterval(refreshRiskCockpit, 15000);
 """
 
 

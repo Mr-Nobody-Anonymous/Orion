@@ -1,0 +1,123 @@
+# ORION Dataset Registry
+# Tracks all research and market datasets with provenance.
+
+schema_version: "1.0.0"
+updated_at: "2026-09-13T12:00:00Z"
+
+datasets:
+  sp500_daily:
+    name: "S&P 500 Daily Returns"
+    provider: "yfinance"
+    asset_class: "equity"
+    frequency: "daily"
+    start_date: "2000-01-01"
+    universe_size: 500
+    fields:
+      - "open"
+      - "high"
+      - "low"
+      - "close"
+      - "volume"
+      - "adjusted_close"
+    quality_score: 0.95
+    survivorship_bias_corrected: false
+    corporate_actions_adjusted: true
+    status: "planned"
+
+  crypto_hourly:
+    name: "Top 50 Crypto Hourly"
+    provider: "ccxt"
+    asset_class: "crypto"
+    frequency: "1h"
+    start_date: "2020-01-01"
+    universe_size: 50
+    fields:
+      - "open"
+      - "high"
+      - "low"
+      - "close"
+      - "volume"
+    quality_score: 0.85
+    survivorship_bias_corrected: false
+    corporate_actions_adjusted: false
+    status: "planned"
+
+  macro_indicators:
+    name: "US Macro Economic Indicators"
+    provider: "openbb"
+    asset_class: "macro"
+    frequency: "monthly"
+    start_date: "1990-01-01"
+    fields:
+      - "gdp"
+      - "cpi"
+      - "unemployment"
+      - "fed_funds_rate"
+      - "treasury_10y"
+      - "credit_spread"
+      - "vix"
+      - "oil_wti"
+      - "gold"
+      - "usd_index"
+    quality_score: 0.98
+    survivorship_bias_corrected: true
+    corporate_actions_adjusted: false
+    status: "planned"
+
+  sec_filings:
+    name: "SEC EDGAR Filings (10-K, 10-Q)"
+    provider: "finrobot"
+    asset_class: "fundamental"
+    frequency: "quarterly"
+    start_date: "2010-01-01"
+    fields:
+      - "revenue"
+      - "net_income"
+      - "total_assets"
+      - "total_debt"
+      - "cash_flow_operations"
+      - "eps"
+      - "book_value"
+    quality_score: 0.92
+    survivorship_bias_corrected: false
+    corporate_actions_adjusted: false
+    status: "planned"
+
+  options_chain:
+    name: "US Equity Options Chains"
+    provider: "alpaca_py"
+    asset_class: "option"
+    frequency: "daily"
+    start_date: "2020-01-01"
+    fields:
+      - "strike"
+      - "expiry"
+      - "bid"
+      - "ask"
+      - "volume"
+      - "open_interest"
+      - "implied_volatility"
+    quality_score: 0.88
+    survivorship_bias_corrected: false
+    corporate_actions_adjusted: false
+    status: "planned"
+
+  yield_curves:
+    name: "US Treasury Yield Curves"
+    provider: "openbb"
+    asset_class: "fixed_income"
+    frequency: "daily"
+    start_date: "1990-01-01"
+    fields:
+      - "1m"
+      - "3m"
+      - "6m"
+      - "1y"
+      - "2y"
+      - "5y"
+      - "10y"
+      - "30y"
+    quality_score: 0.99
+    survivorship_bias_corrected: true
+    corporate_actions_adjusted: false
+    status: "planned"

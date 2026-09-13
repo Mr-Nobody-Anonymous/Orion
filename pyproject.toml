@@ -26,6 +26,12 @@ data = [
     "ccxt>=4.0",
     "alpaca-trade-api>=3.0",
 ]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pydantic>=2.0.0",
+    "websockets>=11.0",
+]
 dev = [
     "wheel",
     "build",
