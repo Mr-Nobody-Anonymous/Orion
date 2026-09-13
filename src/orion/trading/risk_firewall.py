@@ -72,17 +72,21 @@ class RiskFirewall:
         *,
         max_position_pct: float = 0.15,
         max_concentration_pct: float = 0.25,
+        max_sector_concentration_pct: float = 0.40,
         max_leverage: float = 2.0,
         max_adv_participation_pct: float = 0.02,
         max_var_pct: float = 0.03,
         max_2008_stress_loss_pct: float = 0.25,
+        max_drawdown_pct: float = 0.10,
     ) -> None:
         self.max_position_pct = max_position_pct
         self.max_concentration_pct = max_concentration_pct
+        self.max_sector_concentration_pct = max_sector_concentration_pct
         self.max_leverage = max_leverage
         self.max_adv_participation_pct = max_adv_participation_pct
         self.max_var_pct = max_var_pct
         self.max_2008_stress_loss_pct = max_2008_stress_loss_pct
+        self.max_drawdown_pct = max_drawdown_pct
 
     def evaluate(
         self,
@@ -93,6 +97,9 @@ class RiskFirewall:
         kill_switch_engaged: bool = False,
         venue_healthy: bool = True,
         compliance_restricted_symbols: tuple[str, ...] = (),
+        adv_map: Mapping[str, Decimal] | None = None,
+        sector_map: Mapping[str, str] | None = None,
+        high_water_mark: Decimal | None = None,
     ) -> FirewallVerdict:
         """Run order intent sequentially through all 12 gates."""
         results: list[GateResult] = []
@@ -133,21 +140,32 @@ class RiskFirewall:
         if not g2_pass:
             return self._verdict(intent, False, "Gate 2: Position Limit Exceeded", 2, results, Decimal("0"))
 
-        # Gate 3: Concentration Limit
-        g3_pass = new_pos_pct <= self.max_concentration_pct
+        # Gate 3: Sector Concentration Limit
+        sector_map = sector_map or {}
+        target_sector = sector_map.get(sym, "Unknown")
+        
+        # Calculate total exposure for this sector across existing positions
+        current_sector_notional = Decimal("0")
+        for p_sym, p_qty in current_positions.items():
+            if sector_map.get(p_sym.upper(), "Unknown") == target_sector:
+                # Approximate position value (would use actual mark-to-market in a full implementation)
+                current_sector_notional += p_qty * unit_price 
+                
+        new_sector_pct = float((current_sector_notional + notional) / max(portfolio_equity, Decimal("1")))
+        g3_pass = new_sector_pct <= self.max_sector_concentration_pct
         results.append(
             GateResult(
                 gate_number=3,
-                gate_name="Concentration Limit",
+                gate_name="Sector Concentration Limit",
                 passed=g3_pass,
-                reason=f"Issuer concentration {new_pos_pct*100:.1f}% within mandate"
+                reason=f"Sector '{target_sector}' concentration {new_sector_pct*100:.1f}% within mandate"
                 if g3_pass
-                else "Concentration threshold breached",
-                metrics={"concentration_pct": new_pos_pct},
+                else f"Sector concentration {new_sector_pct*100:.1f}% exceeds limit {self.max_sector_concentration_pct*100:.1f}%",
+                metrics={"sector_concentration_pct": new_sector_pct, "sector": target_sector},
             )
         )
         if not g3_pass:
-            return self._verdict(intent, False, "Gate 3: Concentration Limit Breached", 3, results, Decimal("0"))
+            return self._verdict(intent, False, "Gate 3: Sector Concentration Limit Breached", 3, results, Decimal("0"))
 
         # Gate 4: Leverage Limit
         total_notional = sum(current_positions.values()) * unit_price + notional
@@ -167,9 +185,10 @@ class RiskFirewall:
         if not g4_pass:
             return self._verdict(intent, False, "Gate 4: Leverage Limit Breached", 4, results, Decimal("0"))
 
-        # Gate 5: Liquidity Check (ADV participation <= 2%)
-        est_adv = Decimal("5000000.0")
-        adv_ratio = float(order_qty / est_adv)
+        # Gate 5: Liquidity Check (ADV participation <= max_adv_participation_pct)
+        adv_map = adv_map or {}
+        est_adv = adv_map.get(sym, Decimal("5000000.0"))
+        adv_ratio = float(order_qty / max(est_adv, Decimal("1")))
         g5_pass = adv_ratio <= self.max_adv_participation_pct
         results.append(
             GateResult(
@@ -296,7 +315,29 @@ class RiskFirewall:
         if not g12_pass:
             return self._verdict(intent, False, "Gate 12: Global Kill Switch Engaged", 12, results, Decimal("0"))
 
-        # All 12 gates successfully passed!
+        # Gate 13: Drawdown Throttling Check
+        g13_pass = True
+        current_drawdown = 0.0
+        if high_water_mark and high_water_mark > 0:
+            current_drawdown = float((portfolio_equity / high_water_mark) - Decimal("1.0"))
+            if current_drawdown < -self.max_drawdown_pct:
+                g13_pass = False
+        
+        results.append(
+            GateResult(
+                gate_number=13,
+                gate_name="Drawdown Limit Throttling",
+                passed=g13_pass,
+                reason=f"Current drawdown {current_drawdown*100:.2f}% is within acceptable limit"
+                if g13_pass
+                else f"HARD STOP: Portfolio drawdown {current_drawdown*100:.2f}% exceeds {self.max_drawdown_pct*100:.2f}% limit",
+                metrics={"current_drawdown_pct": current_drawdown, "limit_pct": self.max_drawdown_pct},
+            )
+        )
+        if not g13_pass:
+            return self._verdict(intent, False, "Gate 13: Drawdown Limit Breached (Trading Suspended)", 13, results, Decimal("0"))
+
+        # All 13 gates successfully passed!
         return self._verdict(intent, True, None, None, results, order_qty)
 
     def _verdict(
