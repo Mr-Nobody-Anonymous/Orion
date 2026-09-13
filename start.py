@@ -265,12 +265,14 @@ def step_cycle(opts):
 def step_dashboard(opts):
     """Mission Control web dashboard (foreground; Ctrl+C to stop)."""
     host = opts.host or "127.0.0.1"
-    port = int(opts.port or 8000)
+    legacy_port = int(opts.port or 8787)
+    api_port = 8000
+    
     if opts.tui:
         say("step", "4/4 mission ctrl  : orion tui (terminal dashboard, q=quit)")
         return run_foreground(["tui"])
     
-    say("step", "4/4 mission ctrl  : starting Next.js UI & FastAPI backend (Ctrl+C to stop)")
+    say("step", "4/4 mission ctrl  : starting Legacy UI, Next.js UI, & FastAPI (Ctrl+C to stop)")
     
     import shutil
     if not shutil.which("npm"):
@@ -280,26 +282,20 @@ def step_dashboard(opts):
     # Using shell=True on Windows is required for npm commands 
     use_shell = (os.name == "nt")
     next_cmd = ["npm", "run", "dev"]
-    api_cmd = [PYTHON, "-m", "uvicorn", "backend.api.app:app", "--host", host, "--port", str(port)]
+    api_cmd = [PYTHON, "-m", "uvicorn", "backend.api.app:app", "--host", host, "--port", str(api_port)]
+    legacy_cmd = [PYTHON, "-m", "orion", "serve", "--host", host, "--port", str(legacy_port), "--no-browser"]
     
-    say("info", "   FastAPI backend  : http://%s:%d" % (host, port))
+    say("info", "   Legacy UI        : http://%s:%d" % (host, legacy_port))
+    say("info", "   FastAPI backend  : http://%s:%d" % (host, api_port))
     say("info", "   Next.js frontend : http://localhost:3000")
     
     api_proc = subprocess.Popen(api_cmd, cwd=str(ROOT), env=ENV)
     next_proc = subprocess.Popen(next_cmd, cwd=str(ROOT / "frontend"), env=ENV, shell=use_shell)
+    legacy_proc = subprocess.Popen(legacy_cmd, cwd=str(ROOT), env=ENV)
     
-    if not opts.no_browser and sys.stdout.isatty():
-        try:
-            import webbrowser
-            import time
-            time.sleep(3) # Give servers a moment to bind
-            webbrowser.open("http://localhost:3000")
-        except Exception:  # noqa: BLE001
-            pass
-            
     try:
         # Block until interrupted by the user
-        api_proc.wait()
+        legacy_proc.wait()
     except KeyboardInterrupt:
         pass
     finally:
@@ -308,12 +304,15 @@ def step_dashboard(opts):
         try:
             api_proc.terminate()
             next_proc.terminate()
+            legacy_proc.terminate()
             api_proc.wait(timeout=5)
             next_proc.wait(timeout=5)
+            legacy_proc.wait(timeout=5)
         except Exception:  # noqa: BLE001
             try:
                 api_proc.kill()
                 next_proc.kill()
+                legacy_proc.kill()
             except Exception:  # noqa: BLE001
                 pass
         say("ok", "ORION stopped cleanly.")
