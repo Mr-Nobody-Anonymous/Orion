@@ -1,0 +1,318 @@
+{
+  "freqtrade": {
+    "url": "https://github.com/freqtrade/freqtrade.git",
+    "category": "trading_framework",
+    "description": "Crypto trading bot with strategy optimization",
+    "integration_module": "src.integrations.freqtrade_adapter",
+    "pip_package": "freqtrade",
+    "status": "integrated"
+  },
+  "jesse": {
+    "url": "https://github.com/jesse-ai/jesse.git",
+    "category": "trading_framework",
+    "description": "Advanced crypto trading framework",
+    "integration_module": "src.integrations.jesse_adapter",
+    "pip_package": "jesse",
+    "status": "integrated"
+  },
+  "backtrader": {
+    "url": "https://github.com/mementum/backtrader.git",
+    "category": "backtesting",
+    "description": "Event-driven backtesting",
+    "integration_module": "src.integrations.backtrader_adapter",
+    "pip_package": "backtrader",
+    "status": "integrated"
+  },
+  "vectorbt": {
+    "url": "https://github.com/polakowo/vectorbt.git",
+    "category": "backtesting",
+    "description": "Vectorized backtesting",
+    "integration_module": "src.integrations.vectorbt_adapter",
+    "pip_package": "vectorbt",
+    "status": "integrated"
+  },
+  "nautilus_trader": {
+    "url": "https://github.com/nautechsystems/nautilus_trader.git",
+    "category": "trading_framework",
+    "description": "High-performance algorithmic trading",
+    "integration_module": "src.integrations.nautilus_adapter",
+    "pip_package": "nautilus_trader",
+    "status": "integrated"
+  },
+  "hummingbot": {
+    "url": "https://github.com/hummingbot/hummingbot.git",
+    "category": "trading_framework",
+    "description": "Market making and arbitrage",
+    "integration_module": "src.integrations.hummingbot_adapter",
+    "pip_package": "hummingbot",
+    "status": "integrated"
+  },
+  "zipline_reloaded": {
+    "url": "https://github.com/stefan-jansen/zipline-reloaded.git",
+    "category": "backtesting",
+    "description": "Zipline backtesting engine",
+    "integration_module": "src.integrations.zipline_adapter",
+    "pip_package": "zipline-reloaded",
+    "status": "integrated"
+  },
+  "octobot": {
+    "url": "https://github.com/Drakkar-Software/OctoBot.git",
+    "category": "trading_framework",
+    "description": "Crypto trading bot ecosystem",
+    "integration_module": "src.integrations.octobot_adapter",
+    "pip_package": "",
+    "status": "integrated"
+  },
+  "pysystemtrade": {
+    "url": "https://github.com/robcarver17/pysystemtrade.git",
+    "category": "trading_framework",
+    "description": "Systematic futures trading",
+    "integration_module": "src.integrations.pysystemtrade_adapter",
+    "pip_package": "",
+    "status": "integrated"
+  },
+  "tensortrade": {
+    "url": "https://github.com/tensortrade-org/tensortrade.git",
+    "category": "trading_framework",
+    "description": "RL-based trading",
+    "integration_module": "src.integrations.tensortrade_adapter",
+    "pip_package": "tensortrade",
+    "status": "integrated"
+  },
+  "ccxt": {
+    "url": "https://github.com/ccxt/ccxt.git",
+    "category": "data_provider",
+    "description": "Unified crypto exchange API",
+    "integration_module": "src.integrations.ccxt_adapter",
+    "pip_package": "ccxt",
+    "status": "integrated"
+  },
+  "yfinance": {
+    "url": "https://github.com/ranaroussi/yfinance.git",
+    "category": "data_provider",
+    "description": "Yahoo Finance data",
+    "integration_module": "src.integrations.yfinance_adapter",
+    "pip_package": "yfinance",
+    "status": "integrated"
+  },
+  "alpha_vantage": {
+    "url": "https://github.com/RomelTorres/alpha_vantage.git",
+    "category": "data_provider",
+    "description": "",
+    "integration_module": "src.integrations.alpha_vantage_adapter",
+    "pip_package": "alpha_vantage",
+    "status": "integrated"
+  },
+  "ib_insync": {
+    "url": "https://github.com/erdewit/ib_insync.git",
+    "category": "data_provider",
+    "description": "Interactive Brokers async API",
+    "integration_module": "src.integrations.ib_insync_adapter",
+    "pip_package": "ib_insync",
+    "status": "integrated"
+  },
+  "python_binance": {
+    "url": "https://github.com/sammchardy/python-binance.git",
+    "category": "data_provider",
+    "description": "",
+    "integration_module": "src.integrations.binance_adapter",
+    "pip_package": "python-binance",
+    "status": "integrated"
+  },
+  "alpaca_trade_api": {
+    "url": "https://github.com/alpacahq/alpaca-trade-api-python.git",
+    "category": "data_provider",
+    "description": "",
+    "integration_module": "src.integrations.alpaca_adapter",
+    "pip_package": "alpaca-trade-api",
+    "status": "integrated"
+  },
+  "pandas_ta": {
+    "url": "https://github.com/twopirllc/pandas-ta.git",
+    "category": "indicators",
+    "status": "failed",
+    "error": "Git clone failed: Cloning into 'C:\\Users\\hp\\Desktop\\Orion\\external\\pandas_ta'...\nremote: Repository not found.\nfatal: repository 'https://github.com/twopirllc/pandas-ta.git/' not found\n"
+  },
+  "ta": {
+    "url": "https://github.com/bukosabino/ta.git",
+    "category": "indicators",
+    "description": "",
+    "integration_module": "src.integrations.ta_adapter",
+    "pip_package": "ta",
+    "status": "integrated"
+  },
+  "finta": {
+    "url": "https://github.com/peerchemist/finta.git",
+    "category": "indicators",
+    "description": "",
+    "integration_module": "src.integrations.finta_adapter",
+    "pip_package": "finta",
+    "status": "integrated"
+  },
+  "finrl": {
+    "url": "https://github.com/AI4Finance-Foundation/FinRL.git",
+    "category": "ml_ai",
+    "description": "Deep RL for finance",
+    "integration_module": "src.integrations.finrl_adapter",
+    "pip_package": "finrl",
+    "status": "integrated"
+  },
+  "fingpt": {
+    "url": "https://github.com/AI4Finance-Foundation/FinGPT.git",
+    "category": "ml_ai",
+    "description": "LLM for finance",
+    "integration_module": "src.integrations.fingpt_adapter",
+    "pip_package": "",
+    "status": "integrated"
+  },
+  "qlib": {
+    "url": "https://github.com/microsoft/qlib.git",
+    "category": "ml_ai",
+    "description": "Microsoft's quant platform",
+    "integration_module": "src.integrations.qlib_adapter",
+    "pip_package": "pyqlib",
+    "status": "integrated"
+  },
+  "mlfinlab": {
+    "url": "https://github.com/hudson-and-thames/mlfinlab.git",
+    "category": "ml_ai",
+    "description": "Advances in Financial ML",
+    "integration_module": "src.integrations.mlfinlab_adapter",
+    "pip_package": "",
+    "status": "integrated"
+  },
+  "stable_baselines3": {
+    "url": "https://github.com/DLR-RM/stable-baselines3.git",
+    "category": "ml_ai",
+    "description": "",
+    "integration_module": "src.integrations.sb3_adapter",
+    "pip_package": "stable-baselines3",
+    "status": "integrated"
+  },
+  "darts": {
+    "url": "https://github.com/unit8co/darts.git",
+    "category": "ml_ai",
+    "description": "Time series forecasting",
+    "integration_module": "src.integrations.darts_adapter",
+    "pip_package": "darts",
+    "status": "integrated"
+  },
+  "tsfresh": {
+    "url": "https://github.com/blue-yonder/tsfresh.git",
+    "category": "ml_ai",
+    "description": "",
+    "integration_module": "src.integrations.tsfresh_adapter",
+    "pip_package": "tsfresh",
+    "status": "integrated"
+  },
+  "optuna": {
+    "url": "https://github.com/optuna/optuna.git",
+    "category": "ml_ai",
+    "description": "",
+    "integration_module": "src.integrations.optuna_adapter",
+    "pip_package": "optuna",
+    "status": "integrated"
+  },
+  "mlflow": {
+    "url": "https://github.com/mlflow/mlflow.git",
+    "category": "ml_ai",
+    "status": "failed",
+    "error": "Command '['git', 'clone', '--depth', '1', 'https://github.com/mlflow/mlflow.git', 'C:\\\\Users\\\\hp\\\\Desktop\\\\Orion\\\\external\\\\mlflow']' timed out after 300 seconds"
+  },
+  "shap": {
+    "url": "https://github.com/slundberg/shap.git",
+    "category": "ml_ai",
+    "description": "",
+    "integration_module": "src.integrations.shap_adapter",
+    "pip_package": "shap",
+    "status": "integrated"
+  },
+  "finbert": {
+    "url": "https://github.com/ProsusAI/finBERT.git",
+    "category": "nlp_sentiment",
+    "description": "",
+    "integration_module": "src.integrations.finbert_adapter",
+    "pip_package": "",
+    "status": "integrated"
+  },
+  "pyportfolioopt": {
+    "url": "https://github.com/robertmartin8/PyPortfolioOpt.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.pyportfolioopt_adapter",
+    "pip_package": "pyportfolioopt",
+    "status": "integrated"
+  },
+  "riskfolio": {
+    "url": "https://github.com/dcajasn/Riskfolio-Lib.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.riskfolio_adapter",
+    "pip_package": "riskfolio-lib",
+    "status": "integrated"
+  },
+  "gs_quant": {
+    "url": "https://github.com/goldmansachs/gs-quant.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.gsquant_adapter",
+    "pip_package": "gs-quant",
+    "status": "integrated"
+  },
+  "financepy": {
+    "url": "https://github.com/domokane/FinancePy.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.financepy_adapter",
+    "pip_package": "financepy",
+    "status": "integrated"
+  },
+  "pyfolio": {
+    "url": "https://github.com/quantopian/pyfolio.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.pyfolio_adapter",
+    "pip_package": "pyfolio-reloaded",
+    "status": "integrated"
+  },
+  "quantstats": {
+    "url": "https://github.com/ranaroussi/quantstats.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.quantstats_adapter",
+    "pip_package": "quantstats",
+    "status": "integrated"
+  },
+  "empyrical": {
+    "url": "https://github.com/quantopian/empyrical.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.empyrical_adapter",
+    "pip_package": "empyrical-reloaded",
+    "status": "integrated"
+  },
+  "alphalens": {
+    "url": "https://github.com/quantopian/alphalens.git",
+    "category": "risk_portfolio",
+    "description": "",
+    "integration_module": "src.integrations.alphalens_adapter",
+    "pip_package": "alphalens-reloaded",
+    "status": "integrated"
+  },
+  "web3py": {
+    "url": "https://github.com/ethereum/web3.py.git",
+    "category": "blockchain",
+    "description": "",
+    "integration_module": "src.integrations.web3_adapter",
+    "pip_package": "web3",
+    "status": "integrated"
+  },
+  "lightweight_charts": {
+    "url": "https://github.com/tradingview/lightweight-charts.git",
+    "category": "ui_charting",
+    "description": "TradingView charts",
+    "integration_module": "frontend.integrations.lightweight_charts",
+    "pip_package": "",
+    "status": "integrated"
+  }
+}

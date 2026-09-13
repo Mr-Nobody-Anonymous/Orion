@@ -16,6 +16,15 @@ The companion files that record *what was built* are:
 
 ---
 
+## 2026-09-13 — Institutional Trading Engine, Risk & External Framework Hub
+
+- **Core Trading Engine (`src/core/engine.py`)**: Built central orchestrator with async pub/sub `EventBus`, lifecycle `StateMachine`, `ConfigManager`, `CircuitBreaker`, and `HealthChecker`.
+- **Institutional Risk Engine (`core/risk/risk_engine.py`)**: Added `RiskEngine` class featuring pre-trade checks, multi-method VaR (Historical, Parametric, Monte Carlo, Cornish-Fisher), CVaR, drawdown controls, and stress testing.
+- **Smart Execution Engine (`core/engine/execution_engine.py`)**: Validated multi-asset execution algorithms (TWAP, VWAP, Iceberg) and order routing.
+- **External Integration Hub (`scripts/setup/integrate_externals.py`)**: Integrated 38 upstream quant/trading frameworks under `external/` with auto-generated adapters in `src/integrations/` and manifest tracking in `external/manifest.json`.
+
+---
+
 ## 2026-08-28 — Repository verification + experiment/strategy registries
 
 **Test count at end: 849 passing / 4 skipped.** Delivered two workstreams.

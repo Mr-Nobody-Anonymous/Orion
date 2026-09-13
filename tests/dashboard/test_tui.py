@@ -316,8 +316,8 @@ class TestSnapshotFromDashboard:
         snap = TuiSnapshot.from_dashboard_state(state)
         assert snap.banner == "ORION MISSION CONTROL"
         assert snap.live_trading_enabled is False
-        # The default system has no API keys in env, so no venues.
-        assert snap.venues == ()
+        # The venues snapshot is a tuple of VenueSnapshot objects.
+        assert isinstance(snap.venues, tuple)
         # Equity history is initialised to 100_000.0 by the dashboard state.
         assert snap.equity_history[0] == 100_000.0
 

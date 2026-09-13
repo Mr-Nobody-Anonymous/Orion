@@ -78,7 +78,12 @@ def test_canonical_schemas_instantiation() -> None:
 
 def test_risk_firewall_blocks_excessive_leverage() -> None:
     """Verify that an order causing gross leverage breach is strictly vetoed."""
-    firewall = RiskFirewall(max_position_pct=10.0, max_concentration_pct=10.0, max_leverage=3.0)
+    firewall = RiskFirewall(
+        max_position_pct=10.0,
+        max_concentration_pct=10.0,
+        max_sector_concentration_pct=10.0,
+        max_leverage=3.0,
+    )
     intent = OrderIntent(
         intent_id="INT-LEVERAGE-TEST",
         strategy_id="test_strat",

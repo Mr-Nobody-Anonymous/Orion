@@ -37,6 +37,7 @@ holdout (a separate research question).
 | P2 (UX & governance) | 5 + P2-6 | ✅ all done (P2-6: demo ✅, live gated ⛔) |
 | P3 (evidence) | 4 (P3-1, P3-1b, P3-2, P3-3) | ✅ all done |
 | P4 (operator-quality surface) | 5 (P4-1, P4-2, P4-3, P4-4, P4-5) | ✅ all done |
+| Institutional Engine & Integrations | Core engine, Risk engine, 38 adapters | ✅ all done |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
 | Total tests | 1164 passing, 4 skipped, 0 failing | ✅ |
 | ORION quality gates | 3 of 3 green (architecture + plane separation + pytest ✅) | ✅ |

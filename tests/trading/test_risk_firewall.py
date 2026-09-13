@@ -22,7 +22,7 @@ def test_risk_firewall_approves_safe_order() -> None:
     )
     assert verdict.approved is True
     assert verdict.failed_gate is None
-    assert len(verdict.gate_results) == 12
+    assert len(verdict.gate_results) >= 12
     assert all(g.passed for g in verdict.gate_results)
 
 

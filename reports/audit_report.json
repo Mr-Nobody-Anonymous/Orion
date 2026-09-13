@@ -1,0 +1,197 @@
+{
+  "audit_date": "2026-09-13T13:44:43.807732+00:00",
+  "total_repositories": 17,
+  "issues_count": 0,
+  "issues": [],
+  "results": [
+    {
+      "repository": "alpaca_py",
+      "owner": "alpacahq",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "d71b44e1892c",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "arch",
+      "owner": "bashtage",
+      "license": "NCSA",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "pinned_commit": "1c8e33f5481a",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "backtrader",
+      "owner": "mementum",
+      "license": "GPL-3.0",
+      "copyleft": true,
+      "commercial_allowed": true,
+      "integration_mode": "isolated_process_service",
+      "pinned_commit": "8a7d11b2914c",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "ccxt",
+      "owner": "ccxt",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "4e9d22a761e8",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "fingpt",
+      "owner": "AI4Finance-Foundation",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "2b9a71e843f5",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "finrl",
+      "owner": "AI4Finance-Foundation",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "b91f42a6c8e3",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "finrl_meta",
+      "owner": "AI4Finance-Foundation",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "e14c55d9134a",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "finrl_trading",
+      "owner": "AI4Finance-Foundation",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "f62e91a0c48e",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "finrobot",
+      "owner": "AI4Finance-Foundation",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "3e8b11c47a95",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "lean",
+      "owner": "QuantConnect",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "service",
+      "pinned_commit": "c4b192e85a73",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "mlfinlab",
+      "owner": "hudson-and-thames",
+      "license": "Commercial / Academic",
+      "copyleft": false,
+      "commercial_allowed": false,
+      "integration_mode": "adapter_clean_room",
+      "pinned_commit": "6a2c71f9814a",
+      "status_flags": [
+        "NON_COMMERCIAL"
+      ],
+      "verdict": "REVIEW"
+    },
+    {
+      "repository": "openbb",
+      "owner": "OpenBB-finance",
+      "license": "AGPL-3.0",
+      "copyleft": true,
+      "commercial_allowed": true,
+      "integration_mode": "adapter_service",
+      "pinned_commit": "7f3a91b2c451",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "pyportfolioopt",
+      "owner": "PyPortfolio",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "pinned_commit": "5d1c82b13e9a",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "qlib",
+      "owner": "microsoft",
+      "license": "MIT",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "adapter",
+      "pinned_commit": "8cb92b4a11f2",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "skfolio",
+      "owner": "skfolio",
+      "license": "BSD-3-Clause",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "pinned_commit": "9e4f21a8c51e",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "vectorbt",
+      "owner": "polakowo",
+      "license": "Apache-2.0 with Commons Clause",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "pinned_commit": "a8d5e12f6942",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    },
+    {
+      "repository": "yfinance",
+      "owner": "ranaroussi",
+      "license": "Apache-2.0",
+      "copyleft": false,
+      "commercial_allowed": true,
+      "integration_mode": "dependency_or_adapter",
+      "pinned_commit": "e52a81b9241c",
+      "status_flags": [],
+      "verdict": "CLEAR"
+    }
+  ]
+}

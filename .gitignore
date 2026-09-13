@@ -26,3 +26,7 @@ source_repositories/**/.gitattributes
 # Vendored reference repositories (1.7 GB locally, not pushed to git).
 # These are research material consulted while designing ORION; the actual
 # capabilities ORION reuses are imported via adapters under src/orion/.
+external/*
+!external/manifest.json
+external_repos/*
+!external_repos/.gitkeep

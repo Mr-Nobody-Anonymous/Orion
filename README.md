@@ -23,16 +23,12 @@
 
 > **1164 tests passing (all passing, 4 skipped). No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
 
-**New (this session):** multi-venue **demo trading** adapters (Alpaca, Binance,
-Kraken, Coinbase, OANDA, IBKR — testnet/paper endpoints by default, live
-multi-gated), a **learning-from-mistakes** loop (`MistakeAnalyzer` + persistent
-lesson store feeding the replay buffer), a **peer-AI council** that learns from
-every external AI configured in `.env` (OpenAI / Anthropic / Gemini / Azure),
-the **Mission Control** web dashboard (`orion serve`), an **append-only
-experiment tracker** (JSONL + optional MLflow backend), an **immutable
-strategy registry** with full lineage and audited lifecycle, and a
-**machine-verified upstream provenance manifest** (29/30 canonical URLs
-reachable; 12 moved/renamed URLs recovered via search + `git ls-remote`).
+**New (Institutional Engine & Integrations):** 
+- **Core Asynchronous Trading Engine** (`src/core/engine.py`): Full central orchestrator with async event bus, system state machine, health checking, and circuit breaker protection.
+- **Institutional Risk Engine** (`core/risk/risk_engine.py`): Multi-method VaR (Historical, Parametric, Monte Carlo, Cornish-Fisher), CVaR/Expected Shortfall, drawdown monitors, pre-trade position size checks, and stress testing.
+- **Smart Execution Engine** (`core/engine/execution_engine.py`): Multi-asset execution algorithms (TWAP, VWAP, Iceberg), order routing, and fill tracking.
+- **External Integration Registry** (`external/manifest.json` & `src/integrations/`): Automated integration pipeline and adapters for 38 external quantitative finance and algorithmic trading frameworks.
+- **Multi-venue Demo Trading** adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR), a **learning-from-mistakes** loop, peer-AI council, and Mission Control dashboard.
 
 ---
 
