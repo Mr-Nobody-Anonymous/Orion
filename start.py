@@ -265,20 +265,60 @@ def step_cycle(opts):
 def step_dashboard(opts):
     """Mission Control web dashboard (foreground; Ctrl+C to stop)."""
     host = opts.host or "127.0.0.1"
-    port = int(opts.port or 8787)
+    port = int(opts.port or 8000)
     if opts.tui:
         say("step", "4/4 mission ctrl  : orion tui (terminal dashboard, q=quit)")
         return run_foreground(["tui"])
-    say("step", "4/4 mission ctrl  : orion serve on http://%s:%d  (Ctrl+C to stop)" % (host, port))
+    
+    say("step", "4/4 mission ctrl  : starting Next.js UI & FastAPI backend (Ctrl+C to stop)")
+    
+    import shutil
+    if not shutil.which("npm"):
+        say("fail", "npm not found. Please install Node.js to run the Orion Next.js frontend.")
+        return 1
+
+    # Using shell=True on Windows is required for npm commands 
+    use_shell = (os.name == "nt")
+    next_cmd = ["npm", "run", "dev"]
+    api_cmd = [PYTHON, "-m", "uvicorn", "backend.api.app:app", "--host", host, "--port", str(port)]
+    
+    say("info", "   FastAPI backend  : http://%s:%d" % (host, port))
+    say("info", "   Next.js frontend : http://localhost:3000")
+    
+    api_proc = subprocess.Popen(api_cmd, cwd=str(ROOT), env=ENV)
+    next_proc = subprocess.Popen(next_cmd, cwd=str(ROOT / "frontend"), env=ENV, shell=use_shell)
+    
     if not opts.no_browser and sys.stdout.isatty():
         try:
             import webbrowser
-            webbrowser.open("http://%s:%d" % (host, port))
-        except Exception:  # noqa: BLE001 - headless boxes must not crash boot
+            import time
+            time.sleep(3) # Give servers a moment to bind
+            webbrowser.open("http://localhost:3000")
+        except Exception:  # noqa: BLE001
             pass
-    # ``--no-browser``: the CLI would open a tab itself; the launcher owns
-    # that so exactly one tab opens (and none on headless machines).
-    return run_foreground(["serve", "--host", host, "--port", str(port), "--no-browser"])
+            
+    try:
+        # Block until interrupted by the user
+        api_proc.wait()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print()
+        say("info", "Shutting down background services...")
+        try:
+            api_proc.terminate()
+            next_proc.terminate()
+            api_proc.wait(timeout=5)
+            next_proc.wait(timeout=5)
+        except Exception:  # noqa: BLE001
+            try:
+                api_proc.kill()
+                next_proc.kill()
+            except Exception:  # noqa: BLE001
+                pass
+        say("ok", "ORION stopped cleanly.")
+    
+    return 0
 
 
 # --------------------------------------------------------------------------
