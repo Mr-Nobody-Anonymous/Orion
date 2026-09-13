@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import dashboard, portfolio, risk, ai_council, execution
+from .routes import dashboard, portfolio, risk, ai_council, execution, research
 from .websocket import market_stream
 
 app = FastAPI(
@@ -22,6 +22,7 @@ app.include_router(portfolio.router, prefix="/api/v1/portfolio", tags=["portfoli
 app.include_router(risk.router, prefix="/api/v1/risk", tags=["risk"])
 app.include_router(ai_council.router, prefix="/api/v1/ai-council", tags=["ai-council"])
 app.include_router(execution.router, prefix="/api/v1/execution", tags=["execution"])
+app.include_router(research.router, prefix="/api/v1/research", tags=["research"])
 app.include_router(market_stream.router, prefix="/api/v1/ws", tags=["websocket"])
 
 @app.on_event("startup")

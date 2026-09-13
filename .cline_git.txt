@@ -1,0 +1,3 @@
+﻿?? .cline_git.txt
+?? .cline_inspect.ps1
+?? .cline_state.txt
