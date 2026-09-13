@@ -147,7 +147,36 @@ class RiskAgent(SpecialistAgent):
     role = "Aladdin Risk & Downside Capital Preservation"
 
     def evaluate(self, symbol: str, context: Mapping[str, Any] | None = None) -> AgentProvenance:
-        # Veto power: can assert veto if stress loss or VaR breaches mandate
+        ctx = context or {}
+        stress_loss = float(ctx.get("stress_loss_2008", 0.184))
+        var_pct = float(ctx.get("var_pct", 0.018))
+        volatility = float(ctx.get("volatility", 0.28))
+
+        veto_reasons: list[str] = []
+        if stress_loss > 0.25:
+            veto_reasons.append(f"2008 stress test loss -{stress_loss*100:.1f}% breaches -25% capital floor.")
+        if var_pct > 0.03:
+            veto_reasons.append(f"Portfolio VaR 95% at {var_pct*100:.2f}% breaches 3.00% ceiling.")
+        if volatility > 0.50:
+            veto_reasons.append(f"Asset volatility {volatility*100:.1f}% breaches 50% max risk threshold.")
+        if ctx.get("veto", False):
+            veto_reasons.append("Explicit risk veto asserted by supervisor.")
+
+        if veto_reasons:
+            return AgentProvenance(
+                agent_name=self.name,
+                role=self.role,
+                decision="REDUCE",
+                confidence=0.96,
+                uncertainty=0.04,
+                evidence=tuple(veto_reasons),
+                contradictions=("Alpha models remain positive despite downside risk breach.",),
+                assumptions=("Tail correlation breakdown under extreme volatility regimes.",),
+                model_version="Aladdin-VaR-v1.4",
+                data_timestamp=datetime.now(timezone.utc).isoformat(),
+                veto_asserted=True,
+            )
+
         return AgentProvenance(
             agent_name=self.name,
             role=self.role,
