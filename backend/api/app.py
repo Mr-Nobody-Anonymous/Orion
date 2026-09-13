@@ -27,4 +27,15 @@ app.include_router(market_stream.router, prefix="/api/v1/ws", tags=["websocket"]
 @app.on_event("startup")
 async def startup_event():
     from orion.dashboard.web import DashboardState
-    app.state.orion = DashboardState()
+    state = DashboardState()
+    
+    # Seed the dashboard with a few initial simulated trades so it isn't completely empty
+    try:
+        prices = [100, 101, 100.5, 102, 103, 104, 105]
+        state.run_cycle("NVDA", prices)
+        state.run_cycle("AAPL", [220, 221, 222, 224])
+        state.run_cycle("TSLA", [230, 235, 240, 238])
+    except Exception as e:
+        print(f"Warning: Failed to seed simulated trades: {e}")
+        
+    app.state.orion = state
