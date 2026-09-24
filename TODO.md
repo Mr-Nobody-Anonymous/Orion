@@ -5,7 +5,8 @@ This TODO is the actionable response to the external code review of the
 specific existing file in `src/orion/` that the implementation should
 plug into. Items already completed in this session are marked ✅.
 
-**Updated 2026-09-01 (current state):** every P0/P1/P2 item in this
+**Updated 2026-09-24 (current state):** CI is the source of truth for
+test counts and readiness. Every P0/P1/P2 item in this
 TODO remains **implemented and tested**. Every P3 item is now
 **done**: P3-1 (paper-Alpaca evidence), P3-1b (peer-AI
 skip-on-failure evidence), P3-2 (frozen-holdout backtest
@@ -21,7 +22,7 @@ The published P3-2 result is honest — ORION currently does
 holdout, and the verdict (`beats_factor_neutral: false`) is
 in `artifacts/frozen-holdout/config.json`. The module +
 test directories all exist on disk and contribute to the
-**1164 / 1168** test count (all passing, 4 intentionally
+Test count is reported by CI; local counts vary by Python version and
 skipped).
 The next bottleneck is no longer evidence infrastructure;
 it is whether ORION's intelligence layer can be tuned to
@@ -39,7 +40,7 @@ holdout (a separate research question).
 | P4 (operator-quality surface) | 5 (P4-1, P4-2, P4-3, P4-4, P4-5) | ✅ all done |
 | Institutional Engine & Integrations | Core engine, Risk engine, 38 adapters | ✅ all done |
 | Phase audit reports | 7 (31A–31G) | ✅ all done |
-| Total tests | 1164 passing, 4 skipped, 0 failing | ✅ |
+| Total tests | Reported by CI | 🔄 |
 | ORION quality gates | 3 of 3 green (architecture + plane separation + pytest ✅) | ✅ |
 
 For the per-phase build reports and the documentation

@@ -18,16 +18,17 @@ Does NOT allow automatic merging of upstream code into production Orion.
 All cloned repos are treated as read-only reference implementations.
 
 Usage:
-    python scripts/sync_repositories.py              # sync all planned
-    python scripts/sync_repositories.py --repo qlib  # sync specific repo
-    python scripts/sync_repositories.py --dry-run     # preview only
+    python scripts/sync_repositories.py              # preview all planned
+    python scripts/sync_repositories.py --repo qlib  # preview one repo
+    python scripts/sync_repositories.py --sync       # explicitly sync
 """
 
 from __future__ import annotations
 
 import json
+import argparse
+import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -72,8 +73,12 @@ def _load_repos() -> dict[str, Any]:
 def _git_clone(url: str, dest: Path, commit: str | None = None) -> bool:
     """Clone a repository and optionally checkout a specific commit."""
     if dest.exists():
-        print(f"  Already cloned at {dest}")
-        return True
+        actual = _get_current_sha(dest)
+        if commit and actual != commit:
+            print(f"  Existing checkout is not pinned: {actual or 'missing'} != {commit}")
+            return False
+        print(f"  Already cloned at {dest} ({actual or 'unknown SHA'})")
+        return bool(actual)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -87,20 +92,30 @@ def _git_clone(url: str, dest: Path, commit: str | None = None) -> bool:
 
         if commit:
             # Fetch the specific commit for pinning
-            subprocess.run(
+            fetch = subprocess.run(
                 ["git", "fetch", "--depth", "1", "origin", commit],
                 capture_output=True, text=True, timeout=120,
                 cwd=str(dest),
             )
-            subprocess.run(
+            if fetch.returncode != 0:
+                raise RuntimeError(f"fetch failed: {fetch.stderr.strip()}")
+            checkout = subprocess.run(
                 ["git", "checkout", commit],
                 capture_output=True, text=True, timeout=30,
                 cwd=str(dest),
             )
+            if checkout.returncode != 0:
+                raise RuntimeError(f"checkout failed: {checkout.stderr.strip()}")
+
+        actual = _get_current_sha(dest)
+        if commit and actual != commit:
+            raise RuntimeError(f"checkout verification failed: {actual or 'missing'} != {commit}")
 
         return True
-    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+    except (subprocess.TimeoutExpired, FileNotFoundError, RuntimeError) as e:
         print(f"  Clone error: {e}")
+        if dest.exists():
+            shutil.rmtree(dest)
         return False
 
 
@@ -244,12 +259,16 @@ def sync_repository(name: str, meta: dict[str, Any], *, dry_run: bool = False) -
 
 
 def main() -> None:
-    dry_run = "--dry-run" in sys.argv
-    specific_repo = None
-
-    for i, arg in enumerate(sys.argv):
-        if arg == "--repo" and i + 1 < len(sys.argv):
-            specific_repo = sys.argv[i + 1]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", help="sync one named repository")
+    parser.add_argument(
+        "--sync",
+        action="store_true",
+        help="perform network/filesystem synchronization (default is preview)",
+    )
+    args = parser.parse_args()
+    dry_run = not args.sync
+    specific_repo = args.repo
 
     repos = _load_repos()
     manifests: list[dict[str, Any]] = []
@@ -257,7 +276,7 @@ def main() -> None:
     if specific_repo:
         if specific_repo not in repos:
             print(f"Error: Repository '{specific_repo}' not found in registry.")
-            sys.exit(1)
+            raise SystemExit(1)
         repos_to_sync = {specific_repo: repos[specific_repo]}
     else:
         repos_to_sync = repos

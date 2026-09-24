@@ -23,8 +23,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -44,6 +46,7 @@ PRICES = [
     170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
     180, 181, 182, 183, 184, 185, 186, 187, 188, 189,
 ]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_full_workflow_end_to_end() -> None:
@@ -153,7 +156,6 @@ def test_full_workflow_end_to_end() -> None:
 
 def test_cli_smoke_full_workflow() -> None:
     """Run the complete documented workflow via the CLI."""
-    repo = "c:\\Users\\hp\\Desktop\\Orion"
     cmds = [
         ["status"],
         ["doctor"],
@@ -176,7 +178,8 @@ def test_cli_smoke_full_workflow() -> None:
             capture_output=True,
             text=True,
             check=True,
-            cwd=repo,
+            cwd=ROOT,
+            env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
         )
         payload = json.loads(result.stdout)
         assert "hardware" in payload
