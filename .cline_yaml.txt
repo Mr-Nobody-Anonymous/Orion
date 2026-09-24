@@ -1,9 +1,0 @@
-﻿python.exe : Traceback (most recent call last):
-At line:1 char:1
-+ & 'C:\Users\hp\Desktop\Orion\.venv-fresh2\Scripts\python.exe' -c 'imp ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
-  File "<string>", line 1, in <module>
-ModuleNotFoundError: No module named 'yaml'

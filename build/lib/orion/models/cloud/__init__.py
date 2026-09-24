@@ -1,0 +1,60 @@
+"""ORION cloud LLM providers.
+
+Every cloud capability is opt-in. ``NullCloudProvider`` is the
+default stub that raises ``CloudProviderUnavailable`` so that no
+infrastructure may make a silent cloud call.
+
+The four shipping providers — :class:`OpenAIProvider`,
+:class:`AnthropicProvider`, :class:`AzureOpenAIProvider`, and
+:class:`HttpProvider` — share the same :class:`BaseHttpCloudProvider`
+transport: stdlib-only, bounded retries, credential-redacted
+status, explicit refusal to issue a request without a configured
+``api_key``.
+
+None of these providers log the API key. Diagnostic surfaces
+redact the credential to ``ab****yz`` style.
+"""
+
+from __future__ import annotations
+
+from .anthropic import AnthropicProvider
+from .azure_openai import AzureOpenAIProvider
+from .base import (
+    BaseHttpCloudProvider,
+    CloudProviderError,
+    CloudProviderStatus,
+    HttpCloudConfig,
+    env_or_none,
+)
+from .cohere import CohereProvider
+from .deepseek import DeepSeekProvider
+from .factory import cloud_provider_status, create_cloud_providers_from_env
+from .gemini import GeminiProvider
+from .http import HttpProvider
+from .mistral import MistralProvider
+from .ollama_client import OllamaHttpCloudProvider
+from .openai import OpenAIProvider
+from .openrouter import OpenRouterProvider
+from .provider import CloudProviderUnavailable, NullCloudProvider
+
+__all__ = [
+    "AnthropicProvider",
+    "AzureOpenAIProvider",
+    "BaseHttpCloudProvider",
+    "CloudProviderError",
+    "CloudProviderStatus",
+    "CloudProviderUnavailable",
+    "CohereProvider",
+    "DeepSeekProvider",
+    "GeminiProvider",
+    "HttpCloudConfig",
+    "HttpProvider",
+    "MistralProvider",
+    "NullCloudProvider",
+    "OllamaHttpCloudProvider",
+    "OpenAIProvider",
+    "OpenRouterProvider",
+    "cloud_provider_status",
+    "create_cloud_providers_from_env",
+    "env_or_none",
+]

@@ -6,6 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "orion"
 version = "0.1.0"
 description = "ORION financial intelligence platform"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "ORION contributors" }]
+keywords = ["finance", "research", "trading", "risk"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 requires-python = ">=3.10"
 dependencies = [
     # All ORION stdlib-only modules work without any of these; the
@@ -24,7 +38,7 @@ ml = [
 ]
 data = [
     "ccxt>=4.0",
-    "alpaca-trade-api>=3.0",
+    "alpaca-py>=0.30",
 ]
 api = [
     "fastapi>=0.100.0",
@@ -35,6 +49,9 @@ api = [
 dev = [
     "wheel",
     "build",
+    "pytest>=7",
+    "ruff>=0.6",
+    "mypy>=1.10",
 ]
 
 [tool.pytest.ini_options]
@@ -44,6 +61,11 @@ addopts = "--import-mode=importlib"
 
 [project.scripts]
 orion = "orion.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/Mr-Nobody-Anonymous/Orion"
+Repository = "https://github.com/Mr-Nobody-Anonymous/Orion"
+Issues = "https://github.com/Mr-Nobody-Anonymous/Orion/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

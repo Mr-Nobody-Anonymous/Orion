@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import subprocess
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _run(*args: str) -> dict:
@@ -15,7 +19,8 @@ def _run(*args: str) -> dict:
         capture_output=True,
         text=True,
         check=True,
-        cwd="c:\\Users\\hp\\Desktop\\Orion",
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
     )
     return json.loads(result.stdout)
 

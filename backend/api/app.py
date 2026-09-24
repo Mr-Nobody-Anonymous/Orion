@@ -30,13 +30,9 @@ async def startup_event():
     from orion.dashboard.web import DashboardState
     state = DashboardState()
     
-    # Seed the dashboard with a few initial simulated trades so it isn't completely empty
-    try:
-        prices = [100, 101, 100.5, 102, 103, 104, 105]
-        state.run_cycle("NVDA", prices)
-        state.run_cycle("AAPL", [220, 221, 222, 224])
-        state.run_cycle("TSLA", [230, 235, 240, 238])
-    except Exception as e:
-        print(f"Warning: Failed to seed simulated trades: {e}")
-        
+    # Keep demo state explicit and valid for the model lookback window.
+    prices = [100 + (index * 0.25) for index in range(40)]
+    state.run_cycle("NVDA", prices)
+    state.run_cycle("AAPL", [220 + (index * 0.2) for index in range(40)])
+    state.run_cycle("TSLA", [230 + (index * 0.3) for index in range(40)])
     app.state.orion = state

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api";
 import { Search, BrainCircuit, LineChart, FileText, Activity, ShieldAlert, Cpu } from "lucide-react";
 
 export default function ResearchPage() {
@@ -15,7 +16,7 @@ export default function ResearchPage() {
     async function fetchAsset() {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/research/asset/${symbol}`);
+        const res = await fetch(apiUrl(`/research/asset/${symbol}`));
         if (res.ok) setAssetData(await res.json());
       } catch (err) {
         console.error(err);
@@ -31,7 +32,7 @@ export default function ResearchPage() {
     if (!query) return;
     const delayDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/dashboard/search?q=${query}`);
+        const res = await fetch(apiUrl(`/dashboard/search?q=${query}`));
         if (res.ok) setSearchData(await res.json());
       } catch (err) {
         console.error(err);

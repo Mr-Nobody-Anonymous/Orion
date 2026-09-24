@@ -30,3 +30,7 @@ external/*
 !external/manifest.json
 external_repos/*
 !external_repos/.gitkeep
+.venv*/
+source_repositories/
+.cline_*
+src/*.egg-info/

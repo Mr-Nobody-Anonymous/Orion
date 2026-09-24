@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShieldAlert, AlertTriangle, Crosshair, BarChart2, Shield } from "lucide-react";
+import { apiUrl } from "@/lib/api";
 
 export default function RiskPage() {
   const [data, setData] = useState<any>(null);
@@ -10,7 +11,7 @@ export default function RiskPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/risk");
+        const res = await fetch(apiUrl("/risk"));
         if (res.ok) setData(await res.json());
       } catch (err) {
         console.error(err);

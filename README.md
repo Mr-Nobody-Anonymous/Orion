@@ -14,14 +14,13 @@
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 1164 passing](https://img.shields.io/badge/Tests-1164%20passing-green.svg)](https://github.com/)
+[![CI](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml/badge.svg)](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml)
 [![Mode: LOCAL](https://img.shields.io/badge/Inference-LOCAL-purple.svg)](https://ollama.com/)
 [![Execution: SIM + DEMO](https://img.shields.io/badge/Execution-SIM%20%2B%20DEMO-orange.svg)](https://github.com/)
 [![Safety: First](https://img.shields.io/badge/Safety-First-red.svg)](https://github.com/)
-[![Zero Fake Integrations](https://img.shields.io/badge/Zero%20Fake-Integrations-green.svg)](https://github.com/)
 [![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
 
-> **1164 tests passing (all passing, 4 skipped). No evidence of trading alpha yet.** The next milestone is a reproducible out-of-sample result, not more infrastructure. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for the predict/plan/persist layer (tool executor with immutable invocation log, persistent agent loop, real goal manager, predict-before-act), and [PHASE_31D_AUDIT.md](docs/architecture/PHASE_31D_AUDIT.md) for the broader plan.
+> **Simulation-first research prototype.** CI is the source of truth for test results. No evidence of trading alpha or production readiness is claimed. Demo dashboard data is synthetic and must not be used for trading.
 
 **New (Institutional Engine & Integrations):** 
 - **Core Asynchronous Trading Engine** (`src/core/engine.py`): Full central orchestrator with async event bus, system state machine, health checking, and circuit breaker protection.
@@ -194,7 +193,9 @@ engine.
 
 ## 🧱 Architecture (the canonical tree)
 
-All product code lives under `src/orion/`. Everything is real, tested code —
+The canonical product code lives under `src/orion/`. Capabilities are
+classified as implemented, experimental, demo, partial, or unavailable based
+on tests and runtime checks —
 **no placeholder modules** (the Phase-30 audit found zero stubs in the package).
 
 ```
@@ -303,7 +304,7 @@ orion/
 ├── local_ai.py  providers.py  registry.py  risk.py  workflow.py  integrations.py
 └── __init__.py                     #   Public exports
 
-tests/                             # ✅ 1164 passing (4 skipped, 0 failing)
+tests/                             # CI-managed test suite
 ├── unit/  integration/  end_to_end/  brain/  prediction/  trading/
 ├── research/  coding/  evolution/  learning/  memory/  models/
 ├── backtesting/  benchmarking/  mathematics/  security/  intelligence/
@@ -463,12 +464,13 @@ and generated code can never alter them.
 ## 🧪 Testing
 
 ```powershell
-python -m pytest tests -q       # full suite (1164 tests)
+python -m pytest tests -q       # full suite; see CI for supported matrices
 python -m compileall src        # byte-compile every module
 python -m orion doctor          # health + safety posture check
 ```
 
-Currently **1164 tests pass** (4 skipped, 0 failing) across `tests/unit`, `tests/integration`,
+The test suite is run in CI across supported Python versions; local results
+depend on the selected environment. Tests are grouped under `tests/unit`, `tests/integration`,
 `tests/end_to_end`, plus per-domain suites for brain, prediction, trading,
 research, coding, evolution, learning, memory, models, backtesting,
 benchmarking, mathematics, security, intelligence, evaluation, registry_v2,
@@ -532,7 +534,7 @@ provenance/audit logs.
 
 | Capability | Status |
 |---|---|
-| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act), mission layer (goal trees, budgeted runs, ledger, persistence) | **IMPLEMENTED** (1164 tests) |
+| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act), mission layer (goal trees, budgeted runs, ledger, persistence) | **IMPLEMENTED / EXPERIMENTAL** (CI-tested) |
 | Demo broker adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR) + `BrokerRegistry` + kill switch | **IMPLEMENTED** — demo/testnet endpoints by default, discovered from `.env` |
 | Learning from mistakes (`MistakeAnalyzer`, `LessonStore`, replay feed, `OrionSystem.reflect_on_trade`) | **IMPLEMENTED** |
 | Peer-AI council (learn from OpenAI / Anthropic / Gemini / Azure via `.env` keys) + Gemini provider | **IMPLEMENTED** — opt-in; no key → honestly unavailable |
