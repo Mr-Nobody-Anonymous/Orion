@@ -12,6 +12,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from orion.integrations.provenance import load_provenance_manifest
+
 
 @dataclass(frozen=True, slots=True)
 class SourceRepositoryRecord:
@@ -65,27 +67,41 @@ def source_repository_inventory(root: Path | None = None) -> dict[str, Any]:
     project_root = root or Path(__file__).resolve().parents[3]
     source_root = project_root / "source_repositories"
     manifest = source_root / "MANIFEST.yaml"
-    if not manifest.is_file():
-        raise FileNotFoundError(f"source repository manifest not found: {manifest}")
-
     records: list[SourceRepositoryRecord] = []
-    for item in _manifest_records(manifest):
-        relative_path = item.get("local_path", "")
-        local_path = project_root / relative_path if relative_path else source_root / item["name"]
-        records.append(
-            SourceRepositoryRecord(
-                name=item["name"],
-                category=item.get("category", "unknown"),
-                local_path=relative_path,
-                canonical_url=item.get("canonical_url", ""),
-                purpose=item.get("purpose", ""),
-                integration_mode=item.get("integration_mode", "unknown"),
-                status=item.get("status", "unknown"),
-                path_exists=local_path.is_dir(),
-                checkout_type=item.get("checkout_type", "unknown"),
-                directly_imported=False,
+    if manifest.is_file():
+        for item in _manifest_records(manifest):
+            relative_path = item.get("local_path", "")
+            local_path = project_root / relative_path if relative_path else source_root / item["name"]
+            records.append(
+                SourceRepositoryRecord(
+                    name=item["name"],
+                    category=item.get("category", "unknown"),
+                    local_path=relative_path,
+                    canonical_url=item.get("canonical_url", ""),
+                    purpose=item.get("purpose", ""),
+                    integration_mode=item.get("integration_mode", "unknown"),
+                    status=item.get("status", "unknown"),
+                    path_exists=local_path.is_dir(),
+                    checkout_type=item.get("checkout_type", "unknown"),
+                    directly_imported=False,
+                )
             )
-        )
+    else:
+        for item in load_provenance_manifest(project_root).values():
+            records.append(
+                SourceRepositoryRecord(
+                    name=item.name,
+                    category=item.category,
+                    local_path=item.local_path,
+                    canonical_url=item.canonical_url,
+                    purpose=item.purpose,
+                    integration_mode=item.integration_mode,
+                    status=item.status,
+                    path_exists=item.exists_locally,
+                    checkout_type="snapshot",
+                    directly_imported=False,
+                )
+            )
 
     by_mode: dict[str, int] = {}
     for record in records:
