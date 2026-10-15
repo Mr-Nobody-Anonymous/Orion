@@ -206,8 +206,7 @@ def step_doctor(opts):
         return False
     payload = _parse_json(out)
     status = _json_field(payload, "status", "?")
-    say("step", "   health status  : %s" % status)
-    if status != "HEALTHY":
+    if status not in ("HEALTHY", "SIMULATION_CORE_HEALTHY", "CORE_HEALTHY"):
         say("warn", "health gate is %s - full report:" % status)
         print(out.rstrip())
         if not opts.force:

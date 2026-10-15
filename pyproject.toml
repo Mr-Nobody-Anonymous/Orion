@@ -5,6 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "orion"
 version = "0.1.0"
+<<<<<<< HEAD
+description = "ORION financial intelligence and quantitative trading research platform"
+readme = "README.md"
+=======
 description = "ORION financial intelligence platform"
 readme = "README.md"
 license = "MIT"
@@ -20,16 +24,65 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+>>>>>>> origin/master
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "ORION Contributors", email = "orion@example.com"}
+]
+maintainers = [
+    {name = "ORION Maintainers", email = "orion@example.com"}
+]
+keywords = [
+    "finance",
+    "trading",
+    "quantitative",
+    "backtesting",
+    "machine-learning",
+    "agent",
+    "portfolio",
+    "risk-management"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
-    # All ORION stdlib-only modules work without any of these; the
-    # packages below are optional integrations that enhance the
-    # system when present. ``provider.status()`` reports whether each
-    # is available.
+    # Core - minimal required dependencies
     "requests>=2.28",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.1",
+    "pydantic>=2.5.0",
+    "numpy>=1.25.0",
+    "pandas>=2.1.0",
+    "typing-extensions>=4.8.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Mr-Nobody-Anonymous/Orion"
+Repository = "https://github.com/Mr-Nobody-Anonymous/Orion"
+Issues = "https://github.com/Mr-Nobody-Anonymous/Orion/issues"
+Documentation = "https://github.com/Mr-Nobody-Anonymous/Orion/tree/main/docs"
+
 [project.optional-dependencies]
+<<<<<<< HEAD
+# Core trading stack
+trading = [
+    "ccxt>=4.1.0",
+    "alpaca-py>=0.20.0",
+    "ib_insync>=0.9.86",
+    "python-binance>=1.0.19",
+=======
 test = [
     "pytest>=7",
     "numpy>=1.23",
@@ -57,12 +110,108 @@ dev = [
     "pytest>=7",
     "ruff>=0.6",
     "mypy>=1.10",
+>>>>>>> origin/master
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src", "."]
-addopts = "--import-mode=importlib"
+# Data providers
+data = [
+    "yfinance>=0.2.31",
+    "fredapi>=0.5.0",
+    "polars>=0.19.0",
+    "pyarrow>=14.0.0",
+    "h5py>=3.10.0",
+]
+
+# API server
+api = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "aiohttp>=3.9.0",
+    "httpx>=0.25.0",
+    "redis>=5.0.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.12.0",
+    "psycopg2-binary>=2.9.0",
+    "pymongo>=4.6.0",
+]
+
+# ML/AI
+ml = [
+    "scikit-learn>=1.0",
+    "torch>=2.0",
+    "transformers>=4.35.0",
+    "accelerate>=0.24.0",
+]
+
+# Portfolio & Risk
+portfolio = [
+    "pyportfolioopt>=1.5.5",
+    "riskfolio-lib>=4.4.0",
+    "quantstats>=0.0.62",
+    "empyrical-reloaded>=0.5.7",
+]
+
+# Technical Analysis
+technical = [
+    "pandas-ta>=0.3.14b",
+    "ta>=0.11.0",
+    "finta>=1.3",
+]
+
+# Visualization
+viz = [
+    "plotly>=5.18.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "mplfinance>=0.12.10b0",
+]
+
+# Utilities
+utils = [
+    "loguru>=0.7.2",
+    "tenacity>=8.2.3",
+    "schedule>=1.2.1",
+    "cryptography>=41.0.0",
+    "python-jose>=3.3.0",
+    "passlib>=1.7.4",
+    "bcrypt>=4.1.0",
+    "prometheus-client>=0.19.0",
+    "celery>=5.3.0",
+]
+
+# Development
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-benchmark>=4.0.0",
+    "hypothesis>=6.91.0",
+    "factory-boy>=3.3.0",
+    "black>=23.12.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pylint>=3.0.0",
+    "bandit>=1.7.6",
+    "ruff>=0.1.0",
+    "pre-commit>=3.6.0",
+    "pip-audit>=2.6.0",
+    "pip-tools>=7.4.0",
+    "uv>=0.1.0",
+    "build>=1.0.0",
+    "wheel",
+    "twine",
+]
+
+# Documentation
+docs = [
+    "sphinx>=7.2.0",
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
 
 [project.scripts]
 orion = "orion.__main__:main"
@@ -74,3 +223,124 @@ Issues = "https://github.com/Mr-Nobody-Anonymous/Orion/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["orion*"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--import-mode=importlib -ra -q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::ResourceWarning:.*sqlite3.*",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PL",  # pylint
+    "TRY", # tryceratops
+    "ARG", # flake8-unused-arguments
+    "RET", # flake8-return
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "ARG001", # unused argument (common in callbacks)
+    "ARG002", # unused method argument
+    "TRY003", # avoid specifying long messages outside exceptions
+    "PLW0613", # unused argument (pylint)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S106"]
+"src/orion/dashboard/*" = ["T201"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+show_error_codes = true
+pretty = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = [
+    "orion.dashboard.*",
+    "orion.cli.*",
+    "tests.*",
+]
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv*", "source_repositories"]
+skips = ["B101", "B104", "B105", "B106", "B107", "B108", "B311", "B603", "B607"]
+
+[tool.coverage.run]
+source = ["src/orion"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*_test.py",
+    "*/conftest.py",
+    "src/orion/__main__.py",
+    "src/orion/cli/*",
+    "src/orion/dashboard/*",
+]
+branch = true
+concurrency = ["thread", "multiprocessing"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+precision = 2
+show_missing = true
+skip_covered = true
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+src_paths = ["src"]

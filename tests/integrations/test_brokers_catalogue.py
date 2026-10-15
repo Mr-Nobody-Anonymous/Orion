@@ -1,4 +1,4 @@
-﻿"""Tests for the broker catalogue (P4-2)."""
+"""Tests for the broker catalogue (P4-2)."""
 
 from __future__ import annotations
 

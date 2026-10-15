@@ -1,3 +1,6 @@
+# Development dependencies
+# Install with: pip install -e ".[dev,docs]"
+
 # Testing
 pytest>=7.4.0
 pytest-asyncio>=0.23.0
@@ -14,16 +17,21 @@ flake8>=7.0.0
 mypy>=1.8.0
 pylint>=3.0.0
 bandit>=1.7.6
+ruff>=0.1.0
+pre-commit>=3.6.0
+
+# Security auditing
+pip-audit>=2.6.0
+pip-tools>=7.4.0
+uv>=0.1.0
 
 # Documentation
 sphinx>=7.2.0
 mkdocs>=1.5.0
 mkdocs-material>=9.5.0
+mkdocstrings[python]>=0.24.0
 
 # Debugging
 ipython>=8.19.0
 jupyter>=1.0.0
 jupyterlab>=4.0.0
-
-# Pre-commit
-pre-commit>=3.6.0

@@ -1,0 +1,12 @@
+# ORION Trading Execution Configuration
+trading:
+  execution_mode: "simulation"  # simulation | live (live requires server-side override)
+  live_trading_enabled: false
+  autonomy_level: 0  # 0=research/dry-run, 1=recommendations, 2=paper execution
+  default_order_type: "LIMIT"
+  slippage_model: "fixed_bps"
+  slippage_bps: 5.0
+  commission_model: "zero_commission"
+  venues:
+    primary: "simulated_exchange"
+    paper_brokers: ["alpaca_paper", "interactive_brokers_paper"]

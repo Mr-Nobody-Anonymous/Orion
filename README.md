@@ -14,20 +14,43 @@
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+<<<<<<< HEAD
+[![Tests: 1260 passing](https://img.shields.io/badge/Tests-1260%20passing-green.svg)](https://github.com/)
+=======
 [![CI](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml/badge.svg)](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml)
+>>>>>>> origin/master
 [![Mode: LOCAL](https://img.shields.io/badge/Inference-LOCAL-purple.svg)](https://ollama.com/)
-[![Execution: SIM + DEMO](https://img.shields.io/badge/Execution-SIM%20%2B%20DEMO-orange.svg)](https://github.com/)
+[![Execution: SIMULATION](https://img.shields.io/badge/Execution-SIMULATION%20ONLY-orange.svg)](https://github.com/)
 [![Safety: First](https://img.shields.io/badge/Safety-First-red.svg)](https://github.com/)
+<<<<<<< HEAD
+[![Status: Research Prototype](https://img.shields.io/badge/Status-Research%20Prototype-blue.svg)](https://github.com/)
+[![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
+
+> **1,260 tests passing (100% green across unit and integration suites, 4 skipped). No evidence of trading alpha yet.** ORION is a quantitative research and cognitive simulation engine. Live trading is strictly disabled by default. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for cognitive loop details.
+=======
 [![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
 
 > **Simulation-first research prototype.** CI is the source of truth for test results. No evidence of trading alpha or production readiness is claimed. Demo dashboard data is synthetic and must not be used for trading.
+>>>>>>> origin/master
 
-**New (Institutional Engine & Integrations):** 
-- **Core Asynchronous Trading Engine** (`src/core/engine.py`): Full central orchestrator with async event bus, system state machine, health checking, and circuit breaker protection.
-- **Institutional Risk Engine** (`core/risk/risk_engine.py`): Multi-method VaR (Historical, Parametric, Monte Carlo, Cornish-Fisher), CVaR/Expected Shortfall, drawdown monitors, pre-trade position size checks, and stress testing.
-- **Smart Execution Engine** (`core/engine/execution_engine.py`): Multi-asset execution algorithms (TWAP, VWAP, Iceberg), order routing, and fill tracking.
-- **External Integration Registry** (`external/manifest.json` & `src/integrations/`): Automated integration pipeline and adapters for 38 external quantitative finance and algorithmic trading frameworks.
-- **Multi-venue Demo Trading** adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR), a **learning-from-mistakes** loop, peer-AI council, and Mission Control dashboard.
+### 📋 Operational Status & Capability Matrix
+
+| Subsystem | Readiness | Operational Reality |
+|---|---|---|
+| **Python Research Core** | ✅ Functional Prototype | 1,260 tests passing, deterministic 16-phase cognitive loop, simulation/backtest engines |
+| **Risk Management** | ✅ Active Simulation Gate | VaR, position fraction, kill switch, pre-trade limits |
+| **API Backend** | 🟡 Hardened Simulation | FastAPI with API key authentication, validated schemas, live-trading refusal |
+| **Mission Control UI** | 🟡 Functional Prototype | Next.js 16 + Turbopack, typed WebSocket & API client, zero lint errors |
+| **Packaging & CI/CD** | ✅ Resolved | PEP 517 wheel build verified, GitHub Actions CI matrix configured |
+| **External Brokers** | 🔴 Paper / Stubs Only | Live trading blocked by default; adapters require formal contract testing |
+| **Alpha / Trading Returns**| 🔴 Not Demonstrated | Alpha not yet demonstrated; system is for scientific research only |
+
+**Core Engine & Architecture:** 
+- **Core Asynchronous Engine** (`src/core/engine.py`): Central orchestrator with async event bus, system state machine, health checking, and circuit breaker protection.
+- **Risk Engine** (`core/risk/risk_engine.py`): Multi-method VaR (Historical, Parametric, Monte Carlo, Cornish-Fisher), CVaR/Expected Shortfall, drawdown monitors, pre-trade position size checks, and stress testing.
+- **Execution Engine** (`core/engine/execution_engine.py`): Multi-asset execution algorithms (TWAP, VWAP, Iceberg) targeting simulated and paper brokers.
+- **External Integration Registry** (`external/manifest.json` & `src/integrations/`): Adapter registry and metadata under ongoing contract certification.
+- **Paper Trading & Mission Control**: Simulated broker transports, a learning-from-mistakes loop, multi-LLM peer council, and Next.js Mission Control dashboard.
 
 ---
 
@@ -193,10 +216,14 @@ engine.
 
 ## 🧱 Architecture (the canonical tree)
 
+<<<<<<< HEAD
+The canonical research engine lives under `src/orion/` with 1,260 automated unit and integration tests across 23 subpackages. External broker and data adapters operate in paper/simulation mode unless explicitly certified by contract tests.
+=======
 The canonical product code lives under `src/orion/`. Capabilities are
 classified as implemented, experimental, demo, partial, or unavailable based
 on tests and runtime checks —
 **no placeholder modules** (the Phase-30 audit found zero stubs in the package).
+>>>>>>> origin/master
 
 ```
 orion/
@@ -304,7 +331,11 @@ orion/
 ├── local_ai.py  providers.py  registry.py  risk.py  workflow.py  integrations.py
 └── __init__.py                     #   Public exports
 
+<<<<<<< HEAD
+tests/                             # ✅ 1260 passing (4 skipped, 0 failing)
+=======
 tests/                             # CI-managed test suite
+>>>>>>> origin/master
 ├── unit/  integration/  end_to_end/  brain/  prediction/  trading/
 ├── research/  coding/  evolution/  learning/  memory/  models/
 ├── backtesting/  benchmarking/  mathematics/  security/  intelligence/

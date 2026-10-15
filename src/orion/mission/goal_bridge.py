@@ -1,4 +1,4 @@
-﻿"""Mission <-> canonical goal bridge.
+"""Mission <-> canonical goal bridge.
 
 Phase 1 ORION 2.0, correction #2. There is exactly ONE canonical goal
 tree implementation: :class:`orion.agent.state.Goal` +

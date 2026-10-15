@@ -5,8 +5,53 @@ import { apiUrl } from "@/lib/api";
 import { Server, Activity, ArrowRightLeft, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { useMarketStore } from "@/stores/market";
 
+interface BrokerInfo {
+  name: string;
+  category: string;
+}
+
+interface BrokerHealth {
+  provider: string;
+  latency_ms: number;
+}
+
+interface BrokerVenue {
+  venue: string;
+}
+
+interface BrokerData {
+  catalogue: Record<string, BrokerInfo>;
+  health?: BrokerHealth[];
+  venues?: BrokerVenue[];
+}
+
+interface TradeExecutionResult {
+  status: string;
+  order_id?: string;
+  symbol?: string;
+  side?: string;
+  quantity?: number;
+  price?: number;
+  fill_price?: number;
+  venue?: string;
+  is_simulated?: boolean;
+  message?: string;
+  error?: string;
+}
+
+interface MarketTradeItem {
+  kind?: string;
+  side: string;
+  quantity: number;
+  symbol: string;
+  venue?: string;
+  fill_price?: number;
+  price?: number;
+  status?: string;
+}
+
 export default function ExecutionPage() {
-  const [brokers, setBrokers] = useState<any>(null);
+  const [brokers, setBrokers] = useState<BrokerData | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Form State
@@ -16,10 +61,12 @@ export default function ExecutionPage() {
   const [orderType, setOrderType] = useState("MARKET");
   const [dryRun, setDryRun] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastResult, setLastResult] = useState<any>(null);
+  const [lastResult, setLastResult] = useState<TradeExecutionResult | null>(null);
 
   const { marketData } = useMarketStore();
 
+<<<<<<< HEAD
+=======
   const loadBrokers = async () => {
     try {
       const res = await fetch(apiUrl("/dashboard/brokers"));
@@ -31,8 +78,23 @@ export default function ExecutionPage() {
     }
   };
 
+>>>>>>> origin/master
   useEffect(() => {
-    loadBrokers();
+    let active = true;
+    async function fetchBrokers() {
+      try {
+        const res = await fetch("/api/v1/dashboard/brokers");
+        if (res.ok && active) setBrokers(await res.json());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    fetchBrokers();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleTrade = async (e: React.FormEvent) => {
@@ -42,7 +104,11 @@ export default function ExecutionPage() {
     setLastResult(null);
 
     try {
+<<<<<<< HEAD
+      const res = await fetch("/api/v1/execution/trade", {
+=======
       const res = await fetch(apiUrl("/execution/trade"), {
+>>>>>>> origin/master
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -80,9 +146,9 @@ export default function ExecutionPage() {
           <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Connected Venues</h2>
           
           <div className="space-y-4">
-            {brokers?.catalogue && Object.entries(brokers.catalogue).map(([id, info]: [string, any]) => {
-              const health = brokers.health?.find((h: any) => h.provider === id);
-              const isLive = brokers.venues?.some((v: any) => v.venue === id);
+            {brokers?.catalogue && Object.entries(brokers.catalogue).map(([id, info]: [string, BrokerInfo]) => {
+              const health = brokers.health?.find((h: BrokerHealth) => h.provider === id);
+              const isLive = brokers.venues?.some((v: BrokerVenue) => v.venue === id);
               
               return (
                 <div key={id} className={`bg-zinc-900 border rounded-lg p-4 ${isLive ? 'border-emerald-500/30' : 'border-zinc-800'}`}>
@@ -246,7 +312,7 @@ export default function ExecutionPage() {
               
               <div className="flex-1 space-y-3">
                 {marketData?.trades && marketData.trades.length > 0 ? (
-                  marketData.trades.slice().reverse().filter((t:any) => t.kind === 'order').map((trade: any, i: number) => (
+                  marketData.trades.slice().reverse().filter((t: MarketTradeItem) => t.kind === 'order').map((trade: MarketTradeItem, i: number) => (
                     <div key={i} className="flex justify-between items-center p-3 bg-zinc-950 border border-zinc-800/80 rounded">
                       <div className="flex items-center">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded mr-3 ${trade.side === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>

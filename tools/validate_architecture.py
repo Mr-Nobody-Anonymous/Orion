@@ -22,6 +22,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 ARCH_YAML = ROOT / "config" / "architecture.yaml"
 
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
 
 def _indent(raw: str) -> int:
     return len(raw) - len(raw.lstrip(" \t"))

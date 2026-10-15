@@ -18,6 +18,7 @@ run before merging a change.
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import time
@@ -25,6 +26,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PYTHON = sys.executable
+
+
+def _subproc_env() -> dict[str, str]:
+    env = dict(os.environ)
+    src_dir = str(ROOT / "src")
+    if "PYTHONPATH" in env and env["PYTHONPATH"]:
+        env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{env['PYTHONPATH']}"
+    else:
+        env["PYTHONPATH"] = src_dir
+    return env
 
 
 def header(title: str) -> None:
@@ -42,6 +53,7 @@ def run_script(name: str) -> tuple[int, float]:
         cwd=str(ROOT),
         capture_output=True,
         text=True,
+        env=_subproc_env(),
     )
     duration = time.monotonic() - start
     print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
@@ -57,6 +69,7 @@ def run_pytest() -> tuple[int, float]:
         cwd=str(ROOT),
         capture_output=True,
         text=True,
+        env=_subproc_env(),
     )
     duration = time.monotonic() - start
     # Only print the last few lines (summary) so the output stays compact.

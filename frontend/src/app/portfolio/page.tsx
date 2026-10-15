@@ -1,30 +1,75 @@
 "use client";
 
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
+import { Briefcase, PieChart, BarChart, Activity } from "lucide-react";
+
+interface ExposureLeaf {
+  name: string;
+  detail: string;
+}
+
+interface ExposureGroup {
+  name: string;
+  children?: ExposureLeaf[];
+}
+
+interface ExposureTree {
+  name: string;
+  children?: ExposureGroup[];
+}
+
+interface PortfolioMetrics {
+  total_value: number;
+  today_pnl: number;
+  today_pnl_pct: string;
+  total_return_pct: string;
+  sharpe_ratio: number;
+  sortino_ratio: number;
+  volatility_ann_pct: number;
+  risk_score: number;
+  max_drawdown_pct?: number;
+}
+
+interface PortfolioData {
+  portfolio: PortfolioMetrics;
+  exposure_tree: ExposureTree;
+}
+=======
 import { Briefcase, TrendingUp, TrendingDown, PieChart, BarChart, Activity } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+>>>>>>> origin/master
 
 export default function PortfolioPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
       try {
+<<<<<<< HEAD
+        const res = await fetch("/api/v1/portfolio");
+        if (res.ok && active) setData(await res.json());
+=======
         const res = await fetch(apiUrl("/portfolio"));
         if (res.ok) setData(await res.json());
+>>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (loading) return <div className="flex-1 flex items-center justify-center bg-zinc-950 text-zinc-500">Loading portfolio structure...</div>;
 
-  const pnlIsPositive = data?.portfolio?.today_pnl >= 0;
+  const pnlIsPositive = (data?.portfolio?.today_pnl ?? 0) >= 0;
 
   return (
     <div className="flex-1 overflow-y-auto p-8 bg-zinc-950 text-zinc-100">
@@ -49,7 +94,7 @@ export default function PortfolioPage() {
           <div className="text-lg font-bold text-white">${data?.portfolio?.total_value.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <h3 className="text-xs font-medium text-zinc-400 mb-1">Today's PnL</h3>
+          <h3 className="text-xs font-medium text-zinc-400 mb-1">Today&apos;s PnL</h3>
           <div className={`text-lg font-bold flex items-center ${pnlIsPositive ? 'text-emerald-400' : 'text-red-400'}`}>
             {pnlIsPositive ? '+' : ''}${data?.portfolio?.today_pnl.toLocaleString()} 
             <span className="text-xs ml-2 opacity-80">({data?.portfolio?.today_pnl_pct})</span>
@@ -89,14 +134,14 @@ export default function PortfolioPage() {
               </div>
               
               <div className="pl-6 space-y-4">
-                {data?.exposure_tree?.children?.map((group: any, i: number) => (
+                {data?.exposure_tree?.children?.map((group: ExposureGroup, i: number) => (
                   <div key={i}>
                     <div className="flex items-center text-zinc-400 font-bold mb-2">
                       <div className="w-3 h-3 bg-zinc-700 rounded-sm mr-3" />
                       {group.name}
                     </div>
                     <div className="pl-6 space-y-2">
-                      {group.children?.map((leaf: any, j: number) => (
+                      {group.children?.map((leaf: ExposureLeaf, j: number) => (
                         <div key={j} className="flex justify-between items-center group/leaf">
                           <div className="flex items-center text-zinc-500">
                             <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full mr-3" />

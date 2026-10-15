@@ -1,4 +1,4 @@
-﻿"""Tests for P4-4 peer-AI consolidation: recent_insights + peer_status."""
+"""Tests for P4-4 peer-AI consolidation: recent_insights + peer_status."""
 
 from __future__ import annotations
 

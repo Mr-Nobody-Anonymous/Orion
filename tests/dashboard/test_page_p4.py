@@ -1,4 +1,4 @@
-﻿"""Tests for the P4-1 unified mission-control page (the 'cool UI')."""
+"""Tests for the P4-1 unified mission-control page (the 'cool UI')."""
 
 from __future__ import annotations
 

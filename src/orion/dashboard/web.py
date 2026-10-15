@@ -85,8 +85,6 @@ class DashboardState:
             "trades": self.trade_log[-30:],
         }
 
-    def api_brokers(self) -> dict[str, Any]:
-        return self.registry.status()
 
     def api_peers(self) -> dict[str, Any]:
         from ..intelligence.peer_ai import PeerAICouncil
@@ -147,6 +145,8 @@ class DashboardState:
         }
 
     def api_hardware(self) -> dict[str, Any]:
+        from ..infrastructure.hardware_profiler import DEFAULT_TIERS
+
         if self.system.hardware_profile is None:
             self.system.snapshot_hardware()
         return {
@@ -711,11 +711,13 @@ class DashboardState:
         }
 
     def api_risk_aladdin(self) -> dict[str, Any]:
-        """BlackRock Aladdin-class risk, factor decomposition, exposure map, and stress testing."""
+        """Orion Multi-Factor Risk, factor decomposition, and scenario stress testing (Simulated)."""
         portfolio_val = 1_245_320.0
         today_pnl = 12_450.0
         
         return {
+            "is_synthetic": True,
+            "data_source": "SIMULATION_FIXTURE",
             "portfolio": {
                 "total_value": portfolio_val,
                 "today_pnl": today_pnl,
@@ -726,7 +728,7 @@ class DashboardState:
                 "volatility_ann_pct": 14.2,
                 "portfolio_beta": 0.91,
                 "max_drawdown_pct": -12.8,
-                "risk_score": "62 / 100 (Balanced Institutional)",
+                "risk_score": "62 / 100 (Balanced Research Simulation)",
                 "var_95_daily": 24300.0,
                 "cvar_99_daily": 38920.0,
             },
@@ -832,25 +834,27 @@ class DashboardState:
     def api_news(self) -> dict[str, Any]:
         """Real-time financial news with AI importance scoring, market impact, and daily brief."""
         return {
+            "is_synthetic": True,
+            "data_source": "SIMULATION_FIXTURE",
             "daily_brief": {
-                "title": "Orion AI Institutional Morning Market Brief",
+                "title": "Orion AI Research Simulation Morning Market Brief",
                 "overall_sentiment": "NEUTRAL_BULLISH (+0.58)",
-                "primary_driver": "Fed dovish tilt meets semiconductor capex continuity; crude oil bounce stabilizes energy earnings.",
+                "primary_driver": "Simulated macroeconomic regime: policy rate calibration meets semiconductor capex continuity.",
                 "key_stories": [
-                    "1. Federal Reserve signals rate path flexibility ahead of FOMC rate decision.",
-                    "2. NVIDIA announces next-generation ultra-density packaging ramp with TSMC.",
-                    "3. Crude oil gains +1.8% on Middle East maritime shipping insurance adjustments.",
-                    "4. China announces targeted liquidity injection into private enterprise technology funds.",
-                    "5. Bitcoin holds $64,000 support as ETF net inflows turn positive for third consecutive day.",
+                    "1. Simulated Reserve model indicates policy path flexibility ahead of rate decision.",
+                    "2. Semiconductor sector models report ultra-density packaging ramp signals.",
+                    "3. Synthetic commodity index stabilizes following maritime shipping insurance adjustments.",
+                    "4. Regional liquidity injection observed in private enterprise technology simulations.",
+                    "5. Digital asset model holds support as net ETF inflows remain positive.",
                 ]
             },
             "news_feed": [
                 {
                     "id": "news-1",
                     "time": "10:32 EST",
-                    "title": "Fed Governor Waller comments on inflation trajectory: 'Data allows policy calibration toward neutrality'",
-                    "source": "Bloomberg Wire",
-                    "category": "Central Bank",
+                    "title": "Simulated Macro Feed: Inflation trajectory model indicates policy calibration toward neutrality",
+                    "source": "Simulated Macro Wire",
+                    "category": "Central Bank (Simulated)",
                     "importance_score": 92,
                     "impact": "HIGH",
                     "sentiment": "POSITIVE",
@@ -859,9 +863,9 @@ class DashboardState:
                 {
                     "id": "news-2",
                     "time": "10:28 EST",
-                    "title": "NVIDIA and partners confirm full capacity reservation for advanced AI accelerator wafers into 2027",
-                    "source": "Reuters Institutional",
-                    "category": "Equities / Tech",
+                    "title": "Simulated Tech Feed: Advanced AI accelerator demand signals strong wafer reservations",
+                    "source": "Simulated Tech Wire",
+                    "category": "Equities / Tech (Simulated)",
                     "importance_score": 88,
                     "impact": "HIGH",
                     "sentiment": "POSITIVE",
@@ -870,9 +874,9 @@ class DashboardState:
                 {
                     "id": "news-3",
                     "time": "10:17 EST",
-                    "title": "WTI crude oil trades above $76.40 following inventory draw reported at Cushing hub",
-                    "source": "Energy Intelligence",
-                    "category": "Commodities",
+                    "title": "Simulated Commodity Feed: WTI crude oil models reflect inventory draw at distribution hub",
+                    "source": "Simulated Energy Feed",
+                    "category": "Commodities (Simulated)",
                     "importance_score": 74,
                     "impact": "MEDIUM",
                     "sentiment": "NEUTRAL",
@@ -881,9 +885,9 @@ class DashboardState:
                 {
                     "id": "news-4",
                     "time": "10:02 EST",
-                    "title": "Bitcoin holds institutional accumulation band at $64,200 as derivatives funding rate resets to baseline",
-                    "source": "CoinDesk Pro",
-                    "category": "Crypto",
+                    "title": "Simulated Digital Asset Feed: Digital asset models hold accumulation band as funding resets",
+                    "source": "Simulated Crypto Feed",
+                    "category": "Crypto (Simulated)",
                     "importance_score": 79,
                     "impact": "MEDIUM",
                     "sentiment": "POSITIVE",
@@ -892,9 +896,9 @@ class DashboardState:
                 {
                     "id": "news-5",
                     "time": "09:45 EST",
-                    "title": "US Initial Jobless Claims arrive at 218k vs 225k expected; labor market demonstrates continuous firmness",
-                    "source": "Department of Labor / DJ",
-                    "category": "Economics",
+                    "title": "Simulated Economic Data: Initial Jobless Claims simulation aligns with firm labor market",
+                    "source": "Simulated Labor Data",
+                    "category": "Economics (Simulated)",
                     "importance_score": 81,
                     "impact": "HIGH",
                     "sentiment": "POSITIVE",

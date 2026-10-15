@@ -1,4 +1,4 @@
-﻿"""The MissionEngine — orchestration ABOVE the goal system.
+"""The MissionEngine — orchestration ABOVE the goal system.
 
 Phase 1 ORION 2.0. The engine owns the mission lifecycle (via the
 explicit state machine), the outcome ledger, the budget, and metric

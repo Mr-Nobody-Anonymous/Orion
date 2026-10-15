@@ -1,4 +1,4 @@
-﻿"""Mission persistence â€” atomic transitions, append-only history.
+"""Mission persistence â€” atomic transitions, append-only history.
 
 Phase 1 ORION 2.0, corrections #10 and #16. Built directly on the
 existing :class:`~orion.storage.sqlite_store.SqliteStore` (no new ORM

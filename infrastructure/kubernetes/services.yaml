@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orion-core-api-service
+  labels:
+    app: orion-core-api
+spec:
+  type: ClusterIP
+  selector:
+    app: orion-core-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orion-frontend-service
+  labels:
+    app: orion-frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: orion-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

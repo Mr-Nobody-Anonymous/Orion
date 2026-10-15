@@ -1,4 +1,4 @@
-﻿"""Tests for the unified MistakeLearner (P4-3)."""
+"""Tests for the unified MistakeLearner (P4-3)."""
 
 from __future__ import annotations
 

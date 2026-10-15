@@ -1,4 +1,4 @@
-﻿"""Unified mistake-driven learning surface (P4-3).
+"""Unified mistake-driven learning surface (P4-3).
 
 `MistakeLearner` is the single entry point every ORION component
 must go through to record a closed trade's outcome. It wraps the

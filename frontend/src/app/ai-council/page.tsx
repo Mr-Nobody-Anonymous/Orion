@@ -1,41 +1,79 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiUrl } from "@/lib/api";
+<<<<<<< HEAD
 import { BrainCircuit, AlertCircle, Bot, Send, Users } from "lucide-react";
 
+interface PeerInsight {
+  provider: string;
+  timestamp: string;
+  content: string;
+  confidence: number;
+}
+
+interface PeerData {
+  available: number;
+  peers: Record<string, string>;
+  insights: PeerInsight[];
+}
+
+interface ChatMessage {
+  role: "user" | "council";
+  text?: string;
+  consensus?: string;
+  insights?: PeerInsight[];
+  error?: string;
+}
+=======
+import { apiUrl } from "@/lib/api";
+import { BrainCircuit, AlertCircle, Bot, Send, Users } from "lucide-react";
+>>>>>>> origin/master
+
 export default function AICouncilPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PeerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [deliberating, setDeliberating] = useState(false);
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
       try {
+<<<<<<< HEAD
+        const res = await fetch("/api/v1/ai-council/peers");
+        if (res.ok && active) setData(await res.json());
+=======
         const res = await fetch(apiUrl("/ai-council/peers"));
         if (res.ok) setData(await res.json());
+>>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleDeliberate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || deliberating) return;
 
-    const userMessage = { role: "user", text: query };
+    const userMessage: ChatMessage = { role: "user", text: query };
     setChatHistory(prev => [...prev, userMessage]);
     setQuery("");
     setDeliberating(true);
 
     try {
+<<<<<<< HEAD
+      const res = await fetch("/api/v1/ai-council/deliberate", {
+=======
       const res = await fetch(apiUrl("/ai-council/deliberate"), {
+>>>>>>> origin/master
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: userMessage.text, symbol: "NVDA" })
@@ -47,7 +85,11 @@ export default function AICouncilPage() {
           { role: "council", consensus: result.consensus, insights: result.insights }
         ]);
         // Refresh peer data to get latest insights
+<<<<<<< HEAD
+        const peersRes = await fetch("/api/v1/ai-council/peers");
+=======
         const peersRes = await fetch(apiUrl("/ai-council/peers"));
+>>>>>>> origin/master
         if (peersRes.ok) setData(await peersRes.json());
       }
     } catch (err) {
@@ -77,7 +119,7 @@ export default function AICouncilPage() {
           <div>
             <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Active Peers ({data?.available})</h2>
             <div className="space-y-3">
-              {data?.peers && Object.entries(data.peers).map(([name, status]: [string, any]) => (
+              {data?.peers && Object.entries(data.peers).map(([name, status]: [string, string]) => (
                 <div key={name} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3 rounded-lg">
                   <div className="flex items-center">
                     <Bot className="w-4 h-4 mr-3 text-zinc-500" />
@@ -96,7 +138,7 @@ export default function AICouncilPage() {
           <div>
             <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Recent Insights</h2>
             <div className="space-y-4">
-              {data?.insights?.map((insight: any, i: number) => (
+              {data?.insights?.map((insight: PeerInsight, i: number) => (
                 <div key={i} className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50 group-hover:bg-indigo-500 transition-colors" />
                   <div className="flex justify-between items-start mb-2">
@@ -156,7 +198,7 @@ export default function AICouncilPage() {
                         <div className="border-t border-zinc-800/50 pt-4">
                           <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Individual Peer Contributions</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {msg.insights?.map((insight: any, j: number) => (
+                            {msg.insights?.map((insight: PeerInsight, j: number) => (
                               <div key={j} className="bg-zinc-950 border border-zinc-800/80 rounded p-3 text-sm">
                                 <span className="font-bold text-zinc-400 block mb-1">{insight.provider}</span>
                                 <span className="text-zinc-500 line-clamp-3">{insight.content}</span>

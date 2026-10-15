@@ -68,7 +68,7 @@ def _collect_imports_at_level(path: Path) -> list[tuple[str, str]]:
     Imports inside function bodies are excluded; they are lazy and do
     not create import-time cycles.
     """
-    source = path.read_text(encoding="utf-8")
+    source = path.read_text(encoding="utf-8-sig")
     tree = ast.parse(source, filename=str(path))
     module_name = _module_name_for(path)
     edges: list[tuple[str, str]] = []
@@ -106,7 +106,7 @@ def _collect_imports_at_level(path: Path) -> list[tuple[str, str]]:
 
 def _collect_unresolved(path: Path, all_modules: set[str]) -> list[tuple[str, str, str]]:
     """Return (module, target, kind) for any unresolved orion import."""
-    source = path.read_text(encoding="utf-8")
+    source = path.read_text(encoding="utf-8-sig")
     tree = ast.parse(source, filename=str(path))
     module_name = _module_name_for(path)
     unresolved: list[tuple[str, str, str]] = []

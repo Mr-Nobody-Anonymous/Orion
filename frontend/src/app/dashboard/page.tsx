@@ -3,17 +3,37 @@
 import { useMarketStore } from "@/stores/market";
 import { Activity, Briefcase, TrendingUp, ShieldAlert, ArrowRight } from "lucide-react";
 
+interface DashboardTrade {
+  side: string;
+  quantity: number;
+  symbol: string;
+  price?: number;
+}
+
+interface DashboardLimits {
+  max_portfolio_exposure: number;
+  max_position_fraction: number;
+  max_daily_loss_fraction: number;
+}
+
+interface DashboardStateData {
+  limits?: DashboardLimits;
+  equity_history?: number[];
+  trades?: DashboardTrade[];
+}
+
 export default function DashboardPage() {
   const { marketData, isConnected } = useMarketStore();
 
-  const status = marketData || {
+  const status = (marketData as unknown as DashboardStateData) || {
     limits: { max_portfolio_exposure: 0, max_position_fraction: 0, max_daily_loss_fraction: 0 },
     equity_history: [100000],
     trades: []
   };
 
-  const currentEquity = status.equity_history[status.equity_history.length - 1] || 100000;
-  const initialEquity = status.equity_history[0] || 100000;
+  const equityHistory = status.equity_history || [100000];
+  const currentEquity = equityHistory[equityHistory.length - 1] || 100000;
+  const initialEquity = equityHistory[0] || 100000;
   const pnl = currentEquity - initialEquity;
   const pnlPercent = (pnl / initialEquity) * 100;
 
@@ -127,7 +147,7 @@ export default function DashboardPage() {
           </h2>
           <div className="space-y-3">
             {status.trades && status.trades.length > 0 ? (
-              status.trades.slice(-4).reverse().map((trade: any, i: number) => (
+              status.trades.slice(-4).reverse().map((trade: DashboardTrade, i: number) => (
                 <div key={i} className="flex justify-between items-center py-2 border-b border-zinc-800 last:border-0">
                   <div>
                     <span className={`text-xs font-bold px-2 py-1 rounded mr-2 ${trade.side === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>

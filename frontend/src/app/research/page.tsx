@@ -1,30 +1,101 @@
 "use client";
 
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
+import { Search, BrainCircuit, LineChart, FileText, Activity, ShieldAlert } from "lucide-react";
+
+interface StockSearchResult {
+  symbol: string;
+  name: string;
+}
+
+interface SearchResponse {
+  results?: {
+    stocks?: StockSearchResult[];
+  };
+}
+
+interface FScoreItem {
+  label: string;
+  value: string | number;
+}
+
+interface OrderBookLevel {
+  price: number;
+  size: number;
+}
+
+interface OptionChainItem {
+  call_bid: number;
+  strike: number;
+  put_ask: number;
+}
+
+interface AssetData {
+  symbol: string;
+  name: string;
+  is_crypto?: boolean;
+  live_feed?: string;
+  price?: number;
+  change_pct: string;
+  ai_forecast?: {
+    direction: string;
+    confidence: string;
+    drivers?: string[];
+    invalidation_price?: number;
+  };
+  f_score?: {
+    score: number;
+    max: number;
+    rating: string;
+    items?: FScoreItem[];
+  };
+  factors?: Record<string, number>;
+  order_book?: {
+    asks?: OrderBookLevel[];
+    bids?: OrderBookLevel[];
+    spread: number;
+  };
+  options?: {
+    chain?: OptionChainItem[];
+    atm_iv: string;
+  };
+}
+=======
 import { apiUrl } from "@/lib/api";
 import { Search, BrainCircuit, LineChart, FileText, Activity, ShieldAlert, Cpu } from "lucide-react";
+>>>>>>> origin/master
 
 export default function ResearchPage() {
   const [query, setQuery] = useState("");
   const [symbol, setSymbol] = useState("NVDA");
-  const [assetData, setAssetData] = useState<any>(null);
-  const [searchData, setSearchData] = useState<any>(null);
+  const [assetData, setAssetData] = useState<AssetData | null>(null);
+  const [searchData, setSearchData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch specific asset
   useEffect(() => {
+    let active = true;
     async function fetchAsset() {
       setLoading(true);
       try {
+<<<<<<< HEAD
+        const res = await fetch(`/api/v1/research/asset/${symbol}`);
+        if (res.ok && active) setAssetData(await res.json());
+=======
         const res = await fetch(apiUrl(`/research/asset/${symbol}`));
         if (res.ok) setAssetData(await res.json());
+>>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchAsset();
+    return () => {
+      active = false;
+    };
   }, [symbol]);
 
   // Handle Search
@@ -32,7 +103,11 @@ export default function ResearchPage() {
     if (!query) return;
     const delayDebounce = setTimeout(async () => {
       try {
+<<<<<<< HEAD
+        const res = await fetch(`/api/v1/dashboard/search?q=${query}`);
+=======
         const res = await fetch(apiUrl(`/dashboard/search?q=${query}`));
+>>>>>>> origin/master
         if (res.ok) setSearchData(await res.json());
       } catch (err) {
         console.error(err);
@@ -54,10 +129,10 @@ export default function ResearchPage() {
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
-          {query && searchData && searchData.results?.stocks?.length > 0 && (
+          {query && searchData && searchData.results?.stocks && searchData.results.stocks.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 p-2">
               <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 px-2">Equities</div>
-              {searchData.results.stocks.map((stock: any) => (
+              {searchData.results.stocks.map((stock: StockSearchResult) => (
                 <button 
                   key={stock.symbol}
                   onClick={() => { setSymbol(stock.symbol); setQuery(""); setSearchData(null); }}
@@ -149,7 +224,7 @@ export default function ResearchPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  {assetData.f_score?.items?.slice(0,5).map((item: any, i: number) => (
+                  {assetData.f_score?.items?.slice(0,5).map((item: FScoreItem, i: number) => (
                     <div key={i} className="flex justify-between text-xs py-1 border-b border-zinc-800/50 last:border-0">
                       <span className="text-zinc-400 truncate pr-4">{item.label}</span>
                       <span className="font-mono text-zinc-200 whitespace-nowrap">{item.value}</span>
@@ -165,7 +240,7 @@ export default function ResearchPage() {
               {/* Factor Map */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm">
                 <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-4 flex items-center">
-                  <ShieldAlert className="w-4 h-4 mr-2 text-amber-500" /> Aladdin Factor Profile
+                  <ShieldAlert className="w-4 h-4 mr-2 text-amber-500" /> Orion Factor Profile
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {['value', 'momentum', 'quality', 'growth'].map((factor) => {
@@ -190,7 +265,7 @@ export default function ResearchPage() {
                   </h2>
                   <div className="space-y-1">
                     {/* Asks (Red, descending) */}
-                    {assetData.order_book?.asks?.slice().reverse().map((ask: any, i: number) => (
+                    {assetData.order_book?.asks?.slice().reverse().map((ask: OrderBookLevel, i: number) => (
                       <div key={`ask-${i}`} className="flex justify-between text-xs font-mono py-0.5 relative group">
                         <div className="absolute right-0 top-0 bottom-0 bg-red-500/10" style={{width: `${(ask.size/300)*100}%`}}></div>
                         <span className="text-red-400 relative z-10">{ask.price.toFixed(2)}</span>
@@ -204,7 +279,7 @@ export default function ResearchPage() {
                     </div>
 
                     {/* Bids (Green, descending) */}
-                    {assetData.order_book?.bids?.map((bid: any, i: number) => (
+                    {assetData.order_book?.bids?.map((bid: OrderBookLevel, i: number) => (
                       <div key={`bid-${i}`} className="flex justify-between text-xs font-mono py-0.5 relative group">
                         <div className="absolute right-0 top-0 bottom-0 bg-emerald-500/10" style={{width: `${(bid.size/300)*100}%`}}></div>
                         <span className="text-emerald-400 relative z-10">{bid.price.toFixed(2)}</span>
@@ -224,7 +299,7 @@ export default function ResearchPage() {
                     <span>PUTS (Ask)</span>
                   </div>
                   <div className="space-y-2">
-                    {assetData.options?.chain?.map((opt: any, i: number) => (
+                    {assetData.options?.chain?.map((opt: OptionChainItem, i: number) => (
                       <div key={i} className="flex justify-between text-xs font-mono py-1">
                         <span className="text-emerald-400">{opt.call_bid.toFixed(2)}</span>
                         <span className="font-bold text-white bg-zinc-800 px-2 rounded">{opt.strike.toFixed(1)}</span>

@@ -34,6 +34,8 @@ from orion.data.contracts import Asset, AssetClass
 from orion.orchestration.system import OrionSystem
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 PRICES = [
     100, 101, 102, 103, 104, 103, 102, 101, 100, 99,
     100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
@@ -156,6 +158,10 @@ def test_full_workflow_end_to_end() -> None:
 
 def test_cli_smoke_full_workflow() -> None:
     """Run the complete documented workflow via the CLI."""
+<<<<<<< HEAD
+    repo = REPO_ROOT
+=======
+>>>>>>> origin/master
     cmds = [
         ["status"],
         ["doctor"],

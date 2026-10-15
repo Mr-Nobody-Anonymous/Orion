@@ -271,7 +271,7 @@ class OrionSystem:
         result = TrainingPipeline().train_and_register(training_data, ImmutableRegistry(), baseline_error)
         return {"model": asdict(result["model"]), "mean_absolute_error": str(result["mean_absolute_error"]), "status": result["status"].value}
 
-    def evaluate(self, dataset: Sequence[dict[str, object]] | None = None) -> dict[str, object]:
+    def evaluate_candidate(self, dataset: Sequence[dict[str, object]] | None = None) -> dict[str, object]:
         candidate = self.learning.propose_candidate()
         if candidate is None:
             return {"evaluation": "NO_DATA"}
@@ -402,8 +402,17 @@ class OrionSystem:
             "agents": "PASS" if self.agents is not None else "FAIL",
             "compliance": "PASS" if self.audit_log is not None else "FAIL",
             "distributed": "PASS" if self.distributed is not None else "FAIL",
+            "integrations_status": "SIMULATED_OR_STUBBED",
+            "live_trading_ready": "NOT_PRODUCTION_CERTIFIED",
         }
-        return {"status": "HEALTHY" if all(value == "PASS" for value in checks.values()) else "ATTENTION", "checks": checks}
+        all_passed = all(value in ("PASS", "SIMULATED_OR_STUBBED", "NOT_PRODUCTION_CERTIFIED") for value in checks.values())
+        return {
+            "status": "HEALTHY" if all_passed else "ATTENTION",
+            "simulation_status": "SIMULATION_CORE_HEALTHY" if all_passed else "ATTENTION",
+            "production_ready": False,
+            "mode": self.config.execution_mode,
+            "checks": checks,
+        }
 
     # ------------------- P1-5 / P1-6 / P2 public surface -------------------
 

@@ -1,4 +1,4 @@
-﻿"""The deterministic MissionPlanner and its injectable strategies.
+"""The deterministic MissionPlanner and its injectable strategies.
 
 Phase 1 ORION 2.0, corrections #12 and #13:
 

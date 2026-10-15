@@ -1,0 +1,15 @@
+# ORION Data Ingestion and Pipeline Configuration
+data_pipeline:
+  default_source: "synthetic"  # synthetic | yahoo | ccxt | alpaca_paper
+  cache_dir: "data/cache"
+  storage_format: "parquet"
+  universe:
+    equities: ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "SPY", "QQQ"]
+    crypto: ["BTC/USD", "ETH/USD", "SOL/USD"]
+  timeframes:
+    primary: "1d"
+    secondary: ["1h", "15m"]
+  cleaning:
+    fill_missing: "forward_fill"
+    outlier_std_threshold: 4.0
+    adjustment: "splits_and_dividends"

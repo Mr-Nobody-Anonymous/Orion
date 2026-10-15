@@ -1,4 +1,4 @@
-﻿"""Contract tests for the deterministic MissionPlanner.
+"""Contract tests for the deterministic MissionPlanner.
 
 Phase 1 ORION 2.0 â€” corrections #12, #13: the planner is deterministic
 and explicit; strategies are injectable; plan output is structurally

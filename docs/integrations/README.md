@@ -4,13 +4,13 @@ This directory contains integration runbooks, adapter design specifications, dat
 
 ## Directory Index
 
-- [Microsoft Qlib (`qlib.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/qlib.md): Quantitative alpha research, cross-sectional factor modeling, and tabular gradient-boosted forecasting.
-- [QuantConnect LEAN (`lean.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/lean.md): Multi-asset event-driven backtesting, broker execution, and tick simulation.
-- [VectorBT (`vectorbt.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/vectorbt.md): High-speed N-dimensional parameter sweeps and combinatorial walk-forward analysis.
-- [OpenBB (`openbb.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/openbb.md): Financial data aggregation (SEC filings, FRED macro series, economic data) under isolated process boundaries.
-- [FinRL Ecosystem (`finrl.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/finrl.md): Deep reinforcement learning policies (PPO/DDPG/SAC) and OpenAI Gym simulated market environments.
-- [CCXT & Crypto Venues (`ccxt.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/ccxt.md): Unified cryptocurrency spot, futures, and options venue routing.
-- [Portfolio & Risk Engines (`portfolio_engines.md`)](file:///c:/Users/hp/Desktop/Orion/docs/integrations/portfolio_engines.md): PyPortfolioOpt, skfolio, and ARCH econometric volatility modeling.
+- [Microsoft Qlib (`qlib.md`)](qlib.md): Quantitative alpha research, cross-sectional factor modeling, and tabular gradient-boosted forecasting.
+- [QuantConnect LEAN (`lean.md`)](lean.md): Multi-asset event-driven backtesting, broker execution, and tick simulation.
+- [VectorBT (`vectorbt.md`)](vectorbt.md): High-speed N-dimensional parameter sweeps and combinatorial walk-forward analysis.
+- [OpenBB (`openbb.md`)](openbb.md): Financial data aggregation (SEC filings, FRED macro series, economic data) under isolated process boundaries.
+- [FinRL Ecosystem (`finrl.md`)](finrl.md): Deep reinforcement learning policies (PPO/DDPG/SAC) and OpenAI Gym simulated market environments.
+- [CCXT & Crypto Venues (`ccxt.md`)](ccxt.md): Unified cryptocurrency spot, futures, and options venue routing.
+- [Portfolio & Risk Engines (`portfolio_engines.md`)](portfolio_engines.md): PyPortfolioOpt, skfolio, and ARCH econometric volatility modeling.
 
 ## Guiding Principles
 

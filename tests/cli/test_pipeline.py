@@ -1,4 +1,4 @@
-﻿"""Tests for the P4-5 unified CLI surface (orion brokers / cycle / lessons-analysis / pipeline)."""
+"""Tests for the P4-5 unified CLI surface (orion brokers / cycle / lessons-analysis / pipeline)."""
 
 from __future__ import annotations
 

@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orion-core-api
+  labels:
+    app: orion-core-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orion-core-api
+  template:
+    metadata:
+      labels:
+        app: orion-core-api
+    spec:
+      containers:
+        - name: core-api
+          image: orion-core-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ORION_ENV
+              value: "production"
+            - name: ORION_LIVE_TRADING_ENABLED
+              value: "false"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orion-frontend
+  labels:
+    app: orion-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orion-frontend
+  template:
+    metadata:
+      labels:
+        app: orion-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: orion-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10

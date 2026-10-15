@@ -4,27 +4,78 @@ import { useEffect, useState } from "react";
 import { Activity, Globe, TrendingUp, TrendingDown, DollarSign, Target, BarChart2 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 
+interface MacroIndicator {
+  name: string;
+  value: string | number;
+  trend: "UP" | "DOWN" | string;
+  status: string;
+}
+
+interface CentralBankInfo {
+  current_rate: string | number;
+  stance?: string;
+  orion_stance?: string;
+}
+
+interface YieldCurveInfo {
+  us_2y?: string | number;
+  us_10y?: string | number;
+  spread_2s10s_bps?: string | number;
+  signal?: string;
+}
+
+interface MacroData {
+  regime: string;
+  data_source: string;
+  indicators: MacroIndicator[];
+  central_banks?: Record<string, CentralBankInfo>;
+  yield_curve?: YieldCurveInfo;
+}
+
+interface PredictionContract {
+  title: string;
+  statistical_edge_pct: string;
+  market_probability: number;
+  orion_probability: number;
+  recommendation: string;
+  ai_reasoning: string;
+}
+
+interface PredictionData {
+  exchange: string;
+  contracts: PredictionContract[];
+}
+
 export default function MarketsPage() {
-  const [macro, setMacro] = useState<any>(null);
-  const [predictions, setPredictions] = useState<any>(null);
+  const [macro, setMacro] = useState<MacroData | null>(null);
+  const [predictions, setPredictions] = useState<PredictionData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
       try {
         const [macroRes, predRes] = await Promise.all([
+<<<<<<< HEAD
+          fetch("/api/v1/dashboard/macro"),
+          fetch("/api/v1/research/prediction")
+=======
           fetch(apiUrl("/dashboard/macro")),
           fetch(apiUrl("/research/prediction"))
+>>>>>>> origin/master
         ]);
-        if (macroRes.ok) setMacro(await macroRes.json());
-        if (predRes.ok) setPredictions(await predRes.json());
+        if (macroRes.ok && active) setMacro(await macroRes.json());
+        if (predRes.ok && active) setPredictions(await predRes.json());
       } catch (err) {
         console.error("Failed to fetch market data:", err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (loading) {
@@ -50,7 +101,7 @@ export default function MarketsPage() {
 
       {/* Macro Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        {macro?.indicators?.map((ind: any, i: number) => (
+        {macro?.indicators?.map((ind: MacroIndicator, i: number) => (
           <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-sm">
             <h3 className="text-xs font-medium text-zinc-400 mb-1 line-clamp-1">{ind.name}</h3>
             <div className="text-xl font-bold text-white mb-1">{ind.value}</div>
@@ -70,7 +121,7 @@ export default function MarketsPage() {
               <DollarSign className="w-4 h-4 mr-2 text-yellow-500" /> Central Banks
             </h2>
             <div className="space-y-4">
-              {macro?.central_banks && Object.entries(macro.central_banks).map(([name, data]: [string, any]) => (
+              {macro?.central_banks && Object.entries(macro.central_banks).map(([name, data]: [string, CentralBankInfo]) => (
                 <div key={name} className="flex justify-between items-center pb-3 border-b border-zinc-800 last:border-0 last:pb-0">
                   <div className="uppercase font-bold text-zinc-200">{name}</div>
                   <div className="text-right">
@@ -117,7 +168,7 @@ export default function MarketsPage() {
             </div>
 
             <div className="space-y-4">
-              {predictions?.contracts?.map((contract: any, i: number) => (
+              {predictions?.contracts?.map((contract: PredictionContract, i: number) => (
                 <div key={i} className="bg-zinc-950 border border-zinc-800/50 rounded-lg p-4 hover:border-zinc-700 transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-sm font-medium text-white max-w-[75%]">{contract.title}</h3>

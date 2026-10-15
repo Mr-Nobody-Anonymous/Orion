@@ -23,9 +23,9 @@ export function Sidebar() {
   return (
     <div className="w-64 border-r border-zinc-800 bg-zinc-950 flex flex-col h-screen text-zinc-300">
       <div className="p-6 border-b border-zinc-800 flex items-center space-x-3">
-        <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse" />
+        <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-pulse" />
         <span className="font-bold tracking-widest text-zinc-100">ORION</span>
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-500/20 text-red-400 border border-red-500/30 uppercase">Live</span>
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">Simulation</span>
       </div>
       
       <div className="flex-1 overflow-y-auto py-4">

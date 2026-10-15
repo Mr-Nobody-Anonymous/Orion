@@ -4,22 +4,57 @@ import { useEffect, useState } from "react";
 import { ShieldAlert, AlertTriangle, Crosshair, BarChart2, Shield } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 
+interface StressTest {
+  scenario: string;
+  shock_description: string;
+  portfolio_drawdown_pct: number;
+  estimated_loss: number;
+  worst_hit_assets: string[];
+  resilience_factor: string;
+}
+
+interface FactorExposure {
+  name: string;
+  exposure: number;
+  risk_contrib_pct: number;
+}
+
+interface RiskSource {
+  source: string;
+  pct: number;
+}
+
+interface RiskData {
+  stress_tests: StressTest[];
+  factors: FactorExposure[];
+  risk_sources: RiskSource[];
+}
+
 export default function RiskPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RiskData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
       try {
+<<<<<<< HEAD
+        const res = await fetch("/api/v1/risk");
+        if (res.ok && active) setData(await res.json());
+=======
         const res = await fetch(apiUrl("/risk"));
         if (res.ok) setData(await res.json());
+>>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (loading) return <div className="flex-1 flex items-center justify-center bg-zinc-950 text-zinc-500">Loading risk telemetrics...</div>;
@@ -31,7 +66,7 @@ export default function RiskPage() {
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center">
             <ShieldAlert className="w-6 h-6 mr-3 text-red-500" /> Risk Management
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">Aladdin-class factor decomposition and stress testing</p>
+          <p className="text-sm text-zinc-400 mt-1">Multi-factor decomposition and stress testing</p>
         </div>
         <div className="flex space-x-4">
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm font-bold flex items-center shadow-[0_0_15px_rgba(239,68,68,0.2)]">
@@ -50,7 +85,7 @@ export default function RiskPage() {
             </h2>
             
             <div className="space-y-6">
-              {data?.stress_tests?.map((test: any, i: number) => (
+              {data?.stress_tests?.map((test: StressTest, i: number) => (
                 <div key={i} className="bg-zinc-950 border border-zinc-800/80 rounded-lg p-5">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -96,7 +131,7 @@ export default function RiskPage() {
               <BarChart2 className="w-4 h-4 mr-2 text-blue-500" /> Factor Exposure Map
             </h2>
             <div className="space-y-4">
-              {data?.factors?.map((factor: any, i: number) => (
+              {data?.factors?.map((factor: FactorExposure, i: number) => (
                 <div key={i}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-zinc-300 font-medium">{factor.name}</span>
@@ -130,7 +165,7 @@ export default function RiskPage() {
               <Shield className="w-4 h-4 mr-2 text-amber-500" /> Marginal Risk Sources
             </h2>
             <div className="space-y-3">
-              {data?.risk_sources?.map((source: any, i: number) => (
+              {data?.risk_sources?.map((source: RiskSource, i: number) => (
                 <div key={i} className="flex items-center">
                   <div className="w-full">
                     <div className="flex justify-between text-xs mb-1">
