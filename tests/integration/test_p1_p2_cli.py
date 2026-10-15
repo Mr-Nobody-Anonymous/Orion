@@ -9,12 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-<<<<<<< HEAD
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-=======
 ROOT = Path(__file__).resolve().parents[2]
->>>>>>> origin/master
 
 
 def _run(*args: str) -> dict:
@@ -24,12 +19,8 @@ def _run(*args: str) -> dict:
         capture_output=True,
         text=True,
         check=True,
-<<<<<<< HEAD
-        cwd=REPO_ROOT,
-=======
         cwd=ROOT,
         env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
->>>>>>> origin/master
     )
     return json.loads(result.stdout)
 

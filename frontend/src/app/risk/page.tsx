@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { ShieldAlert, AlertTriangle, Crosshair, BarChart2, Shield } from "lucide-react";
-import { apiUrl } from "@/lib/api";
 
 interface StressTest {
   scenario: string;
@@ -38,13 +37,8 @@ export default function RiskPage() {
     let active = true;
     async function loadData() {
       try {
-<<<<<<< HEAD
         const res = await fetch("/api/v1/risk");
         if (res.ok && active) setData(await res.json());
-=======
-        const res = await fetch(apiUrl("/risk"));
-        if (res.ok) setData(await res.json());
->>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {

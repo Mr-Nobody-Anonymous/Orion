@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
 import { Search, BrainCircuit, LineChart, FileText, Activity, ShieldAlert } from "lucide-react";
 
 interface StockSearchResult {
@@ -61,10 +60,6 @@ interface AssetData {
     atm_iv: string;
   };
 }
-=======
-import { apiUrl } from "@/lib/api";
-import { Search, BrainCircuit, LineChart, FileText, Activity, ShieldAlert, Cpu } from "lucide-react";
->>>>>>> origin/master
 
 export default function ResearchPage() {
   const [query, setQuery] = useState("");
@@ -79,13 +74,8 @@ export default function ResearchPage() {
     async function fetchAsset() {
       setLoading(true);
       try {
-<<<<<<< HEAD
         const res = await fetch(`/api/v1/research/asset/${symbol}`);
         if (res.ok && active) setAssetData(await res.json());
-=======
-        const res = await fetch(apiUrl(`/research/asset/${symbol}`));
-        if (res.ok) setAssetData(await res.json());
->>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
@@ -103,11 +93,7 @@ export default function ResearchPage() {
     if (!query) return;
     const delayDebounce = setTimeout(async () => {
       try {
-<<<<<<< HEAD
         const res = await fetch(`/api/v1/dashboard/search?q=${query}`);
-=======
-        const res = await fetch(apiUrl(`/dashboard/search?q=${query}`));
->>>>>>> origin/master
         if (res.ok) setSearchData(await res.json());
       } catch (err) {
         console.error(err);

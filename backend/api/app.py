@@ -57,8 +57,6 @@ app.include_router(ai_council.router, prefix="/api/v1/ai-council", tags=["ai-cou
 app.include_router(execution.router, prefix="/api/v1/execution", tags=["execution"])
 app.include_router(research.router, prefix="/api/v1/research", tags=["research"])
 app.include_router(market_stream.router, prefix="/api/v1/ws", tags=["websocket"])
-<<<<<<< HEAD
-=======
 
 @app.on_event("startup")
 async def startup_event():
@@ -71,4 +69,4 @@ async def startup_event():
     state.run_cycle("AAPL", [220 + (index * 0.2) for index in range(40)])
     state.run_cycle("TSLA", [230 + (index * 0.3) for index in range(40)])
     app.state.orion = state
->>>>>>> origin/master
+

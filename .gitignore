@@ -62,18 +62,16 @@ source_repositories/
 external/*
 !external/manifest.json
 external_repos/*
-!external_repos/.gitkeep
-<<<<<<< HEAD
-
 # Node / Frontend
 node_modules/
 .next/
 out/
 .vercel
 *.tsbuildinfo
-=======
+
+# Virtualenvs & tooling
 .venv*/
-source_repositories/
 .cline_*
 src/*.egg-info/
->>>>>>> origin/master
+build/
+dist/

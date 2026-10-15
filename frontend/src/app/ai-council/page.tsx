@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
 import { BrainCircuit, AlertCircle, Bot, Send, Users } from "lucide-react";
 
 interface PeerInsight {
@@ -24,10 +23,6 @@ interface ChatMessage {
   insights?: PeerInsight[];
   error?: string;
 }
-=======
-import { apiUrl } from "@/lib/api";
-import { BrainCircuit, AlertCircle, Bot, Send, Users } from "lucide-react";
->>>>>>> origin/master
 
 export default function AICouncilPage() {
   const [data, setData] = useState<PeerData | null>(null);
@@ -40,13 +35,8 @@ export default function AICouncilPage() {
     let active = true;
     async function loadData() {
       try {
-<<<<<<< HEAD
         const res = await fetch("/api/v1/ai-council/peers");
         if (res.ok && active) setData(await res.json());
-=======
-        const res = await fetch(apiUrl("/ai-council/peers"));
-        if (res.ok) setData(await res.json());
->>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {
@@ -69,11 +59,7 @@ export default function AICouncilPage() {
     setDeliberating(true);
 
     try {
-<<<<<<< HEAD
       const res = await fetch("/api/v1/ai-council/deliberate", {
-=======
-      const res = await fetch(apiUrl("/ai-council/deliberate"), {
->>>>>>> origin/master
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: userMessage.text, symbol: "NVDA" })
@@ -85,11 +71,7 @@ export default function AICouncilPage() {
           { role: "council", consensus: result.consensus, insights: result.insights }
         ]);
         // Refresh peer data to get latest insights
-<<<<<<< HEAD
         const peersRes = await fetch("/api/v1/ai-council/peers");
-=======
-        const peersRes = await fetch(apiUrl("/ai-council/peers"));
->>>>>>> origin/master
         if (peersRes.ok) setData(await peersRes.json());
       }
     } catch (err) {

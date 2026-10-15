@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Activity, Globe, TrendingUp, TrendingDown, DollarSign, Target, BarChart2 } from "lucide-react";
-import { apiUrl } from "@/lib/api";
 
 interface MacroIndicator {
   name: string;
@@ -56,13 +55,8 @@ export default function MarketsPage() {
     async function loadData() {
       try {
         const [macroRes, predRes] = await Promise.all([
-<<<<<<< HEAD
           fetch("/api/v1/dashboard/macro"),
           fetch("/api/v1/research/prediction")
-=======
-          fetch(apiUrl("/dashboard/macro")),
-          fetch(apiUrl("/research/prediction"))
->>>>>>> origin/master
         ]);
         if (macroRes.ok && active) setMacro(await macroRes.json());
         if (predRes.ok && active) setPredictions(await predRes.json());

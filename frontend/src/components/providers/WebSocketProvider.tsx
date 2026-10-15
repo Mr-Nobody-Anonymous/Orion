@@ -2,13 +2,11 @@
 
 import { useEffect } from "react";
 import { useMarketStore } from "@/stores/market";
-import { webSocketUrl } from "@/lib/api";
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { setMarketData, setIsConnected } = useMarketStore();
 
   useEffect(() => {
-<<<<<<< HEAD
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
     let isUnmounted = false;
@@ -56,28 +54,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       } catch {
         if (!isUnmounted) {
           reconnectTimeout = setTimeout(connect, 3000);
-=======
-    let ws: WebSocket;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-    let isUnmounted = false;
-    
-    const connect = () => {
-      if (isUnmounted) return;
-      ws = new WebSocket(webSocketUrl("/ws/market"));
-      
-      ws.onopen = () => setIsConnected(true);
-      ws.onclose = () => {
-        setIsConnected(false);
-        if (!isUnmounted) {
-          reconnectTimer = setTimeout(connect, 3000);
-        }
-      };
-      
-      ws.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        if (payload.event === "market.update") {
-          setMarketData(payload.data);
->>>>>>> origin/master
         }
       }
     };
@@ -86,11 +62,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isUnmounted = true;
-<<<<<<< HEAD
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
-=======
-      if (reconnectTimer) clearTimeout(reconnectTimer);
->>>>>>> origin/master
       if (ws) ws.close();
     };
   }, [setMarketData, setIsConnected]);

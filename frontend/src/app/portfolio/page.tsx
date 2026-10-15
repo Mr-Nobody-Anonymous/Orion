@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
 import { Briefcase, PieChart, BarChart, Activity } from "lucide-react";
 
 interface ExposureLeaf {
@@ -35,10 +34,6 @@ interface PortfolioData {
   portfolio: PortfolioMetrics;
   exposure_tree: ExposureTree;
 }
-=======
-import { Briefcase, TrendingUp, TrendingDown, PieChart, BarChart, Activity } from "lucide-react";
-import { apiUrl } from "@/lib/api";
->>>>>>> origin/master
 
 export default function PortfolioPage() {
   const [data, setData] = useState<PortfolioData | null>(null);
@@ -48,13 +43,8 @@ export default function PortfolioPage() {
     let active = true;
     async function loadData() {
       try {
-<<<<<<< HEAD
         const res = await fetch("/api/v1/portfolio");
         if (res.ok && active) setData(await res.json());
-=======
-        const res = await fetch(apiUrl("/portfolio"));
-        if (res.ok) setData(await res.json());
->>>>>>> origin/master
       } catch (err) {
         console.error(err);
       } finally {

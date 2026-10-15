@@ -157,11 +157,6 @@ def test_full_workflow_end_to_end() -> None:
 
 
 def test_cli_smoke_full_workflow() -> None:
-    """Run the complete documented workflow via the CLI."""
-<<<<<<< HEAD
-    repo = REPO_ROOT
-=======
->>>>>>> origin/master
     cmds = [
         ["status"],
         ["doctor"],

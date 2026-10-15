@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiUrl } from "@/lib/api";
 import { Server, Activity, ArrowRightLeft, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { useMarketStore } from "@/stores/market";
 
@@ -65,20 +64,6 @@ export default function ExecutionPage() {
 
   const { marketData } = useMarketStore();
 
-<<<<<<< HEAD
-=======
-  const loadBrokers = async () => {
-    try {
-      const res = await fetch(apiUrl("/dashboard/brokers"));
-      if (res.ok) setBrokers(await res.json());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
->>>>>>> origin/master
   useEffect(() => {
     let active = true;
     async function fetchBrokers() {
@@ -104,11 +89,7 @@ export default function ExecutionPage() {
     setLastResult(null);
 
     try {
-<<<<<<< HEAD
       const res = await fetch("/api/v1/execution/trade", {
-=======
-      const res = await fetch(apiUrl("/execution/trade"), {
->>>>>>> origin/master
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
