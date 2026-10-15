@@ -107,10 +107,15 @@ def test_endpoint_live_mode_refusal_when_disabled() -> None:
         os.environ.pop("ORION_LIVE_TRADING_ENABLED", None)
 
 
-def test_endpoint_dry_run_success() -> None:
+def test_endpoint_dry_run_success(monkeypatch: pytest.MonkeyPatch) -> None:
     os.environ["ORION_API_KEY"] = "test-key"
     try:
         with TestClient(app) as client:
+            monkeypatch.setattr(
+                client.app.state.orion,
+                "place_trade",
+                lambda *args, **kwargs: {"status": "DRY_RUN", "venue": "simulation", "order": {"status": "DRY_RUN"}},
+            )
             resp = client.post(
                 "/api/v1/execution/trade",
                 headers={"X-ORION-API-KEY": "test-key"},
@@ -127,3 +132,4 @@ def test_endpoint_dry_run_success() -> None:
             assert data["order"]["status"] == "DRY_RUN"
     finally:
         os.environ.pop("ORION_API_KEY", None)
+

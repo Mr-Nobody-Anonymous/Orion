@@ -228,6 +228,7 @@ class BrokerRegistry:
             raise BrokerAdapterError(
                 f"registry: kill switch engaged — {self.kill_switch.as_dict()['reason']}"
             )
+        record = self.route(symbol, venue=venue)
         ticket: dict[str, Any] = {
             "symbol": symbol,
             "side": side,
@@ -237,9 +238,6 @@ class BrokerRegistry:
         }
         if price is not None:
             ticket["price"] = price
-        if dry_run and not self._venues:
-            return {"status": "DRY_RUN", "venue": venue or "simulation", "mode": "paper", "order": ticket}
-        record = self.route(symbol, venue=venue)
         if dry_run:
             return {"status": "DRY_RUN", "venue": record.venue, "mode": record.mode, "order": ticket}
         response = record.adapter.submit(ticket)
