@@ -37,7 +37,7 @@ def verify_api_key(
 ) -> str:
     """Validate API key from request headers."""
     if not api_key and request:
-        api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+        api_key = request.headers.get("X-ORION-API-KEY") or request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     role = _principal(api_key)
     if role is None:
         raise HTTPException(
@@ -95,8 +95,17 @@ async def place_trade(
             },
         )
 
+    orion = getattr(request.app.state, "orion", None)
+    if orion is None:
+        from orion.dashboard.web import DashboardState
+        orion = DashboardState()
+        prices = [100.0 + i * 0.25 for i in range(40)]
+        orion.run_cycle("NVDA", prices)
+        orion.run_cycle("AAPL", [220.0 + i * 0.2 for i in range(40)])
+        request.app.state.orion = orion
+
     try:
-        result = request.app.state.orion.place_trade(
+        result = orion.place_trade(
             intent.symbol,
             side=intent.side,
             quantity=intent.quantity,
