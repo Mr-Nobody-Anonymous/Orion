@@ -555,10 +555,10 @@ def render_p4_page() -> str:
   <!-- Density Switcher & Copilot Trigger -->
   <div class="topbar-right">
     <button class="btn btn-secondary" onclick="toggleDensity()" title="Toggle compact density mode" style="padding: 5px 9px;">
-      <span id="density-icon">⊟</span>
+      <span id="density-icon">⊞</span>
     </button>
     <button class="btn-copilot" onclick="toggleCopilot()">
-      <span>✨ Ask Orion</span>
+      <span>AI Ask Orion</span>
     </button>
   </div>
 </header>
@@ -602,43 +602,43 @@ def render_p4_page() -> str:
       <span class="nav-icon">⌂</span> Home Terminal
     </a>
     <a class="nav-item" id="nav-asset" onclick="switchWorkspace('asset')">
-      <span class="nav-icon">📈</span> Universal Asset
+      <span class="nav-icon">A</span> Universal Asset
     </a>
 
     <div class="sidebar-section">Execution & Risk</div>
     <a class="nav-item" id="nav-trading" onclick="switchWorkspace('trading')">
-      <span class="nav-icon">⚡</span> Trade & Orders
+      <span class="nav-icon">T</span> Trade & Orders
     </a>
     <a class="nav-item" id="nav-aladdin" onclick="switchWorkspace('aladdin')">
-      <span class="nav-icon">🛡️</span> Aladdin Risk & VaR
+      <span class="nav-icon">R</span> Aladdin Risk & VaR
     </a>
     <a class="nav-item" id="nav-whatif" onclick="switchWorkspace('whatif')">
-      <span class="nav-icon">🔮</span> What-If Simulator
+      <span class="nav-icon">W</span> What-If Simulator
     </a>
     <a class="nav-item" id="nav-prediction" onclick="switchWorkspace('prediction')">
-      <span class="nav-icon">🎯</span> Kalshi Prediction
+      <span class="nav-icon">P</span> Kalshi Prediction
     </a>
 
     <div class="sidebar-section">Intelligence</div>
     <a class="nav-item" id="nav-agents" onclick="switchWorkspace('agents')">
-      <span class="nav-icon">🤖</span> 10 AI Agents
+      <span class="nav-icon">I</span> 10 AI Agents
     </a>
     <a class="nav-item" id="nav-news" onclick="switchWorkspace('news')">
-      <span class="nav-icon">🔬</span> News & Research
+      <span class="nav-icon">N</span> News & Research
     </a>
     <a class="nav-item" id="nav-macro" onclick="switchWorkspace('macro')">
-      <span class="nav-icon">🌍</span> Global Macro & Rates
+      <span class="nav-icon">M</span> Global Macro & Rates
     </a>
 
     <div class="sidebar-section">Quantitative Tools</div>
     <a class="nav-item" id="nav-screener" onclick="switchWorkspace('screener')">
-      <span class="nav-icon">🛠️</span> Screener & Lab
+      <span class="nav-icon">S</span> Screener & Lab
     </a>
     <a class="nav-item" id="nav-capstore" onclick="switchWorkspace('capstore')">
-      <span class="nav-icon">🏛️</span> Engine Marketplace
+      <span class="nav-icon">C</span> Engine Marketplace
     </a>
     <a class="nav-item" id="nav-system" onclick="switchWorkspace('system')">
-      <span class="nav-icon">⚙️</span> System & Cap Bus
+      <span class="nav-icon">X</span> System & Cap Bus
     </a>
   </nav>
 
@@ -673,7 +673,7 @@ def render_p4_page() -> str:
       <div class="grid-main-side">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">📈 Institutional Multi-Asset Performance</span>
+            <span class="card-title">Institutional Multi-Asset Performance</span>
             <span style="font-size: 11px; color: var(--muted);">Live Double-Entry Ledger Synchronized</span>
           </div>
           <canvas id="home-chart-canvas" height="180"></canvas>
@@ -681,14 +681,14 @@ def render_p4_page() -> str:
 
         <div class="card">
           <div class="card-header">
-            <span class="card-title">✨ Orion Daily Market Brief</span>
+            <span class="card-title">Orion Daily Market Brief</span>
             <span class="pill good">AI Synthesized</span>
           </div>
           <div style="font-size: 12px; line-height: 1.6; color: var(--text-dim);" id="home-daily-brief">
             Loading AI market brief...
           </div>
           <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="runCycleDemo()">
-            ⚡ Execute Autonomous Decision Cycle
+            Execute Autonomous Decision Cycle
           </button>
         </div>
       </div>
@@ -696,7 +696,7 @@ def render_p4_page() -> str:
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">🔥 Market Overview & Top Movers</span>
+            <span class="card-title">Market Overview & Top Movers</span>
           </div>
           <div id="home-movers-list" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Rendered by JS -->
@@ -777,13 +777,13 @@ def render_p4_page() -> str:
           </div>
           <div class="card">
             <div class="card-header">
-              <span class="card-title">✨ AI Microstructure Anomalies</span>
+              <span class="card-title">AI Microstructure Anomalies</span>
             </div>
             <div style="font-size: 12px; line-height: 1.6; color: var(--text-dim);" id="asset-ai-anomalies">
               Analyzing chart microstructure for anomalies...
             </div>
             <button class="btn btn-secondary" style="width: 100%; margin-top: 12px;" onclick="explainChartMove()">
-              ✨ Explain This Price Action
+              Explain This Price Action
             </button>
           </div>
         </div>
@@ -854,7 +854,7 @@ def render_p4_page() -> str:
           <!-- Interactive Black-Scholes Greeks Sandbox -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">🧮 Interactive Black-Scholes Greeks & Payoff Simulator</span>
+              <span class="card-title">Interactive Black-Scholes Greeks & Payoff Simulator</span>
               <div style="display: flex; gap: 6px;">
                 <button class="btn btn-secondary active" id="opt-type-call" onclick="setOptionType(true)">CALL</button>
                 <button class="btn btn-secondary" id="opt-type-put" onclick="setOptionType(false)">PUT</button>
@@ -977,7 +977,7 @@ def render_p4_page() -> str:
       <div id="tab-asset-forecast" class="asset-tab-pane" style="display: none;">
         <div class="card" style="margin-bottom: 16px;">
           <div class="card-header">
-            <span class="card-title">🏛️ Multi-Engine Forecast Council Deliberation</span>
+            <span class="card-title">Multi-Engine Forecast Council Deliberation</span>
             <div style="display: flex; gap: 8px;">
               <span class="pill good" id="council-concordance-pill">Concordance 84%</span>
               <button class="btn btn-primary" onclick="deliberateForecastCouncil()">Deliberate Council</button>
@@ -1018,7 +1018,7 @@ def render_p4_page() -> str:
       <div class="grid-main-side">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">⚡ Multi-Broker Smart Order Router Ticket</span>
+            <span class="card-title">Multi-Broker Smart Order Router Ticket</span>
             <span class="pill good">Paper Simulated / Dry-Run</span>
           </div>
           <div class="grid-2" style="margin-bottom: 14px;">
@@ -1096,7 +1096,7 @@ def render_p4_page() -> str:
         <!-- Interactive Stress Testing Sandbox -->
         <div class="card">
           <div class="card-header">
-            <span class="card-title">🌪️ Historical Crisis Stress Testing Sandbox</span>
+            <span class="card-title">Historical Crisis Stress Testing Sandbox</span>
             <span class="pill bad">Instant Recalculation</span>
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;" id="stress-scenarios-list">
@@ -1114,7 +1114,7 @@ def render_p4_page() -> str:
         <!-- Multi-Factor Radar & Attribution -->
         <div class="card">
           <div class="card-header">
-            <span class="card-title">📊 Factor Decomposition & Return Attribution</span>
+            <span class="card-title">Factor Decomposition & Return Attribution</span>
           </div>
           <div id="aladdin-factors-breakdown" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
             <!-- Rendered by JS -->
@@ -1131,7 +1131,7 @@ def render_p4_page() -> str:
     <div id="view-prediction" class="workspace-view" style="display: none;">
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🎯 Kalshi & Polymarket Event Exchange</span>
+          <span class="card-title">Kalshi & Polymarket Event Exchange</span>
           <span class="pill good">Causal AI Edge Filter: ACTIVE</span>
         </div>
         <div style="font-size: 12px; color: var(--text-dim);">
@@ -1147,7 +1147,7 @@ def render_p4_page() -> str:
     <div id="view-agents" class="workspace-view" style="display: none;">
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🤖 10 Autonomous AI Agents Center</span>
+          <span class="card-title">10 Autonomous AI Agents Center</span>
           <span class="pill good">10/10 ACTIVE • L3 Supervised</span>
         </div>
         <div class="grid-3" id="agents-cards-grid" style="gap: 12px;">
@@ -1157,7 +1157,7 @@ def render_p4_page() -> str:
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">🛡️ Human Approval Center (Governance Guard)</span></div>
+          <div class="card-header"><span class="card-title">Human Approval Center (Governance Guard)</span></div>
           <div id="agents-approval-queue" style="display: flex; flex-direction: column; gap: 10px;">
             <!-- Rendered by JS -->
           </div>
@@ -1175,7 +1175,7 @@ def render_p4_page() -> str:
     <div id="view-news" class="workspace-view" style="display: none;">
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🔬 Institutional Research & Real-Time Wire</span>
+          <span class="card-title">Institutional Research & Real-Time Wire</span>
           <span class="pill good">FinGPT NLP Impact Scored</span>
         </div>
         <div id="news-wire-feed" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1190,7 +1190,7 @@ def render_p4_page() -> str:
       <div class="grid-main-side" style="margin-bottom: 16px;">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">🏛️ US Treasury Yield Curve Term Structure</span>
+            <span class="card-title">US Treasury Yield Curve Term Structure</span>
             <div style="display: flex; gap: 8px;">
               <span class="pill good" id="macro-spread-2s10s">2s10s: +20 bps</span>
               <span class="pill warn" id="macro-curve-regime">Normal Steepening</span>
@@ -1249,7 +1249,7 @@ def render_p4_page() -> str:
           </div>
         </div>
 
-        <div class="card"><div class="card-header"><span class="card-title">🌍 Global Regional Economic Regimes</span></div>
+        <div class="card"><div class="card-header"><span class="card-title">Global Regional Economic Regimes</span></div>
           <div id="macro-regions-list" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Rendered by JS -->
           </div>
@@ -1261,7 +1261,7 @@ def render_p4_page() -> str:
     <div id="view-screener" class="workspace-view" style="display: none;">
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🛠️ Quantitative Multi-Factor Screener</span>
+          <span class="card-title">Quantitative Multi-Factor Screener</span>
           <span class="pill good">VectorBT / Qlib Alpha Features</span>
         </div>
         <div id="screener-table-container" style="overflow-x: auto;">
@@ -1271,7 +1271,7 @@ def render_p4_page() -> str:
 
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📈 Strategy Equity Curve Simulator & Backtest Lab</span>
+          <span class="card-title">Strategy Equity Curve Simulator & Backtest Lab</span>
           <div style="display: flex; gap: 8px;">
             <select id="backtest-strategy-select" class="omni-search-input" style="width: 220px; background: rgba(10,13,30,0.9);">
               <option value="Momentum-Regime-v4">Momentum-Regime-v4</option>
@@ -1332,7 +1332,7 @@ def render_p4_page() -> str:
 
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🧩 External Capability Ecosystem & Integration Matrix (30 Repositories)</span>
+          <span class="card-title">External Capability Ecosystem & Integration Matrix (30 Repositories)</span>
           <span class="pill good">Orion Capability Bus</span>
         </div>
         <div style="overflow-x: auto;">
@@ -1357,7 +1357,7 @@ def render_p4_page() -> str:
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-title">⚙️ Model Center & Hardware Router</span></div>
+          <div class="card-header"><span class="card-title">Model Center & Hardware Router</span></div>
           <div id="system-models-list" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Rendered by JS -->
           </div>
@@ -1375,7 +1375,7 @@ def render_p4_page() -> str:
     <div id="view-whatif" class="workspace-view" style="display: none;">
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🔮 Institutional What-If Portfolio & Risk Simulator</span>
+          <span class="card-title">Institutional What-If Portfolio & Risk Simulator</span>
           <span class="pill good">Non-Mutating Shadow State</span>
         </div>
         <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
@@ -1403,8 +1403,8 @@ def render_p4_page() -> str:
           </div>
         </div>
         <div style="display: flex; gap: 12px;">
-          <button class="btn btn-primary" onclick="runWhatIfSimulation()">⚡ Run What-If Simulation</button>
-          <button class="btn" style="background: var(--panel-strong); border: 1px solid var(--accent); color: #fff;" onclick="runFirewallCheckOnTicket()">🛡️ Audit Against 12-Gate Firewall</button>
+          <button class="btn btn-primary" onclick="runWhatIfSimulation()">Run What-If Simulation</button>
+          <button class="btn" style="background: var(--panel-strong); border: 1px solid var(--accent); color: #fff;" onclick="runFirewallCheckOnTicket()">Audit Against 12-Gate Firewall</button>
           <button class="btn" style="background: transparent; border: 1px solid var(--muted); color: var(--muted);" onclick="resetWhatIfTicket()">Abort / Reset</button>
         </div>
       </div>
@@ -1434,7 +1434,7 @@ def render_p4_page() -> str:
 
       <div class="grid-2" style="margin-bottom: 16px;">
         <div class="card">
-          <div class="card-header"><span class="card-title">📊 Factor Exposure Shifts</span></div>
+          <div class="card-header"><span class="card-title">Factor Exposure Shifts</span></div>
           <div style="display: flex; flex-direction: column; gap: 8px;" id="whatif-factors-list">
             <div class="stat-box" style="display: flex; justify-content: space-between;">
               <span>Technology Sector Beta</span><b style="color: var(--warn);">+4.20% (31.2% total)</b>
@@ -1465,7 +1465,7 @@ def render_p4_page() -> str:
 
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🌪️ Stress Scenario Shock Re-calculation (What-If Loss)</span>
+          <span class="card-title">Stress Scenario Shock Re-calculation (What-If Loss)</span>
           <span class="pill" style="border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">Hypothetical Scenario Impact</span>
         </div>
         <div class="grid-4" id="whatif-stress-cards">
@@ -1494,7 +1494,7 @@ def render_p4_page() -> str:
 
       <div class="card" id="whatif-firewall-panel">
         <div class="card-header">
-          <span class="card-title">🛡️ Deterministic 12-Gate Risk Firewall Pre-Clearance Audit</span>
+          <span class="card-title">Deterministic 12-Gate Risk Firewall Pre-Clearance Audit</span>
           <span class="pill good" id="whatif-firewall-badge">12/12 GATES PASSED</span>
         </div>
         <div class="grid-4" id="whatif-firewall-gates" style="gap: 8px; font-size: 11px; margin-top: 8px;">
@@ -1530,7 +1530,7 @@ def render_p4_page() -> str:
 
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-header">
-          <span class="card-title">🏛️ Orion Engine Marketplace & Pinned Upstream Matrix</span>
+          <span class="card-title">Orion Engine Marketplace & Pinned Upstream Matrix</span>
           <span class="pill" style="border: 1px solid var(--accent); color: var(--accent);">Audited & Immutable</span>
         </div>
         <div style="overflow-x: auto;">
@@ -1593,7 +1593,7 @@ def render_p4_page() -> str:
 <div class="copilot-drawer" id="copilot-drawer">
   <div class="copilot-header">
     <div style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-      <span>✨ Ask Orion</span>
+      <span>AI Ask Orion</span>
       <span class="pill good" style="font-size: 9px;">CONTEXT AWARE</span>
     </div>
     <button style="background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer;" onclick="toggleCopilot()">✕</button>
@@ -1629,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {{
 function toggleDensity() {{
   isCompactDensity = !isCompactDensity;
   document.body.classList.toggle('density-compact', isCompactDensity);
-  document.getElementById('density-icon').textContent = isCompactDensity ? '⊞' : '⊟';
+  document.getElementById('density-icon').textContent = isCompactDensity ? '⊞' : '⊞';
 }}
 
 function switchWorkspace(name) {{
@@ -2713,7 +2713,7 @@ async function handlePaletteSearch() {{
   if (res.results.stocks) {{
     html += res.results.stocks.map(s => `
       <div class="palette-item" onclick="openAsset('${{s.symbol}}'); closeCommandPalette();">
-        <span>📈 <b>${{s.symbol}}</b> — ${{s.name}}</span>
+        <span><b>${{s.symbol}}</b> — ${{s.name}}</span>
         <span style="font-family: var(--font-mono);">${{s.price}} (${{s.change}})</span>
       </div>
     `).join('');
@@ -2721,7 +2721,7 @@ async function handlePaletteSearch() {{
   if (res.results.prediction) {{
     html += res.results.prediction.map(p => `
       <div class="palette-item" onclick="switchWorkspace('prediction'); closeCommandPalette();">
-        <span>🎯 <b>${{p.symbol}}</b> — ${{p.title}}</span>
+        <span><b>${{p.symbol}}</b> — ${{p.title}}</span>
         <span style="color: var(--good);">${{p.orion_edge}} Edge</span>
       </div>
     `).join('');

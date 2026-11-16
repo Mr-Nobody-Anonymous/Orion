@@ -147,6 +147,7 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/RomelTorres/alpha_vantage.git",
         category=Category.DATA_PROVIDER,
         integration_module="src.integrations.alpha_vantage_adapter",
+        description="Alpha Vantage data",
         pip_package="alpha_vantage"
     ),
     ExternalRepo(
@@ -162,6 +163,7 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/sammchardy/python-binance.git",
         category=Category.DATA_PROVIDER,
         integration_module="src.integrations.binance_adapter",
+        description="Binance API",
         pip_package="python-binance"
     ),
     ExternalRepo(
@@ -169,17 +171,11 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/alpacahq/alpaca-trade-api-python.git",
         category=Category.DATA_PROVIDER,
         integration_module="src.integrations.alpaca_adapter",
+        description="Alpaca API",
         pip_package="alpaca-trade-api"
     ),
 
     # ===== INDICATORS =====
-    ExternalRepo(
-        name="pandas_ta",
-        url="https://github.com/twopirllc/pandas-ta.git",
-        category=Category.INDICATORS,
-        integration_module="src.integrations.pandas_ta_adapter",
-        pip_package="pandas-ta"
-    ),
     ExternalRepo(
         name="ta",
         url="https://github.com/bukosabino/ta.git",
@@ -231,6 +227,7 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/DLR-RM/stable-baselines3.git",
         category=Category.ML_AI,
         integration_module="src.integrations.sb3_adapter",
+        description="Stable Baselines 3",
         pip_package="stable-baselines3"
     ),
     ExternalRepo(
@@ -246,6 +243,7 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/blue-yonder/tsfresh.git",
         category=Category.ML_AI,
         integration_module="src.integrations.tsfresh_adapter",
+        description="Time series feature extraction",
         pip_package="tsfresh"
     ),
     ExternalRepo(
@@ -253,27 +251,23 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         url="https://github.com/optuna/optuna.git",
         category=Category.ML_AI,
         integration_module="src.integrations.optuna_adapter",
+        description="Hyperparameter optimization",
         pip_package="optuna"
-    ),
-    ExternalRepo(
-        name="mlflow",
-        url="https://github.com/mlflow/mlflow.git",
-        category=Category.ML_AI,
-        integration_module="src.integrations.mlflow_adapter",
-        pip_package="mlflow"
     ),
     ExternalRepo(
         name="shap",
         url="https://github.com/slundberg/shap.git",
         category=Category.ML_AI,
         integration_module="src.integrations.shap_adapter",
+        description="Explainability",
         pip_package="shap"
     ),
     ExternalRepo(
         name="finbert",
         url="https://github.com/ProsusAI/finBERT.git",
         category=Category.NLP_SENTIMENT,
-        integration_module="src.integrations.finbert_adapter"
+        integration_module="src.integrations.finbert_adapter",
+        description="Financial BERT"
     ),
 
     # ===== RISK & PORTFOLIO =====
@@ -343,611 +337,77 @@ EXTERNAL_REPOS: List[ExternalRepo] = [
         pip_package="web3"
     ),
 
-    # ===== UI/CHARTING =====
+    # ===== UI CHARTING =====
     ExternalRepo(
         name="lightweight_charts",
         url="https://github.com/tradingview/lightweight-charts.git",
         category=Category.UI_CHARTING,
         integration_module="frontend.integrations.lightweight_charts",
-        description="TradingView charts"
-    ),
+        pip_package=""
+    )
 ]
 
 
 class OrionIntegrator:
-    """Manages all external repository integrations."""
-
-    def __init__(self, base_dir: str = None):
-        self.base_dir = Path(base_dir or os.getcwd())
+    def __init__(self):
+        self.base_dir = Path("/home/user/Orion")
         self.external_dir = self.base_dir / "external"
         self.integrations_dir = self.base_dir / "src" / "integrations"
-        self.manifest_file = self.base_dir / "external" / "manifest.json"
-
-    def setup(self):
-        """Full setup of all external dependencies."""
-        logger.info("=" * 60)
-        logger.info("ORION EXTERNAL INTEGRATION SETUP")
-        logger.info("=" * 60)
-
         self.external_dir.mkdir(parents=True, exist_ok=True)
         self.integrations_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create __init__.py for integrations
-        init_file = self.integrations_dir / "__init__.py"
-        if not init_file.exists():
-            init_file.write_text('"""Orion External Integrations"""\n')
-
-        manifest = {}
-
-        for repo in EXTERNAL_REPOS:
-            try:
-                self._clone_repo(repo)
-                self._create_adapter(repo)
-                manifest[repo.name] = {
-                    "url": repo.url,
-                    "category": repo.category.value,
-                    "description": repo.description,
-                    "integration_module": repo.integration_module,
-                    "pip_package": repo.pip_package,
-                    "status": "integrated"
-                }
-                logger.info(f"✅ {repo.name} integrated successfully")
-            except Exception as e:
-                logger.error(f"❌ {repo.name} failed: {e}")
-                manifest[repo.name] = {
-                    "url": repo.url,
-                    "category": repo.category.value,
-                    "status": "failed",
-                    "error": str(e)
-                }
-
-        # Save manifest
-        with open(self.manifest_file, 'w') as f:
-            json.dump(manifest, f, indent=2)
-
-        self._generate_integration_registry()
-        self._generate_requirements()
-
-        logger.info("=" * 60)
-        logger.info("INTEGRATION COMPLETE")
-        logger.info(f"Total repos: {len(EXTERNAL_REPOS)}")
-        integrated = sum(1 for v in manifest.values() if v["status"] == "integrated")
-        logger.info(f"Successfully integrated: {integrated}")
-        logger.info(f"Failed: {len(EXTERNAL_REPOS) - integrated}")
-        logger.info("=" * 60)
-
-    def _clone_repo(self, repo: ExternalRepo):
-        """Clone a repository into external/."""
-        repo_dir = self.external_dir / repo.name
-        if repo_dir.exists():
-            logger.info(f"  📁 {repo.name} already exists, pulling latest...")
-            subprocess.run(
-                ["git", "pull"],
-                cwd=repo_dir,
-                capture_output=True,
-                timeout=120
-            )
-        else:
-            logger.info(f"  📥 Cloning {repo.name}...")
-            cmd = ["git", "clone", "--depth", "1"]
-            if repo.branch != "main":
-                cmd.extend(["--branch", repo.branch])
-            cmd.extend([repo.url, str(repo_dir)])
-            result = subprocess.run(cmd, capture_output=True, timeout=300)
-            if result.returncode != 0:
-                raise RuntimeError(f"Git clone failed: {result.stderr.decode()}")
-
-    def _create_adapter(self, repo: ExternalRepo):
-        """Generate adapter/wrapper module for integration."""
-        adapter_name = f"{repo.name}_adapter.py"
-        adapter_path = self.integrations_dir / adapter_name
-
-        if adapter_path.exists():
-            return
-
-        adapter_code = self._generate_adapter_code(repo)
-        adapter_path.write_text(adapter_code)
-
-    def _generate_adapter_code(self, repo: ExternalRepo) -> str:
-        """Generate adapter code based on category."""
-        adapters = {
-            Category.TRADING_FRAMEWORK: self._trading_framework_adapter,
-            Category.DATA_PROVIDER: self._data_provider_adapter,
-            Category.ML_AI: self._ml_ai_adapter,
-            Category.RISK_PORTFOLIO: self._risk_portfolio_adapter,
-            Category.NLP_SENTIMENT: self._nlp_adapter,
-            Category.BLOCKCHAIN: self._blockchain_adapter,
-            Category.UI_CHARTING: self._ui_adapter,
-            Category.INDICATORS: self._indicator_adapter,
-            Category.BACKTESTING: self._backtesting_adapter,
-            Category.EXECUTION: self._execution_adapter,
-        }
-        generator = adapters.get(repo.category, self._generic_adapter)
-        return generator(repo)
-
-    def _trading_framework_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Adapter for {repo.name}
-Auto-generated integration layer.
-Source: {repo.url}
-"""
-
-import logging
-from typing import Any, Dict, List, Optional
-from abc import ABC
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}Adapter:
-    """
-    Adapter to integrate {repo.name} into Orion's trading engine.
-    Maps {repo.name}'s API to Orion's internal interfaces.
-    """
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-        self._initialized = False
-        self._engine = None
-        logger.info(f"{repo.name} adapter initialized")
-
-    def initialize(self):
-        """Initialize the {repo.name} integration."""
-        try:
-            # Import the external library
-            # import {repo.name.replace("-", "_")}
-            self._initialized = True
-            logger.info("{repo.name} successfully loaded")
-        except ImportError:
-            logger.warning("{repo.name} not installed. Install with: pip install {repo.pip_package or repo.name}")
-
-    def create_strategy(self, strategy_config: Dict) -> Any:
-        """Create a strategy using {repo.name}'s engine."""
-        if not self._initialized:
-            self.initialize()
-        raise NotImplementedError("Implement strategy creation for {repo.name}")
-
-    def run_backtest(self, strategy: Any, data: Any, **kwargs) -> Dict:
-        """Run a backtest using {repo.name}'s engine."""
-        raise NotImplementedError("Implement backtesting for {repo.name}")
-
-    def get_signals(self, data: Any) -> Dict:
-        """Get trading signals from {repo.name}."""
-        raise NotImplementedError("Implement signal generation for {repo.name}")
-
-    def convert_to_orion_format(self, external_data: Any) -> Dict:
-        """Convert {repo.name} output to Orion's internal format."""
-        raise NotImplementedError("Implement data conversion for {repo.name}")
-
-    def convert_from_orion_format(self, orion_data: Dict) -> Any:
-        """Convert Orion's internal format to {repo.name}'s format."""
-        raise NotImplementedError("Implement data conversion for {repo.name}")
-
-    @property
-    def is_available(self) -> bool:
-        """Check if {repo.name} is available."""
-        try:
-            __import__("{repo.name.replace("-", "_")}")
-            return True
-        except ImportError:
-            return False
-
-    def health_check(self) -> Dict[str, Any]:
-        """Health check for {repo.name} integration."""
-        return {{
-            "name": "{repo.name}",
-            "available": self.is_available,
-            "initialized": self._initialized,
-            "category": "{repo.category.value}"
-        }}
-'''
-
-    def _data_provider_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Data Provider Adapter for {repo.name}
-Source: {repo.url}
-"""
-
-import logging
-import pandas as pd
-from typing import Any, Dict, List, Optional
-from datetime import datetime
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}DataAdapter:
-    """
-    Data provider adapter for {repo.name}.
-    Provides unified data access through Orion's data interface.
-    """
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-        self._client = None
-
-    def connect(self, **kwargs):
-        """Establish connection to data source."""
-        raise NotImplementedError
-
-    def disconnect(self):
-        """Close connection."""
-        if self._client:
-            self._client = None
-
-    def get_historical_bars(
-        self,
-        symbol: str,
-        timeframe: str,
-        start: datetime,
-        end: datetime,
-        **kwargs
-    ) -> pd.DataFrame:
-        """Fetch historical OHLCV bars."""
-        raise NotImplementedError
-
-    def get_realtime_quote(self, symbol: str) -> Dict:
-        """Get real-time quote."""
-        raise NotImplementedError
-
-    def get_orderbook(self, symbol: str, depth: int = 20) -> Dict:
-        """Get order book data."""
-        raise NotImplementedError
-
-    def subscribe_ticker(self, symbols: List[str], callback):
-        """Subscribe to real-time ticker updates."""
-        raise NotImplementedError
-
-    def subscribe_trades(self, symbols: List[str], callback):
-        """Subscribe to real-time trade updates."""
-        raise NotImplementedError
-
-    def get_available_symbols(self) -> List[str]:
-        """Get list of available symbols."""
-        raise NotImplementedError
-
-    def normalize_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Normalize external data to Orion format.
-        Expected columns: timestamp, open, high, low, close, volume
-        """
-        column_map = {{
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Volume": "volume",
-            "Date": "timestamp", "Datetime": "timestamp"
-        }}
-        df = df.rename(columns=column_map)
-        return df
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-
-    def health_check(self) -> Dict:
-        return {{
-            "name": "{repo.name}",
-            "type": "data_provider",
-            "available": self.is_available,
-            "connected": self._client is not None
-        }}
-'''
-
-    def _ml_ai_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion ML/AI Adapter for {repo.name}
-Source: {repo.url}
-"""
-
-import logging
-import numpy as np
-import pandas as pd
-from typing import Any, Dict, List, Optional, Tuple
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}MLAdapter:
-    """
-    ML/AI adapter for {repo.name}.
-    Integrates {repo.name}'s models into Orion's ML pipeline.
-    """
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-        self._model = None
-        self._scaler = None
-
-    def build_model(self, model_config: Dict) -> Any:
-        """Build an ML model using {repo.name}."""
-        raise NotImplementedError
-
-    def train(
-        self,
-        X_train: np.ndarray,
-        y_train: np.ndarray,
-        X_val: Optional[np.ndarray] = None,
-        y_val: Optional[np.ndarray] = None,
-        **kwargs
-    ) -> Dict:
-        """Train the model."""
-        raise NotImplementedError
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """Generate predictions."""
-        if self._model is None:
-            raise RuntimeError("Model not trained")
-        raise NotImplementedError
-
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict:
-        """Evaluate model performance."""
-        raise NotImplementedError
-
-    def save_model(self, path: str):
-        """Save model to disk."""
-        raise NotImplementedError
-
-    def load_model(self, path: str):
-        """Load model from disk."""
-        raise NotImplementedError
-
-    def get_feature_importance(self) -> Dict[str, float]:
-        """Get feature importance scores."""
-        raise NotImplementedError
-
-    def hyperparameter_tune(self, param_space: Dict, n_trials: int = 100) -> Dict:
-        """Run hyperparameter optimization."""
-        raise NotImplementedError
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-
-    def health_check(self) -> Dict:
-        return {{
-            "name": "{repo.name}",
-            "type": "ml_ai",
-            "available": self.is_available,
-            "model_loaded": self._model is not None
-        }}
-'''
-
-    def _risk_portfolio_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Risk/Portfolio Adapter for {repo.name}
-Source: {repo.url}
-"""
-
-import logging
-import numpy as np
-import pandas as pd
-from typing import Any, Dict, List, Optional
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}RiskAdapter:
-    """
-    Risk/Portfolio adapter for {repo.name}.
-    """
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-
-    def optimize_portfolio(
-        self,
-        returns: pd.DataFrame,
-        constraints: Dict = None,
-        objective: str = "max_sharpe"
-    ) -> Dict[str, float]:
-        """Optimize portfolio weights."""
-        raise NotImplementedError
-
-    def calculate_risk_metrics(
-        self,
-        returns: pd.Series,
-        benchmark: Optional[pd.Series] = None
-    ) -> Dict:
-        """Calculate comprehensive risk metrics."""
-        raise NotImplementedError
-
-    def calculate_var(
-        self,
-        returns: pd.Series,
-        confidence: float = 0.95,
-        method: str = "historical"
-    ) -> float:
-        """Calculate Value at Risk."""
-        raise NotImplementedError
-
-    def stress_test(
-        self,
-        portfolio: Dict[str, float],
-        scenarios: List[Dict]
-    ) -> List[Dict]:
-        """Run stress tests."""
-        raise NotImplementedError
-
-    def generate_tearsheet(
-        self,
-        returns: pd.Series,
-        benchmark: Optional[pd.Series] = None
-    ) -> Dict:
-        """Generate performance tearsheet data."""
-        raise NotImplementedError
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-'''
-
-    def _nlp_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion NLP/Sentiment Adapter for {repo.name}
-Source: {repo.url}
-"""
-import logging
-from typing import Any, Dict, List
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}NLPAdapter:
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-        self._model = None
-
-    def analyze_sentiment(self, text: str) -> Dict:
-        raise NotImplementedError
-
-    def batch_analyze(self, texts: List[str]) -> List[Dict]:
-        raise NotImplementedError
-
-    def extract_entities(self, text: str) -> List[Dict]:
-        raise NotImplementedError
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-'''
-
-    def _blockchain_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Blockchain Adapter for {repo.name}
-Source: {repo.url}
-"""
-import logging
-from typing import Any, Dict, List
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}BlockchainAdapter:
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-        self._connection = None
-
-    def connect(self, rpc_url: str):
-        raise NotImplementedError
-
-    def get_token_price(self, token_address: str) -> float:
-        raise NotImplementedError
-
-    def execute_swap(self, params: Dict) -> Dict:
-        raise NotImplementedError
-
-    def monitor_mempool(self, callback):
-        raise NotImplementedError
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-'''
-
-    def _ui_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion UI Adapter for {repo.name}
-Source: {repo.url}
-Note: Frontend integration - see frontend/src/integrations/
-"""
-# This is a placeholder. Actual integration happens in the frontend.
-# See: frontend/src/components/charts/
-'''
-
-    def _indicator_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Indicator Adapter for {repo.name}
-Source: {repo.url}
-"""
-import logging
-import pandas as pd
-from typing import Any, Dict, Optional
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}IndicatorAdapter:
-    def __init__(self):
-        self._lib = None
-
-    def initialize(self):
-        try:
-            import {repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')} as lib
-            self._lib = lib
-        except ImportError:
-            logger.warning("{repo.name} not available")
-
-    def calculate(self, df: pd.DataFrame, indicator: str, **params) -> pd.DataFrame:
-        """Calculate an indicator using {repo.name}."""
-        raise NotImplementedError
-
-    def list_indicators(self) -> list:
-        """List all available indicators."""
-        raise NotImplementedError
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.pip_package.replace('-', '_') if repo.pip_package else repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-'''
-
-    def _backtesting_adapter(self, repo: ExternalRepo) -> str:
-        return self._trading_framework_adapter(repo)
-
-    def _execution_adapter(self, repo: ExternalRepo) -> str:
-        return self._trading_framework_adapter(repo)
-
-    def _generic_adapter(self, repo: ExternalRepo) -> str:
-        return f'''"""
-Orion Generic Adapter for {repo.name}
-Source: {repo.url}
-"""
-import logging
-from typing import Any, Dict
-
-logger = logging.getLogger(__name__)
-
-
-class {self._class_name(repo.name)}Adapter:
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {{}}
-
-    @property
-    def is_available(self) -> bool:
-        try:
-            __import__("{repo.name.replace('-', '_')}")
-            return True
-        except ImportError:
-            return False
-
-    def health_check(self) -> Dict:
-        return {{"name": "{repo.name}", "available": self.is_available}}
-'''
 
     def _class_name(self, name: str) -> str:
         """Convert repo name to CamelCase class name."""
         return ''.join(word.capitalize() for word in name.replace('-', '_').split('_'))
+
+    def setup(self):
+        """Clone and setup all external repositories."""
+        for repo in EXTERNAL_REPOS:
+            repo_dir = self.external_dir / repo.name
+            if not repo_dir.exists():
+                logger.info(f"Cloning {repo.name} from {repo.url}...")
+                try:
+                    subprocess.run(
+                        ["git", "clone", "--depth", "1", repo.url, str(repo_dir)],
+                        check=True,
+                        capture_output=True
+                    )
+                    logger.info(f"Successfully cloned {repo.name}")
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Failed to clone {repo.name}: {e.stderr.decode()}")
+            else:
+                logger.info(f"Repository {repo.name} already exists at {repo_dir}")
+
+        self._generate_integration_registry()
+        self._generate_requirements()
+        self._update_manifest()
+
+    def _update_manifest(self):
+        """Update the external manifest.json."""
+        manifest_path = self.external_dir / "manifest.json"
+        manifest = {}
+        
+        # Load existing if present
+        if manifest_path.exists():
+            try:
+                with open(manifest_path, 'r') as f:
+                    manifest = json.load(f)
+            except json.JSONDecodeError:
+                pass
+
+        for repo in EXTERNAL_REPOS:
+            repo_dir = self.external_dir / repo.name
+            manifest[repo.name] = {
+                "url": repo.url,
+                "category": repo.category.value,
+                "description": repo.description,
+                "integration_module": repo.integration_module,
+                "pip_package": repo.pip_package,
+                "status": "integrated" if repo_dir.exists() else "pending"
+            }
+
+        with open(manifest_path, 'w') as f:
+            json.dump(manifest, f, indent=2)
 
     def _generate_integration_registry(self):
         """Generate the master integration registry."""
@@ -1101,7 +561,6 @@ def health_check_all() -> Dict[str, Dict]:
             "ib_insync>=0.9.86",
             "",
             "# Indicators",
-            "pandas-ta>=0.3.14b",
             "ta>=0.11.0",
             "finta>=1.3",
             "ta-lib>=0.4.28",
@@ -1158,7 +617,6 @@ def health_check_all() -> Dict[str, Dict]:
             "vaderSentiment>=3.3.2",
             "",
             "# Experiment Tracking",
-            "mlflow>=2.9.0",
             "optuna>=3.4.0",
             "wandb>=0.16.0",
             "",
