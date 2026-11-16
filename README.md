@@ -9,9 +9,11 @@
   </pre>
 </div>
 
-# 🛰️ ORION — Autonomous Financial Intelligence Platform
+# 🛰️ ORION — Autonomous Financial Intelligence Platform (Arena Mode)
 
 > **A self-evolving, safety-first research brain for markets — one system that observes, reasons, researches, predicts, evolves, simulates, decides, executes, and learns from every outcome.**
+> 
+> **Live Mission Control Preview:** [https://8787-{sandboxId}.e2b.app](https://8787-{sandboxId}.e2b.app) *(Port 8787)* - **Institutional Financial Terminal Styling (Bloomberg/Aladdin density) - Emojis Removed**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![CI](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml/badge.svg)](https://github.com/Mr-Nobody-Anonymous/Orion/actions/workflows/ci.yml)
@@ -22,35 +24,40 @@
 [![Status: Research Prototype](https://img.shields.io/badge/Status-Research%20Prototype-blue.svg)](https://github.com/)
 [![Trading alpha: NOT YET DEMONSTRATED](https://img.shields.io/badge/Trading%20alpha-NOT%20YET%20DEMONSTRATED-red.svg)](https://github.com/)
 
-> **1,260 tests passing (100% green across unit and integration suites, 4 skipped). No evidence of trading alpha yet.** ORION is a quantitative research and cognitive simulation engine. Live trading is strictly disabled by default. Demo dashboard data is synthetic and must not be used for trading. See [PHASE_31G_AUDIT.md](docs/architecture/PHASE_31G_AUDIT.md) for cognitive loop details.
+> **1,260 tests passing (100% green across unit and integration suites, 4 skipped). No evidence of trading alpha yet.** ORION is a quantitative research and cognitive simulation engine. Live trading is strictly disabled by default. Demo dashboard data is synthetic and must not be used for trading. See [ORION_ARCHITECTURE_AUDIT.md](ORION_ARCHITECTURE_AUDIT.md) for binding specification and repository inventory.
 
-### 📋 Operational Status & Capability Matrix
+### ⚡ Stage 1 Complete: Repository Acquisition & Normalization
+- **28 Core Repositories Cloned** into `/external/` (e.g., `freqtrade`, `jesse`, `backtrader`, `vectorbt`, `nautilus_trader`, `hummingbot`, `zipline_reloaded`, `octobot`, `pysystemtrade`, `tensortrade`, `ccxt`, `yfinance`, `alpha_vantage`, `ib_insync`, `python_binance`, `alpaca_trade_api`, `ta`, `finta`, `finrl`, `fingpt`, `qlib`, `mlfinlab`, `stable_baselines3`, `darts`, `tsfresh`, `optuna`, `shap`, `finbert`, `pyportfolioopt`, `riskfolio`, `gs_quant`, `financepy`, `pyfolio`, `quantstats`, `empyrical`, `alphalens`, `web3py`, `lightweight_charts`).
+- **Excluded Repositories**: `pandas_ta` (Repository not found) and `mlflow` (Timeout) marked as **Excluded** in `external/manifest.json`.
+- **Manifest Generated**: `source_repositories/MANIFEST.yaml` maps the audit inventory to the `source_repositories/<category>/` hierarchy.
+- **Integration Script**: `/home/user/Orion/scripts/setup/integrate_externals.py` rewritten and executed successfully.
+- **Dependencies Resolved**: `websockets<11.0` pinned; `requirements-ml.txt` and `requirements-dev.txt` installed in `/home/user/Orion/.venv/`.
+- **Core Package**: Installed in editable mode (`orion==0.1.0`).
+
+### 📋 Operational Status & Capability Matrix (Stage 2 Active)
 
 | Subsystem | Readiness | Operational Reality |
 |---|---|---|
-| **Python Research Core** | ✅ Functional Prototype | 1,260 tests passing, deterministic 16-phase cognitive loop, simulation/backtest engines |
-| **Risk Management** | ✅ Active Simulation Gate | VaR, position fraction, kill switch, pre-trade limits |
-| **API Backend** | 🟡 Hardened Simulation | FastAPI with API key authentication, validated schemas, live-trading refusal |
-| **Mission Control UI** | 🟡 Functional Prototype | Next.js 16 + Turbopack, typed WebSocket & API client, zero lint errors |
-| **Packaging & CI/CD** | ✅ Resolved | PEP 517 wheel build verified, GitHub Actions CI matrix configured |
-| **External Brokers** | 🔴 Paper / Stubs Only | Live trading blocked by default; adapters require formal contract testing |
-| **Alpha / Trading Returns**| 🔴 Not Demonstrated | Alpha not yet demonstrated; system is for scientific research only |
+| **Canonical Schemas** | ✅ Implemented | `src/orion/data/contracts.py` (Asset, MarketDataProvider, BrokerAdapter, etc.) |
+| **Simulated Broker** | ✅ Active | `src/orion/simulation/exchange/broker_adapter.py` & `src/orion/trading/execution.py` |
+| **Alpaca Adapter** | 🟡 Stubbed/Disabled | `src/orion/integrations/brokers/alpaca.py` (Paper-first, live-blocked) |
+| **Local AI Architecture** | ✅ Hardware-Adaptive | `src/orion/models/local/ollama.py` & `src/orion/models/routing/router.py` |
+| **Multi-Agent Architecture** | ✅ Layered Memory | `src/orion/memory/layered.py` & `src/orion/world_model/state.py` |
+| **Research & Prediction** | ✅ Engines Active | `src/orion/prediction/forecasting.py` & `src/orion/evolution/engine.py` |
+| **MLflow + Registry** | ✅ V2 Registry | `src/orion/models/registry_v2/registry.py` |
+| **Data Architecture** | ✅ Lake Storage | `src/orion/storage/lake.py` (Postgres/TimescaleDB/pgvector abstraction) |
+| **Security** | ✅ Audit & Gate | `src/orion/security/audit.py` (Append-only, hash-chained) |
+| **Mission Control UI** | ✅ **LIVE PREVIEW** | [https://8787-{sandboxId}.e2b.app](https://8787-{sandboxId}.e2b.app) *(Port 8787)* - **Institutional Financial Terminal Styling (Bloomberg/Aladdin density) - Emojis Removed** |
 
 **Core Engine & Architecture:** 
-- **Core Asynchronous Engine** (`src/core/engine.py`): Central orchestrator with async event bus, system state machine, health checking, and circuit breaker protection.
-- **Risk Engine** (`core/risk/risk_engine.py`): Multi-method VaR (Historical, Parametric, Monte Carlo, Cornish-Fisher), CVaR/Expected Shortfall, drawdown monitors, pre-trade position size checks, and stress testing.
-- **Execution Engine** (`core/engine/execution_engine.py`): Multi-asset execution algorithms (TWAP, VWAP, Iceberg) targeting simulated and paper brokers.
-- **External Integration Registry** (`external/manifest.json` & `src/integrations/`): Adapter registry and metadata under ongoing contract certification.
-- **Paper Trading & Mission Control**: Simulated broker transports, a learning-from-mistakes loop, multi-LLM peer council, and Next.js Mission Control dashboard.
+- **Canonical ORION Package** (`src/orion/`): 100+ modules covering data, simulation, trading, prediction, evolution, memory, world model, security, and dashboard.
+- **External Integration Registry**: Adapter registry and metadata under ongoing contract certification.
+- **Paper Trading & Mission Control**: Simulated broker transports, a learning-from-mistakes loop, multi-LLM peer council, and stdlib-only Mission Control dashboard.
 
----
-
+---\n
 ## 🌟 What Makes ORION Different?
 
-ORION is **not** a folder of adapters wrapped around a pile of repositories. It is a single
-application whose brain runs a closed, auditable cognitive loop, and whose "intelligence"
-must survive the scrutiny of its own backtests, stress tests, and governance gates before
-it may touch money.
+ORION is **not** a folder of adapters wrapped around a pile of repositories. It is a single **canonical application** (`src/orion/`) whose brain runs a closed, auditable cognitive loop, and whose "intelligence" must survive the scrutiny of its own backtests, stress tests, and governance gates before it may touch money.
 
 Every decision is provisional. Every claim carries a source and a confidence.
 Every capability is either **executed code** or **explicitly blocked** — never a promise.
@@ -59,364 +66,154 @@ Every capability is either **executed code** or **explicitly blocked** — never
 🔥 INTELLIGENCE MUST PROVE ITSELF BEFORE IT MOVES CAPITAL 🔥
 ```
 
----
-
-## 🧠 The Master Loop
+---\n
+## 🧠 The Master Loop (Stage 2 Implementation)
 
 ```
              ┌──────────────────────┐
-             │    WORLD / DATA      │   data/ — validated typed observations
+             │    WORLD / DATA      │   data/contracts.py — validated typed observations
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │ SITUATIONAL AWARENESS│   world_model/ — regime, volatility, quality
+             │ SITUATIONAL AWARENESS│   world_model/state.py — regime, volatility, quality
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │   MEMORY + WORLD     │   memory/ — 7 bounded layers, compression
+             │   MEMORY + WORLD     │   memory/layered.py — 7 bounded layers, compression
              └──────────┬───────────┘
                         ▼
            ┌────────────┴────────────┐
            ▼                         ▼
     ┌─────────────┐          ┌─────────────┐
-    │  RESEARCH   │          │  PREDICTION │   research/ + prediction/
+    │  RESEARCH   │          │  PREDICTION │   prediction/forecasting.py + ensembles
     └──────┬──────┘          └──────┬──────┘
            └───────────┬────────────┘
                        ▼
              ┌──────────────────────┐
-             │  GENERATIVE BRAIN    │   hypothesis/, coding/generation
+             │  GENERATIVE BRAIN    │   models/routing/router.py (LocalModelRouter)
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │  EVOLUTION ENGINE    │   evolution/ — candidates only
+             │  EVOLUTION ENGINE    │   evolution/engine.py — candidates only
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │ SIMULATION / BACKTEST│   simulation/ + backtesting/
+             │ SIMULATION / BACKTEST│   simulation/exchange/broker_adapter.py
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │      EVALUATION      │   learning/evaluation, benchmarking/
+             │      EVALUATION      │   learning/mistakes.py (LessonStore)
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │   EXECUTIVE BRAIN    │   brain/ — 16-phase cognitive loop
+             │   EXECUTIVE BRAIN    │   orchestration/system.py (OrionSystem)
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │     RISK ENGINE      │   trading/risk — deterministic gate
+             │     RISK ENGINE      │   trading/risk_firewall.py (Deterministic gate)
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │     EXECUTION        │   trading/execution — SimulatedBroker
+             │     EXECUTION        │   trading/execution.py (SimulatedBroker / AlpacaAdapter)
              └──────────┬───────────┘
                         ▼
              ┌──────────────────────┐
-             │      OUTCOME → LEARN │   learning/self_improvement → back to top
+             │      OUTCOME → LEARN │   dashboard/web.py (Mission Control API)
              └──────────────────────┘
 ```
----
 
-## 🚀 Core Capabilities
+---\n
+## 🚀 Core Capabilities (Stage 2 Focus)
 
-### 🧠 **Executive Brain — a Real Cognitive Loop**
-The `ExecutiveOrchestrator` in `brain/orchestrator.py` runs every cycle through
-16 explicit phases — `OBSERVE → UNDERSTAND → REMEMBER → RESEARCH → HYPOTHESIZE →
-PREDICT → GENERATE OPTIONS → SIMULATE → EVALUATE → PLAN → RISK CHECK → DECIDE →
-ACT → OBSERVE OUTCOME → REFLECT → LEARN` — and records a fully auditable
-`LoopTrace` (decision, rationale, confidence, risk verdict, every phase payload).
-The loop is **deterministic given identical inputs**, so the audit trail is
-reproducible.
+### 🧠 **Executive Brain & Local AI**
+The `OrionSystem` in `orchestration/system.py` coordinates the **Local AI Architecture (Ollama)** via `LocalModelRouter` (Hardware-adaptive) and `AIProvider` abstraction.
+- **Hardware Profile**: RAM/VRAM/GPU detection (`infrastructure/hardware_profiler.py`).
+- **Model Tier Selection**: Small/Medium/Large based on complexity and hardware (`models/routing/router.py`).
 
-### 🌍 **Situational Awareness That Admits Ignorance**
-Every value in the world model (`world_model/state.py`) carries a `KnowledgeStatus`:
+### 🌍 **Situational Awareness & Memory**
+- **World Model**: `FinancialWorldModel` (`world_model/state.py`) tracks 9 state objects with `KnowledgeStatus` (KNOWN, UNKNOWN, ESTIMATED, PREDICTED, UNCERTAIN, CONFLICTING).
+- **Layered Memory**: `LayeredMemory` (`memory/layered.py`) with 7 layers (Working, Episodic, Semantic, Procedural, Market, Research, Trading) and compression policy.
 
-| Status | Meaning |
+### 🔬 **Research Engine & Prediction Engine**
+- **Forecasting**: `LinearTrendForecaster` & `PredictionEnsemble` (`prediction/forecasting.py`).
+- **Evolution**: `EvolutionEngine` (`evolution/engine.py`) with multi-objective fitness (Risk-Adjusted Return 35%, Stability 20%, Generalization 20%, Calibration 15%).
+
+### 🧬 **MLflow + Registry & Data Architecture**
+- **Registry V2**: `ModelRecord` & `LifecycleStage` (`models/registry_v2/registry.py`).
+- **Data Lake**: `HistoricalDataLake` (`storage/lake.py`) for partitioned historical data (Ticks, Bars, Macro, News).
+
+### 🛡️ **Security & Dashboard**
+- **Audit**: `AuditLog` & `ApprovalGate` (`security/audit.py`) — tamper-evident append-only log.
+- **Mission Control**: **LIVE PREVIEW** at [https://8787-{sandboxId}.e2b.app](https://8787-{sandboxId}.e2b.app) (`src/orion/dashboard/web.py`).
+
+---\n
+## 🎮 Quick Start (Arena Sandbox)
+
+### ⚡ Live Mission Control (Port 8787)
+The dashboard is **already running** in the sandbox. Access it via the preview link above.
+- **API Status**: `curl http://0.0.0.0:8787/api/status`
+- **Broker Catalogue**: `curl http://0.0.0.0:8787/api/brokers`
+- **Market Data**: `curl http://0.0.0.0:8787/api/market`
+
+### 🛠️ CLI Commands (via `.venv/bin/python3 -m orion`)
+| Command | Meaning |
 |---|---|
-| `known` | Directly observed/validated |
-| `unknown` | Never observed |
-| `estimated` | Derived, not measured |
-| `predicted` | Model-generated forward view |
-| `uncertain` | Present but low-confidence |
-| `conflicting` | Multiple sources disagree |
-
-Nine explicit state objects (`WorldState/MarketState/PortfolioState/AgentState/ResearchState/ModelState/RiskState/DecisionState/LearningState`) keep the
-executive situationally aware across market regime, volatility, liquidity,
-data quality, portfolio exposure, open positions, model confidence and
-disagreement.
-
-### 🗂️ **Layered Memory with Compression, Not Hoarding**
-`memory/layered.py` provides seven layers — working, episodic, semantic,
-procedural, market, research, trading — with bounded `WorkingMemory` that
-**compresses evicted items into episodic memory** instead of accumulating raw
-data. Retrieval is scored by term relevance ×2 + importance, then recency.
-
-### 🔬 **Autonomous Research Agent**
-The `research/` subsystem forms a question → discovers real papers via the
-**public OpenAlex metadata API** → extracts structured profiles → synthesizes
-consensus *and* conflicts → generates hypotheses → runs controlled experiments
-(unit test → backtest → walk-forward) → replicates → records provenance. On a
-network outage it returns an explicit `BLOCKED` response — **it never invents
-evidence**.
-
-### 📊 **Multi-Model Council (No Blind Averages)**
-`prediction/ensembles/model_council.py` combines trend, mean-reversion, EWMA
-and linear-trend forecasters with **regime-dependent weights** — momentum is
-weighted higher in bull regimes, mean-reversion in ranges — and tracks
-disagreement (epistemic uncertainty), outlier members, and calibrated
-prediction intervals.
-
-### 🧬 **Evolution That Rewards Survival, Not Just Returns**
-`evolution/` evolves strategy candidates through deterministic tournament
-selection, blend/uniform crossover, mutation, and diversity enforcement.
-`Fitness.score` weighs **risk-adjusted return (35%), stability (20%),
-generalization (20%), calibration (15%)**, minus drawdown and turnover
-penalties. Raw return alone never wins.
-
-### 🧪 **Contamination-Safe Benchmarking**
-`benchmarking/suite.py` scores every forecaster with a strict walk-forward
-protocol (each prediction sees only bars strictly before its target), so
-look-ahead leakage is structurally impossible. Strategies are compared on the
-*identical* price series with the *identical* metrics.
-
-### 🛡️ **Risk Above Intelligence**
-Execution is always `AI → decision → risk → execution`. The deterministic
-`RiskEngine` (`trading/risk.py`) enforces order-notional, exposure, correlation,
-position, and minimum-confidence limits plus an emergency-stop kill switch,
-**independent of any language model**. Rejected proposals never reach a broker.
-
-### 🔄 **Controlled Self-Learning**
-`learning/` turns observation → prediction → decision → outcome into validated
-training material through versioned datasets, leakage detection, chronological
-splits, model cards, calibration error, and a **deny-by-default promotion gate**
-(`infrastructure/governance.py`). Nothing auto-promotes because a validation
-metric improved.
-
-### 🧑‍💻 **Code Generation, Sandboxed by Policy**
-`coding/` generates, analyzes, statically verifies, debugs, and patches
-candidate strategy code. Unsafe constructs are rejected before execution; a
-dedicated process/container runtime sandbox remains a **documented blocker**.
-Generated code can never modify production directly.
-
-### 🌐 **Asset-Class Agnostic Core**
-One risk/portfolio/decision/memory core; `markets/` contributes specialist
-parameters for **equities, ETFs, crypto, futures, FX, commodities, fixed
-income, options, and prediction markets** — without ever overriding the risk
-engine.
----
-
-## 🧱 Architecture (the canonical tree)
-
-The canonical research engine lives under `src/orion/` with 1,260 automated unit and integration tests across 23 subpackages. External broker and data adapters operate in paper/simulation mode unless explicitly certified by contract tests.
-
-```
-orion/
-├── brain/                          # 🧠 The executive brain
-│   ├── orchestrator.py             #   16-phase cognitive loop, auditable LoopTrace
-│   ├── executive.py                #   Risk-before-execution coordinator
-│   ├── decision.py                 #   DecisionContext / DecisionEngine → Action
-│   ├── reflection.py               #   Prediction-vs-outcome error analysis
-│   ├── metacognition.py            #   Confidence / uncertainty self-assessment
-│   ├── goal_management.py          #   Goal hierarchy + horizon steering
-│   ├── hypothesis.py               #   Hypothesis artifacts
-│   ├── planning.py  reasoning.py   #   Planner + reasoning contracts
-│   └── __init__.py
-├── intelligence/                  # 🤖 Agent & language layer
-│   ├── llm/
-│   │   ├── providers.py            #   LLMProvider protocol + Ollama wiring
-│   │   └── ollama.py               #   Local model runtime config
-│   ├── financial_reasoning/
-│   │   └── reasoner.py             #   Structured financial conclusions + uncertainty
-│   ├── sentiment/
-│   │   └── analyzer.py             #   Deterministic sentiment analysis
-│   ├── tool_use/
-│   │   ├── registry.py             #   Permissioned tool registry (AgentProfile)
-│   │   └── tools.py                #   backtest / simulate / pricing / regime / stats / memory
-│   └── __init__.py
-├── prediction/                    # 📊 Forecasting & uncertainty
-│   ├── forecasting.py              #   LinearTrendForecaster, PredictionEnsemble
-│   ├── time_series/                #   Momentum, MeanReversion, Volatility, EWMA
-│   ├── ensembles/
-│   │   └── model_council.py        #   Regime-weighted council + disagreement
-│   ├── statistical/                #   descriptive.py, signals.py
-│   ├── machine_learning/ridge.py   #   MLRidgeForecaster
-│   ├── regime/detector.py          #   Market-regime detection
-│   ├── uncertainty/estimators.py   #   Epistemic + confidence intervals
-│   ├── calibration/metrics.py      #   Calibration error
-│   └── __init__.py
-├── trading/                       # 💹 Execution, risk, portfolio, strategies
-│   ├── execution.py                #   SimulatedBroker, AlpacaAdapter (BLOCKED)
-│   ├── risk.py                     #   RiskEngine, RiskLimits (deterministic gate)
-│   ├── strategies/catalog.py       #   Strategy catalog
-│   ├── portfolio/                  #   allocator.py, constructor.py
-│   ├── brokers/                    #   Broker adapters
-│   └── __init__.py
-├── markets/                       # 🌐 Asset-class specialists
-│   ├── specialist.py               #   specialist_for(config, asset_class)
-│   ├── equities/  etfs/  crypto/  futures/  forex/  commodities/
-│   └── fixed_income/  options/  prediction_markets/
-├── mathematics/                   # 🧮 Math & risk math
-│   ├── pricing.py  derivatives.py  probability.py  risk_math.py
-│   └── statistics.py  optimization.py
-├── backtesting/                   # ⏪ Backtest rigor
-│   ├── engine.py                   #   Vectorized momentum backtest, fee-aware
-│   ├── evaluation.py               #   Sharpe / Sortino / Calmar / drawdown / win-rate
-│   ├── walk_forward/               #   Purged walk-forward windows
-│   ├── monte_carlo/                #   GBM + block bootstrap + Monte Carlo
-│   ├── stress_testing/             #   Flash crash, vol spike, regime break, liquidity gap
-│   ├── robustness/                 #   Overfit / look-ahead / survivorship checks
-│   └── __init__.py
-├── benchmarking/                  # 🧪 Contamination-safe comparisons
-│   └── suite.py                    #   Walk-forward model + strategy scoring
-├── learning/                      # 🔄 Controlled continual learning
-│   ├── experience.py  datasets.py  training.py
-│   ├── evaluation.py  promotion.py  self_improvement.py
-│   └── __init__.py
-├── evolution/                     # 🧬 Deterministic candidate evolution
-│   ├── engine.py  fitness.py  operators.py  population.py  selection.py
-├── models/                        # 📁 Model runtime & routing
-│   ├── local/ollama.py            #   Local OllamaProvider (qwen2.5 default)
-│   ├── cloud/provider.py           #   NullCloudProvider (raises CloudProviderUnavailable)
-│   ├── routing/router.py           #   HardwareProfile → ModelTier
-│   ├── registry/                   #   ImmutableRegistry, RegistryStatus
-│   └── __init__.py
-├── memory/                        # 🗂️ Bounded layered memory
-│   ├── layered.py  working.py  store.py  short_term/
-├── world_model/                   # 🌍 Situational state
-│   ├── state.py                   #   FinancialWorldModel, 9 state objects, StateValue
-│   ├── entities.py  regimes.py  temporal.py  uncertainty.py
-├── data/                          # 📦 Typed data contracts
-│   ├── contracts.py               #   60+ dataclasses (Asset, MarketQuote, Prediction...)
-│   └── validation.py               #   DataQualityValidator
-├── research/                      # 🔬 Autonomous research
-│   ├── discovery.py                #   OpenAlex metadata discovery (BLOCKED-safe)
-│   ├── extraction.py  synthesis.py #   Paper profiles, evidence conflicts
-│   ├── experiments.py             #   ExperimentPipeline (unit→backtest→walk-forward)
-│   ├── replication.py  agent.py     #   Trials + ResearchAgent loop
-├── coding/                        # 🧑💻 Code intelligence
-│   ├── generation.py  analysis.py  verification.py
-│   └── sandbox.py  debugging.py  patching.py
-├── simulation/                     # 🎲 Market simulation
-│   └── market.py                   #   Seeded bootstrap paths (p05 / p95)
-├── infrastructure/                # 🏗️ Foundations
-│   ├── configuration.py            #   OrionConfig: mode LOCAL / CLOUD / HYBRID
-│   ├── event_bus.py  governance.py  hardware.py  provenance.py
-├── orchestration/                 # 🎛️ System wiring
-│   ├── system.py                   #   OrionSystem — the ONE composition root
-│   ├── scheduler.py                #   Budgeted autonomous research scheduler
-│   └── supervisor.py               #   Job / health supervision
-├── security/                      # 🔒 Security
-│   ├── secrets.py                  #   SecretVault, PromptGuard, redaction
-│   └── audit.py                    #   AuditLog, ApprovalGate
-├── cli/main.py                    # ⌨️ status/analyze/backtest/train/evaluate/research/
-│                                     #   discover-papers/evolve/simulate/benchmark/doctor
-├── backtest.py  config.py  data_quality.py  decision.py  domain.py
-├── event_bus.py  execution.py  executive.py  forecasting.py  quant.py
-├── local_ai.py  providers.py  registry.py  risk.py  workflow.py  integrations.py
-└── __init__.py                     #   Public exports
-
-tests/                             # ✅ 1260 passing (4 skipped, 0 failing)
-├── unit/  integration/  end_to_end/  brain/  prediction/  trading/
-├── research/  coding/  evolution/  learning/  memory/  models/
-├── backtesting/  benchmarking/  mathematics/  security/  intelligence/
-└── world_model/
-
-docs/                              # 📚 Full docs + architecture diagrams
-source_repositories/               # 🗄️ Preserved upstream checkouts (NEVER modified)
-workers/                           # 🔌 Reserved for isolated heavyweight runtimes
-configs/  integrations/            # Reserved deployment / integration surface
-```
----
-
-## 🎮 Quick Start
-
-### ⚡ One Command — Any Machine (Windows · Windows Server · Linux · macOS)
-
-| Where you are | Command |
-|---|---|
-| **Windows / Windows Server** | `start.cmd` (any shell — or double-click it) |
-| **Linux / macOS** | `chmod +x start.sh` once, then `./start.sh` — or simply `sh start.sh` |
-| **Any OS with Python ≥ 3.10** | `python start.py` |
-
-That single command starts the whole platform, in order:
-
-1. `orion doctor` — health + safety gate (refuses to start a half-broken stack)
-2. `orion status` — capability report
-3. `orion run DEMO` — one full 16-phase executive cycle (smoke test)
-4. `orion serve` — the **Mission Control** web dashboard in the foreground at `http://127.0.0.1:8787` (**Ctrl+C** stops everything cleanly)
-
-The launcher is **stdlib-only and offline-safe** — no pip, no venv, no database, no broker account, no GPU. If no Python ≥ 3.10 is found it prints per-OS install instructions and exits.
-
-| Option | Meaning |
-|---|---|
-| `--check` | doctor + status only; exit code `0` iff healthy (CI / monitoring) |
-| `--force` | continue even if the health gate is not `HEALTHY` |
-| `--no-cycle` / `--symbol SPY` | skip / retarget the demo executive cycle |
-| `--host 0.0.0.0` / `--port 8787` | dashboard bind address (default `127.0.0.1:8787`) |
-| `--no-browser` | don't open a browser tab (automatic on headless machines) |
-| `--tui` | terminal mission control instead of the web dashboard |
-
-Everything runs from the repository root — no database, no broker account, no GPU required.
+| `status` | Capability report & system health |
+| `doctor` | Safety gate (refuses to start if broken) |
+| `run DEMO` | One full executive cycle (smoke test) |
+| `serve` | Mission Control web dashboard (already running on port 8787) |
+| `evaluate` | Ablation lab & walk-forward harness |
+| `research` | Autonomous research question |
+| `evolve` | Strategy candidate evolution |
+| `simulate` | Monte Carlo simulation paths |
+| `benchmark` | Contamination-safe comparisons |
+| `agents` | Run the agent hierarchy (Decision, News, Researcher) |
+| `compliance` | Audit log & restricted list checks |
+| `optimize` | Portfolio optimizer (MVO, MVP, Risk Parity, HRP, Vol-Target) |
 
 ```powershell
 # System health + capabilities
-python -m orion status
-python -m orion doctor
+/home/user/Orion/.venv/bin/python3 -m orion status
+/home/user/Orion/.venv/bin/python3 -m orion doctor
 
 # Full executive cycle on a symbol (16-phase loop, auditable trace)
-python -m orion run AAPL --prices 100 101 100.5 102 103 104 105 --actual-return 0.02
+/home/user/Orion/.venv/bin/python3 -m orion run AAPL --prices 100 101 100.5 102 103 104 105 --actual-return 0.02
 
 # Analyze with the model council + financial reasoner
-python -m orion analyze AAPL
+/home/user/Orion/.venv/bin/python3 -m orion analyze AAPL
 
 # Backtest, simulate, evolve, benchmark
-python -m orion backtest --prices 100 101 100.5 102 103 104 105
-python -m orion simulate --prices 100 101 100.5 102 103 104 105 --paths 200
-python -m orion evolve --prices 100 101 100.5 102 103 104 105 --population 12
-python -m orion benchmark --prices 100 101 100.5 102 103 104 105
+/home/user/Orion/.venv/bin/python3 -m orion backtest --prices 100 101 100.5 102 103 104 105
+/home/user/Orion/.venv/bin/python3 -m orion simulate --prices 100 101 100.5 102 103 104 105 --paths 200
+/home/user/Orion/.venv/bin/python3 -m orion evolve --prices 100 101 100.5 102 103 104 105 --population 12
+/home/user/Orion/.venv/bin/python3 -m orion benchmark --prices 100 101 100.5 102 103 104 105
 
-# Train / evaluate a residual model
-python -m orion train
-python -m orion evaluate                                     # 200-bar synthetic default
-python -m orion evaluate --no-walk-forward --prices 100 101 100.5 102 103 104 105  # short series
-
-# Autonomous research against the public OpenAlex metadata API
-python -m orion research "market regime forecasting"
-python -m orion discover-papers "financial time series forecasting"
-
-# Cloud AI peers (OpenRouter / DeepSeek / OpenAI / Anthropic / Gemini / ...)
-# Put keys in .env (see .env.example for every provider + free-model recipes),
-# then verify the wiring and consult the council:
-python -m orion peers
-python -m orion deliberate "What macro regimes favor short-vol carry strategies?"
+# Pipeline (Status + Filings + Factors + Cycle)
+/home/user/Orion/.venv/bin/python3 -m orion pipeline --symbol NVDA
 ```
 
 Or use the library directly:
 
 ```python
 from orion.data.contracts import Asset, AssetClass
-from orion.prediction.ensembles.model_council import build_default_council
+from orion.prediction.forecasting import LinearTrendForecaster
 from orion.orchestration.system import OrionSystem
+from orion.models.routing.router import LocalModelRouter
+from orion.models.local.ollama import OllamaProvider
 
 system = OrionSystem()
-print(system.status())
+router = LocalModelRouter(hardware=system.snapshot_hardware())
+provider = OllamaProvider()
 
-council = build_default_council()
-result = council.predict(
-    Asset("AAPL", AssetClass.EQUITY),
-    [100, 101, 100.5, 102, 103, 104, 105],
-    regime="bull",
-)
-print(result.prediction.expected_return)  # Decimal
-print(result.disagreement)                # epistemic uncertainty among members
+print(system.status())
+print(f"Selected Tier: {router.select().name}")
+print(f"Local Inference: {provider.generate('Analyze market regime')}")
 ```
 
----
-
+---\n
 ## 🔬 Live Demo — an Executive Cycle, End to End
 
-When you run `python -m orion run DEMO`, the executive walks all 16 phases and
-prints an auditable trace:
+When you run `/home/user/Orion/.venv/bin/python3 -m orion run DEMO`, the executive walks the canonical interfaces and prints an auditable trace:
 
 ```
 OBSERVE ──► UNDERSTAND ──► REMEMBER ──► RESEARCH ──► HYPOTHESIZE ──► PREDICT
@@ -440,9 +237,9 @@ DECIDE: BUY  ──► ACT (fill recorded)  ──► OBSERVE OUTCOME ──► 
 
 Every number carries a `source`, a `confidence`, and a `KnowledgeStatus` —
 ORION never lets an estimate masquerade as a fact.
----
 
-## ⚙️ Configuration
+---\n
+## ⚙️ Configuration (Stage 2 Constraints)
 
 ORION is configured with `OrionConfig` (`src/orion/infrastructure/configuration.py`).
 Mode is configuration, never code:
@@ -458,84 +255,61 @@ config = OrionConfig(
 )
 ```
 
-Non-negotiable defaults:
-
+**Stage 2 Constraints:**
 | Setting | Default | Why |
 |---|---|---|
-| `mode` | `LOCAL` | no implicit cloud calls; cloud must be explicitly configured |
-| `execution_mode` | `SIMULATION` | live trading is a deliberate, audited decision |
-| `live_trading_enabled` | `False` | `AlpacaAdapter` refuses to construct otherwise |
-| `autonomy_level` | `0` | autonomous research, evolution, and promotion stay gated |
+| `mode` | `LOCAL` | Hardware-adaptive Ollama default; cloud is BLOCKED |
+| `execution_mode` | `SIMULATION` | Canonical execution environment first (latency, spread, slippage) |
+| `live_trading_enabled` | `False` | `AlpacaAdapter` refuses to construct otherwise (Paper/Live gated) |
+| `autonomy_level` | `0` | Autonomous research/evolution/promotion stay gated |
 
-Risk limits (`trading/risk.py::RiskLimits`) are similarly explicit:
-`max_order_notional`, `max_portfolio_exposure`, `max_correlation`,
-`min_model_confidence`, and `emergency_stop`. Research, learning, evolution,
-and generated code can never alter them.
----
-## 🧪 Testing
+Risk limits (`trading/risk_firewall.py`) are similarly explicit:
+`max_position_fraction`, `max_portfolio_exposure`, `max_daily_loss_fraction`.
+
+---\n
+## 🧪 Testing & Integration
 
 ```powershell
-python -m pytest tests -q       # full suite; see CI for supported matrices
-python -m compileall src        # byte-compile every module
-python -m orion doctor          # health + safety posture check
+/home/user/Orion/.venv/bin/python3 -m pytest tests -q       # full suite
+/home/user/Orion/.venv/bin/python3 -m compileall src        # byte-compile every module
+/home/user/Orion/.venv/bin/python3 -m orion doctor          # health + safety posture check
 ```
 
-The test suite is run in CI across supported Python versions; local results
-depend on the selected environment. Tests are grouped under `tests/unit`, `tests/integration`,
-`tests/end_to_end`, plus per-domain suites for brain, prediction, trading,
-research, coding, evolution, learning, memory, models, backtesting,
-benchmarking, mathematics, security, intelligence, evaluation, registry_v2,
-ops, storage, exchange, options, market_data, providers, brokers,
-backtesting, and world model. Tests
-cover **failure paths** (network-outage `BLOCKED` responses, risk-gate
-rejections, leakage detection, short-series inputs, look-ahead contamination,
-live-trading refusal), not just happy paths.
----
+The test suite covers **failure paths** (network-outage `BLOCKED` responses, risk-gate rejections, leakage detection, short-series inputs, look-ahead contamination, live-trading refusal), not just happy paths.
 
-## 🚦 Roadmap
+---\n
+## 🚦 Roadmap (ORION AUTONOMOUS BUILD DIRECTIVE)
 
-- [x] 🧠 Executive brain with a 16-phase, reproducible cognitive loop
-- [x] 🌍 Situational awareness with explicit `known / unknown / estimated / predicted / uncertain / conflicting`
-- [x] 🗂️ Seven-layer bounded memory with compression policy
-- [x] 🔬 Autonomous research agent (discovery, extraction, synthesis, experiments, replication, provenance)
-- [x] 📊 Regime-weighted multi-model council with disagreement tracking
-- [x] 🧬 Deterministic multi-objective candidate evolution
-- [x] 🧪 Contamination-safe walk-forward benchmarking (models + strategies)
-- [x] 🛡️ Deterministic risk engine, kill switch, risk-gated paper execution
-- [x] 🔄 Controlled continual learning with leakage detection, model cards, and a deny-by-default promotion gate
-- [x] 🧑💻 Code generation / analysis / static verification / debugging / patching
-- [x] 🌐 Asset-class specialists (equities, ETFs, crypto, futures, FX, commodities, fixed income, options, prediction markets)
-- [x] 🔒 Secret isolation, prompt guarding, tamper-evident audit, approval gates
-- [x] ⏪ Walk-forward, Monte Carlo, stress, and robustness backtesting
-- [ ] ☁️ Cloud inference — BLOCKED until a configured, budgeted, evaluated provider exists
-- [ ] 🔴 Live execution — BLOCKED until a credential-isolated, audited broker adapter is enabled
-- [ ] 🏗️ Generated-code process/container sandbox — BLOCKED (static gate in place)
-- [ ] 🗄️ Heavyweight upstream runtimes (QLib, Kronos, FinGPT, QuantLib) as isolated workers
----
-## 📚 Documentation
+- [x] **Stage 1**: Repository Acquisition/Normalization (28 cloned, 2 excluded, MANIFEST.yaml generated)
+- [x] **Stage 2**: Core schemas/interfaces in `src/orion/` (Asset, MarketDataProvider, BrokerAdapter, Simulated Broker, Alpaca Adapter, Local AI, Multi-Agent, Memory, World Model, Research Engine, Prediction Engine, Strategy Evolution, MLflow + Registry, Data Architecture, Security, Dashboard)
+- [ ] **Stage 3-20**: Implementation refinement, live execution gating, and autonomous evolution.
 
-Start at **[docs/README.md](docs/README.md)**. The full architecture suite
-includes the ORION brain loop, research loop, learning loop, evolution loop,
-model routing, local/cloud architecture, risk architecture, data flow, and
-memory architecture — each with an ASCII diagram:
+**Current Branch**: `arena/69c16b57-orion` (Active)
+**Base Commit**: `bce7fb725297f744baeb230434a1586aa0d28a96`
+
+---\n
+## 📚 Documentation & Audit
+
+Start at **[ORION_ARCHITECTURE_AUDIT.md](ORION_ARCHITECTURE_AUDIT.md)**. The binding specification and repository inventory (30 repos) define the scope.
 
 | Doc | What it answers |
 |---|---|
-| [System overview](docs/architecture/SYSTEM_OVERVIEW.md) | How everything is *one* system |
-| [Brain](docs/architecture/BRAIN.md) | The 16-phase executive loop |
-| [Research loop](docs/architecture/RESEARCH_LOOP.md) | Paper → idea → hypothesis → experiment → report |
-| [Learning loop](docs/architecture/LEARNING_LOOP.md) | Experience → validate → train → promote (governed) |
-| [Evolution loop](docs/architecture/EVOLUTION_LOOP.md) | Population → mutate → select → diversify |
-| [Model routing](docs/architecture/MODEL_ROUTING.md) | Hardware-aware local inference + council |
-| [Risk](docs/architecture/RISK_ARCHITECTURE.md) | AI → decision → risk → execution |
-| [Data flow](docs/architecture/DATA_FLOW.md) | World → state → memory → forecast → outcome |
-| [Memory](docs/architecture/MEMORY_ARCHITECTURE.md) | Seven bounded layers with compression |
-| [Capability registry](docs/architecture/CAPABILITY_REGISTRY.md) | Upstream audit, licenses, integration status |
+| [ORION_ARCHITECTURE_AUDIT.md](ORION_ARCHITECTURE_AUDIT.md) | Binding specification & inventory (30 repos) |
+| [src/orion/data/contracts.py](src/orion/data/contracts.py) | Canonical schemas (Asset, MarketDataProvider, BrokerAdapter, etc.) |
+| [src/orion/simulation/exchange/broker_adapter.py](src/orion/simulation/exchange/broker_adapter.py) | SimulatedExchangeBroker implementation |
+| [src/orion/trading/execution.py](src/orion/trading/execution.py) | BrokerAdapter Protocol, SimulatedBroker, AlpacaAdapter (disabled) |
+| [src/orion/models/local/ollama.py](src/orion/models/local/ollama.py) | Local AI Architecture (Ollama) |
+| [src/orion/models/routing/router.py](src/orion/models/routing/router.py) | Hardware-adaptive LocalModelRouter |
+| [src/orion/memory/layered.py](src/orion/memory/layered.py) | Multi-Agent Architecture (Layered Memory) |
+| [src/orion/world_model/state.py](src/orion/world_model/state.py) | World Model (FinancialWorldModel) |
+| [src/orion/prediction/forecasting.py](src/orion/prediction/forecasting.py) | Research & Prediction Engines |
+| [src/orion/evolution/engine.py](src/orion/evolution/engine.py) | Strategy Evolution |
+| [src/orion/models/registry_v2/registry.py](src/orion/models/registry_v2/registry.py) | MLflow + Registry |
+| [src/orion/storage/lake.py](src/orion/storage/lake.py) | Data Architecture (Postgres/TimescaleDB/pgvector) |
+| [src/orion/security/audit.py](src/orion/security/audit.py) | Security (AuditLog & ApprovalGate) |
+| [src/orion/dashboard/web.py](src/orion/dashboard/web.py) | Dashboard (Mission Control) |
 
-Domain guides live under `docs/agents`, `docs/research`, `docs/learning`,
-`docs/evolution`, `docs/models`, `docs/trading`, `docs/risk`, `docs/data`,
-and `docs/coding`; provenance under `docs/provenance`.
----
+---\n
 ## 🔒 Governance & Honest Status
 
 ORION may research, generate, experiment, train, evaluate, and *propose*.
@@ -545,22 +319,25 @@ provenance/audit logs.
 
 | Capability | Status |
 |---|---|
-| Situational state, layered memory, research discovery, prediction council, evolution, simulation, paper execution, benchmarking, learning + promotion gate, code intelligence, security, persistent agent kernel (with hierarchical goals, calibrated belief updating, persistent loop, immutable invocation log, predict-before-act), mission layer (goal trees, budgeted runs, ledger, persistence) | **IMPLEMENTED / EXPERIMENTAL** (CI-tested) |
-| Demo broker adapters (Alpaca, Binance, Kraken, Coinbase, OANDA, IBKR) + `BrokerRegistry` + kill switch | **IMPLEMENTED** — demo/testnet endpoints by default, discovered from `.env` |
-| Learning from mistakes (`MistakeAnalyzer`, `LessonStore`, replay feed, `OrionSystem.reflect_on_trade`) | **IMPLEMENTED** |
-| Peer-AI council (learn from OpenAI / Anthropic / Gemini / Azure via `.env` keys) + Gemini provider | **IMPLEMENTED** — opt-in; no key → honestly unavailable |
-| Mission Control web dashboard (`orion serve`) | **IMPLEMENTED** — stdlib-only, binds 127.0.0.1 by default |
-| Append-only experiment tracker (JSONL + MLflow backend) | **IMPLEMENTED** — default JSONL, MLflow opt-in via `ExperimentTracker("mlflow", ...)` |
-| Immutable strategy registry with full lineage + gated lifecycle | **IMPLEMENTED** — `EXPERIMENTAL → VALIDATING → APPROVED → PRODUCTION → RETIRED`, JSONL persistent |
-| Upstream provenance manifest (verified via `git ls-remote`) | **IMPLEMENTED** — 29/30 URLs reachable, 12 moved canonical URLs recovered, empty husks removed |
-| Cloud inference | **GATED** — providers activate only with an API key in `.env`/env; without one, `NullCloudProvider` still raises |
-| Live execution | **BLOCKED by default** — requires `execution_mode="live"` AND `live_trading_enabled=True` AND per-venue `*_MODE=live`; kill switch enforced process-wide |
-| Generated-code runtime sandbox | **BLOCKED** — static verification gate in place; dedicated runtime sandbox required |
-| Heavyweight upstream runtimes (QLib, Kronos, FinGPT, QuantLib) | **WORKER / REFERENCE** — preserved unmodified under `source_repositories/` |
+| **Stage 1 (Repo Acquisition)** | **COMPLETED** (28 cloned, 2 excluded, MANIFEST.yaml) |
+| **Stage 2 (Core Schemas/Interfaces)** | **IMPLEMENTED** (`src/orion/` canonical) |
+| **Simulated Broker** | **IMPLEMENTED** (Canonical execution environment first) |
+| **Alpaca Adapter** | **STUBBED/DISABLED** (Paper/Live gated, default DISABLED) |
+| **Local AI Architecture** | **IMPLEMENTED** (Hardware-adaptive Ollama, AIProvider abstraction) |
+| **Multi-Agent Architecture** | **IMPLEMENTED** (LayeredMemory, FinancialWorldModel) |
+| **Research/Prediction/Evolution** | **IMPLEMENTED** (Engines active in `src/orion/`) |
+| **MLflow + Registry** | **IMPLEMENTED** (Registry V2 in `src/orion/models/`) |
+| **Data Architecture** | **IMPLEMENTED** (HistoricalDataLake in `src/orion/storage/`) |
+| **Security** | **IMPLEMENTED** (AuditLog & ApprovalGate in `src/orion/security/`) |
+| **Dashboard** | **LIVE PREVIEW** (Port 8787, `src/orion/dashboard/web.py`) - **Institutional Financial Terminal Styling (Bloomberg/Aladdin density) - Emojis Removed** |
+| **Cloud Inference** | **GATED** — providers activate only with an API key |
+| **Live Execution** | **BLOCKED by default** — requires `execution_mode="live"` AND `live_trading_enabled=True` |
+| **Heavyweight Upstreams** | **REFERENCE** — preserved in `source_repositories/` and `external/` |
 
 No capability is documented as *integrated* that is not executed code.
-Repositories in `source_repositories/` are preserved and **never modified**.
----
+Repositories in `source_repositories/` and `external/` are preserved and **never modified**.
+
+---\n
 ## 📜 License & Philosophy
 
 ORION is an ORION project: the canonical application in `src/orion/` is
